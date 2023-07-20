@@ -15,7 +15,6 @@ files=`cat diff_files|grep java|grep -v trino-cpp|grep -v testing`
 
 cat diff_files|grep java|grep -v trino-cpp|grep -v testing| while read -r file; do
   to_path=`echo $file|cut -d'/' -f3-|rev|cut -d'/' -f2-|rev`
-  echo $to_path
   mkdir -p trino-cpp-plugin/$to_path
   cp --path $file trino-cpp-plugin/$to_path
 done
