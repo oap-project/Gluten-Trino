@@ -10,7 +10,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-get_filename_component(TRINO_ABSOLUTE_DIR "${PROJECT_SOURCE_DIR}/.." ABSOLUTE)
+get_filename_component(TRINO_CPP_PLUGIN_DIR "${PROJECT_SOURCE_DIR}/../trino-cpp-plugin" ABSOLUTE)
+if(DEFINED ENV{TRINO_HOME})
+  set(TRINO_ABSOLUTE_DIR $ENV{TRINO_HOME})
+else()
+  get_filename_component(TRINO_ABSOLUTE_DIR "$ENV{HOME}/trino" ABSOLUTE)
+endif()
 
 set(TRINO_PROTOCOL_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/trino_protocol.cpp)
 set(TRINO_PROTOCOL_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/trino_protocol.h)
@@ -24,7 +29,7 @@ endforeach ()
 
 add_custom_command(
         OUTPUT ${TRINO_PROTOCOL_SOURCE} ${TRINO_PROTOCOL_HEADER}
-        COMMAND TRINO_HOME=${TRINO_ABSOLUTE_DIR} make
+        COMMAND TRINO_HOME=${TRINO_ABSOLUTE_DIR} TRINO_CPP_PLUGIN_HOME=${TRINO_CPP_PLUGIN_DIR} make
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_custom_target(internal_trino_protocol ALL DEPENDS ${TRINO_PROTOCOL_SOURCE} ${TRINO_PROTOCOL_HEADER})

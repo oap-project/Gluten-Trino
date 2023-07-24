@@ -24,6 +24,7 @@ from topological import topological
 
 
 TRINO_HOME = os.environ.get("TRINO_HOME", os.environ.get("HOME") + "/trino")
+TRINO_CPP_PLUGIN_HOME = os.environ.get("TRINO_CPP_PLUGIN_HOME")
 IGNORED_TYPES = {
     "byte",
     "Integer",
@@ -317,6 +318,7 @@ def main():
     lang = language.get(args.lang, None)["TypeMap"]
 
     files.extend([f"{TRINO_HOME}/{file}" for file in config.JavaClasses])
+    files.extend([f"{TRINO_CPP_PLUGIN_HOME}/{file}" for file in config.trinoCppJavaClasses])
 
     classes = defaultdict(util.attrdict)
     depends = defaultdict(set)
