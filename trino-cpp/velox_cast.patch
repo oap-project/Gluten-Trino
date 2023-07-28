@@ -1,0 +1,64 @@
+From 9890ea19aa47393eeb4da4062390e0092d85c044 Mon Sep 17 00:00:00 2001
+From: "wuxueyang.wxy" <wuxueyang.wxy@alibaba-inc.com>
+Date: Tue, 22 Nov 2022 16:56:35 +0800
+Subject: [PATCH] try add cast for double.
+
+---
+ velox/expression/CastExpr.cpp | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+
+diff --git a/velox/expression/CastExpr.cpp b/velox/expression/CastExpr.cpp
+index 4592fbc8..d5063475 100644
+--- a/velox/expression/CastExpr.cpp
++++ b/velox/expression/CastExpr.cpp
+@@ -134,6 +134,36 @@ void applyIntToDecimalCastKernel(
+     }
+   });
+ }
++
++template <typename TInput, typename TOutput,
++          typename = typename std::enable_if_t<std::is_floating_point_v<TInput>>>
++void applyDoubleToDecimal(
++    const SelectivityVector& rows,
++    const BaseVector& input,
++    exec::EvalCtx& context,
++    const TypePtr& fromType,
++    const TypePtr& toType,
++    VectorPtr castResult) {
++  auto sourceVector = input.as<SimpleVector<TInput>>();
++  auto castResultRawBuffer =
++      castResult->asUnchecked<FlatVector<TOutput>>()->mutableRawValues();
++  const auto & toPrecisionScale = getDecimalPrecisionScale(*toType);
++  context.applyToSelectedNoThrow(rows, [&](vector_size_t row) {
++    const auto & sourceValue = sourceVector->valueAt(row);
++    if (!std::isfinite(sourceValue)) {
++      VELOX_USER_FAIL("Cannot convert infinity or NaN to decimal")
++    }
++
++    auto toValue = sourceValue * static_cast<TInput>(DecimalUtil::kPowersOfTen[toPrecisionScale.second]);
++
++    if (toValue <= static_cast<TInput>(std::numeric_limits<TOutput>::min()) ||
++        toValue >= static_cast<TInput>(std::numeric_limits<TOutput>::max())) {
++      VELOX_USER_FAIL("Float is out of Decimal range.")
++    }
++    castResultRawBuffer[row] = static_cast<TOutput>(toValue);
++  });
++}
++
+ } // namespace
+ 
+ template <typename To, typename From>
+@@ -542,6 +572,10 @@ VectorPtr CastExpr::applyDecimal(
+         break;
+       }
+     }
++    case TypeKind::DOUBLE:
++      applyDoubleToDecimal<double, toDecimalType>(
++          rows, input, context, fromType, toType, castResult);
++      break;
+     default:
+       VELOX_UNSUPPORTED(
+           "Cast from {} to {} is not supported",
+-- 
+2.40.0
+

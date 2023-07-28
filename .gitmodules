@@ -1,0 +1,3 @@
+[submodule "trino-cpp/velox"]
+	path = trino-cpp/velox
+	url = https://github.com/facebookincubator/velox.git

@@ -1,0 +1,349 @@
+{
+  "id": "1",
+  "root": {
+    "@type": "aggregation",
+    "id": "314",
+    "source": {
+      "@type": "project",
+      "id": "43",
+      "source": {
+        "@type": "filter",
+        "id": "1",
+        "source": {
+          "@type": "tablescan",
+          "id": "0",
+          "table": {
+            "connectorId": {
+              "catalogName": "tpch"
+            },
+            "connectorHandle": {
+              "@type": "system:io.trino.plugin.tpch.TpchTableHandle",
+              "schemaName": "tiny",
+              "tableName": "lineitem",
+              "scaleFactor": 0.01,
+              "constraint": {
+                "columnDomains": []
+              }
+            },
+            "transaction": [
+              "system:io.trino.plugin.tpch.TpchTransactionHandle",
+              "INSTANCE"
+            ]
+          },
+          "assignments": {
+            "l_discount<double>": {
+              "@type": "system:io.trino.plugin.tpch.TpchColumnHandle",
+              "columnName": "l_discount",
+              "type": "double"
+            },
+            "l_quantity<double>": {
+              "@type": "system:io.trino.plugin.tpch.TpchColumnHandle",
+              "columnName": "l_quantity",
+              "type": "double"
+            },
+            "l_shipdate<date>": {
+              "@type": "system:io.trino.plugin.tpch.TpchColumnHandle",
+              "columnName": "l_shipdate",
+              "type": "date"
+            },
+            "l_extendedprice<double>": {
+              "@type": "system:io.trino.plugin.tpch.TpchColumnHandle",
+              "columnName": "l_extendedprice",
+              "type": "double"
+            }
+          },
+          "outputVariables": [
+            {
+              "@type": "variable",
+              "name": "l_quantity",
+              "type": "double"
+            },
+            {
+              "@type": "variable",
+              "name": "l_extendedprice",
+              "type": "double"
+            },
+            {
+              "@type": "variable",
+              "name": "l_discount",
+              "type": "double"
+            },
+            {
+              "@type": "variable",
+              "name": "l_shipdate",
+              "type": "date"
+            }
+          ]
+        },
+        "predicate": {
+          "@type": "special",
+          "form": "AND",
+          "returnType": "boolean",
+          "arguments": [
+            {
+              "@type": "call",
+              "displayName": "$operator$less_than_or_equal<t:orderable>(t,t):boolean",
+              "functionHandle": {
+                "@type": "static",
+                "signature": {
+                  "name": "presto.default.$operator$LESS_THAN_OR_EQUAL",
+                  "kind": "SCALAR",
+                  "returnType": "boolean",
+                  "argumentTypes": [
+                    "date",
+                    "date"
+                  ],
+                  "variableArity": false
+                }
+              },
+              "returnType": "boolean",
+              "arguments": [
+                {
+                  "@type": "call",
+                  "displayName": "date",
+                  "functionHandle": {
+                    "@type": "static",
+                    "signature": {
+                      "name": "presto.default.date",
+                      "kind": "SCALAR",
+                      "returnType": "date",
+                      "argumentTypes": [
+                        "varchar"
+                      ],
+                      "variableArity": false
+                    }
+                  },
+                  "returnType": "date",
+                  "arguments": [
+                    {
+                      "@type": "constant",
+                      "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAAAKAAAAAAoAAAAxOTk0LTAxLTAx",
+                      "type": "varchar"
+                    }
+                  ]
+                },
+                {
+                  "@type": "variable",
+                  "name": "l_shipdate",
+                  "type": "date"
+                }
+              ]
+            },
+            {
+              "@type": "call",
+              "displayName": "$operator$less_than<t:orderable>(t,t):boolean",
+              "functionHandle": {
+                "@type": "static",
+                "signature": {
+                  "name": "presto.default.$operator$LESS_THAN",
+                  "kind": "SCALAR",
+                  "returnType": "boolean",
+                  "argumentTypes": [
+                    "date",
+                    "date"
+                  ],
+                  "variableArity": false
+                }
+              },
+              "returnType": "boolean",
+              "arguments": [
+                {
+                  "@type": "variable",
+                  "name": "l_shipdate",
+                  "type": "date"
+                },
+                {
+                  "@type": "call",
+                  "displayName": "date",
+                  "functionHandle": {
+                    "@type": "static",
+                    "signature": {
+                      "name": "presto.default.date",
+                      "kind": "SCALAR",
+                      "returnType": "date",
+                      "argumentTypes": [
+                        "varchar"
+                      ],
+                      "variableArity": false
+                    }
+                  },
+                  "returnType": "date",
+                  "arguments": [
+                    {
+                      "@type": "constant",
+                      "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAAAKAAAAAAoAAAAxOTk1LTAxLTAx",
+                      "type": "varchar"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "@type": "call",
+              "displayName": "$operator$between",
+              "functionHandle": {
+                "@type": "static",
+                "signature": {
+                  "name": "presto.default.$operator$between",
+                  "kind": "SCALAR",
+                  "returnType": "boolean",
+                  "argumentTypes": [
+                    "double",
+                    "double",
+                    "double"
+                  ],
+                  "variableArity": false
+                }
+              },
+              "returnType": "boolean",
+              "arguments": [
+                {
+                  "@type": "variable",
+                  "name": "l_discount",
+                  "type": "double"
+                },
+                {
+                  "@type": "constant",
+                  "valueBlock": "CgAAAExPTkdfQVJSQVkBAAAAAJqZmZmZmak/",
+                  "type": "double"
+                },
+                {
+                  "@type": "constant",
+                  "valueBlock": "CgAAAExPTkdfQVJSQVkBAAAAAOxRuB6F67E/",
+                  "type": "double"
+                }
+              ]
+            },
+            {
+              "@type": "call",
+              "displayName": "$operator$less_than<t:orderable>(t,t):boolean",
+              "functionHandle": {
+                "@type": "static",
+                "signature": {
+                  "name": "presto.default.$operator$LESS_THAN",
+                  "kind": "SCALAR",
+                  "returnType": "boolean",
+                  "argumentTypes": [
+                    "double",
+                    "double"
+                  ],
+                  "variableArity": false
+                }
+              },
+              "returnType": "boolean",
+              "arguments": [
+                {
+                  "@type": "variable",
+                  "name": "l_quantity",
+                  "type": "double"
+                },
+                {
+                  "@type": "constant",
+                  "valueBlock": "CgAAAExPTkdfQVJSQVkBAAAAAAAAAAAAADhA",
+                  "type": "double"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "assignments": {
+        "assignments": {
+          "expr<double>": {
+            "@type": "call",
+            "displayName": "$operator$multiply(double,double):double",
+            "functionHandle": {
+              "@type": "static",
+              "signature": {
+                "name": "presto.default.$operator$MULTIPLY",
+                "kind": "SCALAR",
+                "returnType": "double",
+                "argumentTypes": [
+                  "double",
+                  "double"
+                ],
+                "variableArity": false
+              }
+            },
+            "returnType": "double",
+            "arguments": [
+              {
+                "@type": "variable",
+                "name": "l_extendedprice",
+                "type": "double"
+              },
+              {
+                "@type": "variable",
+                "name": "l_discount",
+                "type": "double"
+              }
+            ]
+          }
+        }
+      },
+      "locality": "LOCAL"
+    },
+    "aggregations": {
+      "sum_0<double>": {
+        "call": {
+          "@type": "call",
+          "displayName": "sum(double):double",
+          "functionHandle": {
+            "@type": "static",
+            "signature": {
+              "name": "presto.default.sum",
+              "kind": "AGGREGATE",
+              "returnType": "double",
+              "argumentTypes": [
+                "double"
+              ],
+              "variableArity": false
+            }
+          },
+          "returnType": "double",
+          "arguments": [
+            {
+              "@type": "variable",
+              "name": "expr",
+              "type": "double"
+            }
+          ]
+        },
+        "isDistinct": false
+      }
+    },
+    "groupingSets": {
+      "groupingKeys": [],
+      "groupingSetCount": 1,
+      "globalGroupingSets": [
+        0
+      ]
+    },
+    "preGroupedVariables": [],
+    "step": "PARTIAL"
+  },
+  "partitioningScheme": {
+    "partitioning": {
+      "handle": {
+        "connectorHandle": {
+          "@type": "system:io.trino.sql.planner.SystemPartitioningHandle",
+          "partitioning": "SINGLE",
+          "function": "SINGLE"
+        },
+        "scaleWriters": false
+      },
+      "arguments": []
+    },
+    "outputLayout": [
+      {
+        "@type": "variable",
+        "name": "sum_0",
+        "type": "row(double,bigint)"
+      }
+    ],
+    "replicateNullsAndAny": false,
+    "bucketToPartition": [
+      0
+    ]
+  }
+}

@@ -1,0 +1,1091 @@
+{
+  "taskId": "20230523_160506_00000_38ttd.1.1.0",
+  "splitAssignments": [
+    {
+      "planNodeId": "0",
+      "splits": [
+        {
+          "sequenceId": 0,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 16,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 1,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 3,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 2,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 28,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 3,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 26,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 4,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 69,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 5,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 25,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 6,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 39,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 7,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 0,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 8,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 30,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 9,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 65,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 10,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 9,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 11,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 5,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 12,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 58,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 13,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 70,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 14,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 44,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 15,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 51,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 16,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 8,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 17,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 59,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 18,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 24,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 19,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 10,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 20,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 18,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 21,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 37,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 22,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 7,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 23,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 27,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 24,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 6,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 25,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 63,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 26,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 12,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 27,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 17,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 28,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 34,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 29,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 47,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 30,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 2,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 31,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 22,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 32,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 57,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 33,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 4,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 34,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 36,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 35,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 14,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 36,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 62,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 37,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 19,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 38,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 38,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 39,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 42,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 40,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 49,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 41,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 33,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 42,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 66,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 43,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 61,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 44,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 1,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 45,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 23,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 46,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 52,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 47,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 64,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 48,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 13,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 49,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 48,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 50,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 43,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 51,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 31,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 52,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 21,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 53,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 20,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 54,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 35,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 55,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 50,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 56,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 45,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 57,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 71,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 58,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 56,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 59,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 54,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 60,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 67,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 61,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 11,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 62,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 55,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 63,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 32,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 64,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 46,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 65,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 53,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 66,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 68,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 67,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 29,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 68,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 15,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 69,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 40,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 70,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 41,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        },
+        {
+          "sequenceId": 71,
+          "planNodeId": "0",
+          "split": {
+            "catalogHandle": "tpch:normal:a54a4dabd3c2c54b5c98ab9451385fae3f0487a110f722aa3d387e502f139234",
+            "connectorSplit": {
+              "@type": "system:io.trino.plugin.tpch.TpchSplit",
+              "partNumber": 60,
+              "totalParts": 216,
+              "addresses": [
+                "127.0.0.1:39483"
+              ]
+            }
+          }
+        }
+      ],
+      "noMoreSplits": true
+    }
+  ]
+}

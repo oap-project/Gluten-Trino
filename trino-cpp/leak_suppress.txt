@@ -1,0 +1,5 @@
+leak:libjvm.so
+leak:libjli.so
+leak:libz.so
+leak:mk_ascdate
+leak:Java_java_util_zip_Inflater_init

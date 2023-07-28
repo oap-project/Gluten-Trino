@@ -1,0 +1,225 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+EnumMap:
+    MockAggregationNode:
+        Step: AggregationNodeStep
+
+    MockExchangeNode:
+        Type: ExchangeNodeType
+        Scope: ExchangeNodeScope
+
+    MockTopNNode:
+        Step: Step
+
+    MockLimitNode:
+        Step: LimitNodeStep
+
+    SelectedRole:
+        Type: SelectedRoleType
+
+    MockJoinNode:
+        Type: JoinNodeType
+
+    MockSemiJoinNode:
+        DistributionType: SemiJoinNodeType
+
+ExtraFields:
+    MockPlanNode:
+        PlanNodeId :         id
+
+    RemoteTransactionHandle:
+        Optional<String>:    dummy
+
+AddToOutput:
+    - NodeState
+
+AbstractClasses:
+    ConnectorPartitioningHandle:
+      super: JsonEncodedSubclass
+      comparable: true
+      subclasses:
+        - { name: SystemPartitioningHandle,   key: system:io.trino.sql.planner.SystemPartitioningHandle }
+        - { name: TpchPartitioningHandle,     key: system:io.trino.plugin.tpch.TpchPartitioningHandle }
+        - { name: HivePartitioningHandle,     key: system:io.trino.plugin.hive.HivePartitioningHandle }
+
+    MockFunctionHandle:
+      super: JsonEncodedSubclass
+      comparable: true
+      subclasses:
+        - { name: MockBuiltInFunctionHandle,  key: static}
+
+    MockRowExpression:
+      super: JsonEncodedSubclass
+      comparable: true
+      subclasses:
+        - { name: MockVariableReferenceExpression,    key: variable}
+        - { name: MockCallExpression,                 key: call}
+        - { name: MockConstantExpression,             key: constant}
+        - { name: MockSpecialFormExpression,          key: special}
+
+    MockPlanNode:
+      super: JsonEncodedSubclass
+      comparable: true
+      subclasses:
+        - { name: MockTableScanNode,          key: tablescan}
+        - { name: MockProjectNode,            key: project}
+        - { name: MockFilterNode,             key: filter}
+        - { name: MockAggregationNode,        key: aggregation}
+        - { name: MockOutputNode,             key: output}
+        - { name: MockExchangeNode,           key: exchange}
+        - { name: MockRemoteSourceNode,       key: remotesource}
+        - { name: MockTopNNode,               key: topn}
+        - { name: MockLimitNode,              key: limit}
+        - { name: MockSortNode,               key: sort}
+        - { name: MockValuesNode,             key: values}
+        - { name: MockJoinNode,               key: join}
+        - { name: MockSemiJoinNode,           key: semijoin}
+        - { name: MockAssignUniqueId,         key: assignuniqueid}
+
+    MockConnectorTableHandle:
+      super: JsonEncodedSubclass
+      comparable: true
+      subclasses:
+        - { name: MockHiveTableHandle,        key: system:io.trino.plugin.hive.protocol.MockHiveTableHandle}
+        - { name: MockTpchTableHandle,        key: system:io.trino.plugin.tpch.protocol.MockTpchTableHandle }
+
+    ValueSet:
+      super: JsonEncodedSubclass
+      subclasses:
+        - { name: EquatableValueSet,          key: equatable }
+        # - { name: SortedRangeSet,             key: sortable } //TBD: Range representation between Trino and Presto is different, fix it later.
+        - { name: AllOrNoneValueSet,          key: allOrNone }
+
+    MockColumnHandle:
+      super: JsonEncodedSubclass
+      comparable: true
+      subclasses:
+        - { name: MockHiveColumnHandle,      key: system:io.trino.plugin.hive.protocol.MockHiveColumnHandle }
+        - { name: MockTpchColumnHandle,      key: system:io.trino.plugin.tpch.protocol.MockTpchColumnHandle }
+
+    MockConnectorSplit:
+      super: JsonEncodedSubclass
+      comparable: true
+      subclasses:
+        - { name: MockHiveSplit,             key: system:io.trino.plugin.hive.protocol.MockHiveSplit }
+        - { name: MockTpchSplit,             key: system:io.trino.plugin.tpch.protocol.MockTpchSplit}
+        - { name: MockRemoteSplit,           key: system:io.trino.velox.protocol.MockRemoteSplit}
+
+    MockConnectorTableLayoutHandle:
+      super: JsonEncodedSubclass
+      comparable: true
+      subclasses:
+        - { name: MockTpchTableLayoutHandle,             key: system:io.trino.plugin.tpch.protocol.MockTpchTableLayoutHandle }
+
+    MockConnectorTransactionHandle:
+      super: JsonEncodedSubclass
+      comparable: true
+      subclasses:
+        - { name: MockHiveTransactionHandle,    key: system:io.trino.plugin.hive.protocol.MockHiveTransactionHandle }
+        - { name: MockTpchTransactionHandle,    key: system:io.trino.plugin.tpch.protocol.MockTpchTransactionHandle }
+
+JavaClasses:
+  - client/trino-client/src/main/java/io/trino/client/ErrorLocation.java
+  - core/trino-main/src/main/java/io/trino/execution/ExecutionFailureInfo.java
+  - core/trino-main/src/main/java/io/trino/execution/TaskInfo.java
+  - core/trino-main/src/main/java/io/trino/execution/TaskState.java
+  - core/trino-main/src/main/java/io/trino/execution/TaskStatus.java
+  - core/trino-main/src/main/java/io/trino/execution/buffer/BufferState.java
+  - core/trino-main/src/main/java/io/trino/execution/buffer/OutputBufferStatus.java
+  - core/trino-main/src/main/java/io/trino/execution/buffer/PipelinedBufferInfo.java
+  - core/trino-main/src/main/java/io/trino/execution/buffer/PipelinedOutputBuffers.java
+  - core/trino-main/src/main/java/io/trino/operator/BlockedReason.java
+  - core/trino-main/src/main/java/io/trino/operator/DriverStats.java
+  - core/trino-main/src/main/java/io/trino/operator/OperatorStats.java
+  - core/trino-main/src/main/java/io/trino/operator/PipelineStats.java
+  - core/trino-main/src/main/java/io/trino/operator/TaskStats.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockAggregationNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockAssignUniqueId.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockAssignments.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockBuiltInFunctionHandle.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockCallExpression.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockCatalogProperties.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockConnectorId.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockConstantExpression.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockExchangeNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockFilterNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockFunctionHandle.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockJoinNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockLimitNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockLocation.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockOrderingScheme.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockOutputNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockPartitioning.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockPartitioningHandle.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockPartitioningScheme.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockPlanFragment.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockPlanNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockProjectNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockRemoteSourceNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockRemoteSplit.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockRowExpression.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockScheduledSplit.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockSemiJoinNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockSignature.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockSortNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockSpecialFormExpression.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockSplit.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockSplitAssignment.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockTableHandle.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockTableScanNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockTopNNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockValuesNode.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/MockVariableReferenceExpression.java
+  - core/trino-main/src/main/java/io/trino/velox/protocol/SplitAssignmentsMessage.java
+  - core/trino-spi/src/main/java/io/trino/spi/ErrorCode.java
+  - core/trino-spi/src/main/java/io/trino/spi/ErrorType.java
+#  - core/trino-spi/src/main/java/io/trino/spi/connector/ConnectorSplit.java
+#  - core/trino-spi/src/main/java/io/trino/spi/connector/ConnectorTableHandle.java
+  - core/trino-spi/src/main/java/io/trino/spi/connector/SortOrder.java
+  - core/trino-spi/src/main/java/io/trino/spi/function/FunctionKind.java
+  - core/trino-spi/src/main/java/io/trino/spi/predicate/AllOrNoneValueSet.java
+  - core/trino-spi/src/main/java/io/trino/spi/predicate/Domain.java
+  - core/trino-spi/src/main/java/io/trino/spi/predicate/EquatableValueSet.java
+# - core/trino-spi/src/main/java/io/trino/spi/predicate/SortedRangeSet.java
+  - core/trino-spi/src/main/java/io/trino/spi/predicate/ValueSet.java
+  - core/trino-spi/src/main/java/io/trino/spi/protocol/MockColumnHandle.java
+  - core/trino-spi/src/main/java/io/trino/spi/protocol/MockConnectorSplit.java
+  - core/trino-spi/src/main/java/io/trino/spi/protocol/MockConnectorTableHandle.java
+  - core/trino-spi/src/main/java/io/trino/spi/protocol/MockConnectorTableLayoutHandle.java
+  - core/trino-spi/src/main/java/io/trino/spi/protocol/MockNodeSelectionStrategy.java
+  - core/trino-spi/src/main/java/io/trino/spi/protocol/MockConnectorTransactionHandle.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/HivePartitionKey.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/metastore/Column.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/metastore/SortingColumn.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/metastore/StorageFormat.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockBucketConversion.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockBucketFunctionType.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockCacheQuotaRequirement.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockCacheQuotaScope.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockDwrfEncryptionMetadata.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockEncryptionInformation.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockEncryptionMetadata.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockHiveBucketProperty.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockHiveColumnHandle.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockHiveFileSplit.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockHiveSplit.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockHiveTableHandle.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockHiveTransactionHandle.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockStorage.java
+  - plugin/trino-hive/src/main/java/io/trino/plugin/hive/protocol/MockTableToPartitionMapping.java
+  - plugin/trino-tpch/src/main/java/io/trino/plugin/tpch/TpchPartitioningHandle.java
+  - plugin/trino-tpch/src/main/java/io/trino/plugin/tpch/protocol/MockTpchColumnHandle.java
+  - plugin/trino-tpch/src/main/java/io/trino/plugin/tpch/protocol/MockTpchSplit.java
+  - plugin/trino-tpch/src/main/java/io/trino/plugin/tpch/protocol/MockTpchTableHandle.java
+  - plugin/trino-tpch/src/main/java/io/trino/plugin/tpch/protocol/MockTpchTableLayoutHandle.java
+  - plugin/trino-tpch/src/main/java/io/trino/plugin/tpch/protocol/MockTpchTransactionHandle.java

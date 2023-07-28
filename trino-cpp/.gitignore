@@ -1,0 +1,8 @@
+.cache
+build-*
+compile_commands.json
+src/protocol/trino_protocol.json
+dist/
+antlr4-cpp-runtime/build/
+antlr4-cpp-runtime/dist/
+antlr4-cpp-runtime/run/
