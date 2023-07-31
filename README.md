@@ -1,6 +1,10 @@
-# Trino Cpp Plugin
+# Gluten: Plugin to Double Trino's Performance
 
-This repo provide a Trino plugin to enable Velox native compute engine for Trino.
+This plugin is still under active development now, and doesn't have a stable release. Welcome to evaluate it. If you encounter any issues or have any suggestions, please submit to our issue list. We'd like to hear your feedback
+
+## Introduction
+
+This repo provides a Trino plugin to enable Velox native compute engine for Trino.
 
 ## Archtecture
 
