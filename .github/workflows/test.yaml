@@ -1,0 +1,29 @@
+name: test
+
+on:
+  push:
+    branches:
+      - dev_module
+  pull_request:
+
+jobs:
+  maven-checks:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - run: echo "checkout code!!"
+      - name: Maven Checks
+        run: |
+          cd trino-cpp-plugin 
+          mvn clean package -DskipTests=true -Dair.check.skip-duplicate-finder=True
+
+  build-cpp:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - name: build cpp
+        run: |
+          cd trino-cpp
+          export TRINO_HOME=/trino_base
+          git submodule update --init --recursive --force
+          make release
