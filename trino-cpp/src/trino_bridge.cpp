@@ -457,6 +457,28 @@ JNIEXPORT jlong JNICALL Java_io_trino_jni_TrinoBridge_createTask(JNIEnv* env, jo
       -1);
 }
 
+JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_failedTask(JNIEnv* env, jobject obj,
+                                                                jlong handlePtr,
+                                                                jstring jTaskId,
+                                                                jstring failedReason) {
+  tryLogException([&env, &handlePtr, &jTaskId, &failedReason]() {
+    io::trino::TrinoTaskId taskId(JniUtils::jstringToString(env, jTaskId));
+
+    JniHandle* handle = reinterpret_cast<JniHandle*>(handlePtr);
+    if (!handle) {
+      JniUtils::throwJavaRuntimeException(env, "Empty JniHandle!!!");
+      return;
+    }
+    TaskHandlePtr taskHandle = handle->getTaskHandle(taskId);
+    if (!taskHandle) {
+      JniUtils::throwJavaRuntimeException(
+          env, "TaskHandle for task " + taskId.fullId() + " didn't exist.");
+      return;
+    }
+    taskHandle->task->setError(JniUtils::jstringToString(env, failedReason));
+  });
+}
+
 JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_removeTask(JNIEnv* env, jobject obj,
                                                                 jlong handlePtr,
                                                                 jstring jTaskId) {

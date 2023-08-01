@@ -29,7 +29,6 @@ class NativeConfigs {
   inline const int32_t& getMaxDriversPerTask() const { return maxDriversPerTask; }
   inline const int32_t& getTaskConcurrency() const { return taskConcurrency; }
   inline const int32_t& getExchangeClientThreads() const { return exchangeClientThreads; }
-  inline const int64_t& getQueryMaxMemory() const { return queryMaxMemory; }
   inline const int64_t& getQueryMaxMemoryPerNode() const { return queryMaxMemoryPerNode; }
   inline const std::unordered_map<std::string, int32_t> getLogVerboseModules() const {
     return logVerboseModules;
@@ -50,8 +49,6 @@ class NativeConfigs {
       32);
   // refer to io.trino.operator.DirectExchangeClientConfig#clientThreads
   int32_t exchangeClientThreads = 25;
-  // refer to io.trino.memory.MemoryManagerConfig#maxQueryMemory
-  int64_t queryMaxMemory = 20l << 30;
   int64_t queryMaxMemoryPerNode = std::numeric_limits<int64_t>::max();
   std::unordered_map<std::string, int32_t> logVerboseModules;
 };

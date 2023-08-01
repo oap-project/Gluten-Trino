@@ -26,9 +26,6 @@ NativeConfigs::NativeConfigs(const std::string& configJsonString) {
   if (configJson.contains("exchangeClientThreads")) {
     configJson.at("exchangeClientThreads").get_to(exchangeClientThreads);
   }
-  if (configJson.contains("queryMaxMemory")) {
-    configJson.at("queryMaxMemory").get_to(queryMaxMemory);
-  }
   if (configJson.contains("queryMaxMemoryPerNode")) {
     configJson.at("queryMaxMemoryPerNode").get_to(queryMaxMemoryPerNode);
   }

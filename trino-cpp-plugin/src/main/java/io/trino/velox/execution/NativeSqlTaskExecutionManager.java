@@ -180,7 +180,8 @@ public class NativeSqlTaskExecutionManager
                     }
                 }
                 catch (Exception e) {
-                    logger.error("Exception in fetchOutputFromNative: %s", e.toString());
+                    trinoBridge.failedTask(nativeHandler, taskId.toString(), e.toString());
+                    logger.error(e, "Exception in fetchOutputFromNative: %s", e.toString());
                 }
             }
             else {

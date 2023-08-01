@@ -65,6 +65,8 @@ public class TrinoBridge
 
     public native long createTask(long handlePtr, String taskId, String planFragment);
 
+    public native void failedTask(long handlePtr, String taskId, String failedReason);
+
     public native void removeTask(long handlePtr, String taskId);
 
     public native void addSplits(long handlePtr, String taskId, String splitsInfo);

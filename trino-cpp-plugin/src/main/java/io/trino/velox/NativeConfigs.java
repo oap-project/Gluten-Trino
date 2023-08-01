@@ -18,8 +18,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.inject.Inject;
 import io.trino.execution.TaskManagerConfig;
-import io.trino.memory.MemoryManagerConfig;
-import io.trino.memory.NodeMemoryConfig;
 import io.trino.operator.DirectExchangeClientConfig;
 
 public class NativeConfigs
@@ -29,15 +27,12 @@ public class NativeConfigs
     private final int maxDriversPerTask;
     private final int taskConcurrency;
     private final int exchangeClientThreads;
-    private final long queryMaxMemory;
     private final long queryMaxMemoryPerNode;
     private final String logVerboseModules;
 
     @Inject
     public NativeConfigs(
             TaskManagerConfig taskManagerConfig,
-            MemoryManagerConfig memoryManagerConfig,
-            NodeMemoryConfig nodeMemoryConfig,
             DirectExchangeClientConfig directExchangeClientConfig,
             NativeTaskConfig nativeTaskConfig)
     {
@@ -46,8 +41,7 @@ public class NativeConfigs
                 taskManagerConfig.getMaxDriversPerTask(),
                 taskManagerConfig.getTaskConcurrency(),
                 directExchangeClientConfig.getClientThreads(),
-                memoryManagerConfig.getMaxQueryMemory().toBytes(),
-                nodeMemoryConfig.getMaxQueryMemoryPerNode().toBytes(),
+                nativeTaskConfig.getMaxQueryMemoryPerNode().toBytes(),
                 nativeTaskConfig.getLogVerboseModules());
     }
 
@@ -58,7 +52,6 @@ public class NativeConfigs
             @JsonProperty int maxDriversPerTask,
             @JsonProperty int taskConcurrency,
             @JsonProperty int exchangeClientThreads,
-            @JsonProperty long queryMaxMemory,
             @JsonProperty long queryMaxMemoryPerNode,
             @JsonProperty String logVerboseModules)
     {
@@ -67,7 +60,6 @@ public class NativeConfigs
         this.maxDriversPerTask = maxDriversPerTask;
         this.taskConcurrency = taskConcurrency;
         this.exchangeClientThreads = exchangeClientThreads;
-        this.queryMaxMemory = queryMaxMemory;
         this.queryMaxMemoryPerNode = queryMaxMemoryPerNode;
         this.logVerboseModules = logVerboseModules;
     }
@@ -100,12 +92,6 @@ public class NativeConfigs
     public int getExchangeClientThreads()
     {
         return exchangeClientThreads;
-    }
-
-    @JsonProperty
-    public long getQueryMaxMemory()
-    {
-        return queryMaxMemory;
     }
 
     @JsonProperty

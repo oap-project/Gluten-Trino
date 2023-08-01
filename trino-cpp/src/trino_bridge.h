@@ -43,6 +43,11 @@ JNIEXPORT jlong JNICALL Java_io_trino_jni_TrinoBridge_createTask(JNIEnv* env, jo
                                                                  jstring jTaskId,
                                                                  jstring jPlanFragment);
 
+JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_failedTask(JNIEnv* env, jobject obj,
+                                                                jlong handlePtr,
+                                                                jstring jTaskId,
+                                                                jstring failedReason);
+
 JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_addSplits(JNIEnv* env, jobject obj,
                                                                jlong handlePtr,
                                                                jstring jTaskId,
