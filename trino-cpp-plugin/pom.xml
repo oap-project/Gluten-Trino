@@ -9,6 +9,7 @@
         <version>134</version>
     </parent>
 
+    <groupId>io.trino</groupId>
     <artifactId>trino-cpp-plugin</artifactId>
     <version>411</version>
     <name>trino-cpp-plugin</name>
@@ -227,7 +228,11 @@
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
-
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>trino-server-dev</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.trino</groupId>
                 <artifactId>trino-spi</artifactId>
@@ -1436,10 +1441,11 @@
             <artifactId>trino-hdfs</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>io.trino</groupId>
-            <artifactId>trino-hive</artifactId>
-        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>io.trino</groupId>-->
+        <!--            <artifactId>trino-hive</artifactId>-->
+        <!--            <scope>provided</scope>-->
+        <!--        </dependency>-->
 
         <!--        <dependency>-->
         <!--            <groupId>io.trino</groupId>-->
@@ -1478,10 +1484,14 @@
             <groupId>io.trino</groupId>
             <artifactId>trino-parser</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.trino</groupId>-->
-<!--            <artifactId>trino-plugin-toolkit</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.trino</groupId>
+            <artifactId>trino-server-dev</artifactId>
+        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>io.trino</groupId>-->
+        <!--            <artifactId>trino-plugin-toolkit</artifactId>-->
+        <!--        </dependency>-->
         <!--        <dependency>-->
         <!--            <groupId>io.airlift</groupId>-->
         <!--            <artifactId>aircompressor</artifactId>-->
@@ -1504,6 +1514,7 @@
             <groupId>io.trino.hive</groupId>
             <artifactId>hive-apache</artifactId>
         </dependency>
+
         <dependency>
             <groupId>io.trino.hive</groupId>
             <artifactId>hive-thrift</artifactId>
@@ -1579,10 +1590,10 @@
             <groupId>io.airlift</groupId>
             <artifactId>log</artifactId>
         </dependency>
-<!--                <dependency>-->
-<!--                    <groupId>io.airlift</groupId>-->
-<!--                    <artifactId>log-manager</artifactId>-->
-<!--                </dependency>-->
+        <!--                <dependency>-->
+        <!--                    <groupId>io.airlift</groupId>-->
+        <!--                    <artifactId>log-manager</artifactId>-->
+        <!--                </dependency>-->
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>node</artifactId>
@@ -1680,10 +1691,10 @@
         <!--            <artifactId>drift-transport-netty</artifactId>-->
         <!--        </dependency>-->
 
-        <!--        <dependency>-->
-        <!--            <groupId>io.airlift.resolver</groupId>-->
-        <!--            <artifactId>resolver</artifactId>-->
-        <!--        </dependency>-->
+        <dependency>
+            <groupId>io.airlift.resolver</groupId>
+            <artifactId>resolver</artifactId>
+        </dependency>
 
         <!-- third party -->
         <dependency>
@@ -1747,6 +1758,10 @@
             <artifactId>joda-time</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.sonatype.aether</groupId>
+            <artifactId>aether-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.weakref</groupId>
             <artifactId>jmxutils</artifactId>
         </dependency>
@@ -1755,6 +1770,11 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna-platform</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.trino</groupId>
+            <artifactId>trino-hive</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.trino</groupId>
@@ -1799,8 +1819,6 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-
-
 
         <dependency>
             <groupId>io.trino</groupId>
