@@ -46,7 +46,7 @@ set(TRINO_CPP_UTILS_SOURCES utils/JniUtils.cpp utils/NativeListenableFuture.cpp)
 set(TRINO_EXCHANGE_SOURCES TrinoExchangeSource.cpp utils/HttpClient.cpp
                            utils/Configs.cpp)
 
-set(SOURCES trino_bridge.cpp utils.cpp test_utils.cpp NativeConfigs.cpp
+set(SOURCES TrinoBridge.cpp utils.cpp TestUtils.cpp NativeConfigs.cpp
         ${TRINO_CPP_UTILS_SOURCES})
 
 if(ENABLE_TRINO_EXCHANGE)

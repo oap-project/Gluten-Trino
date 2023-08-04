@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-get_filename_component(TRINO_CPP_PLUGIN_DIR "${PROJECT_SOURCE_DIR}/../trino-cpp-plugin" ABSOLUTE)
+get_filename_component(TRINO_CPP_PLUGIN_DIR "${PROJECT_SOURCE_DIR}/../GlutenTrinoPlugin" ABSOLUTE)
 if(DEFINED ENV{TRINO_HOME})
   set(TRINO_ABSOLUTE_DIR $ENV{TRINO_HOME})
 else()

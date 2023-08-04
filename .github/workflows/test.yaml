@@ -14,7 +14,7 @@ jobs:
       - run: echo "checkout code!!"
       - name: Maven Checks
         run: |
-          cd trino-cpp-plugin 
+          cd GlutenTrinoPlugin 
           mvn clean package -DskipTests=true -Dair.check.skip-duplicate-finder=True
 
   build-cpp:

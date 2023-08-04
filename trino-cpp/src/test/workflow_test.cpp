@@ -4,7 +4,7 @@
 #include <iostream>
 #include <thread>
 
-#include "test_utils.h"
+#include "TestUtils.h"
 
 #include "src/protocol/external/json/json.hpp"
 #include "src/protocol/trino_protocol.h"

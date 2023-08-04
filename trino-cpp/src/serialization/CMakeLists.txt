@@ -1,6 +1,6 @@
 
 
-set(SERIALIZATION_SOURCE trino_serializer.cpp trino_buffer_stream.cpp trino_byte_stream.cpp)
+set(SERIALIZATION_SOURCE TrinoSerializer.cpp TrinoBufferStream.cpp TrinoByteStream.cpp)
 
 add_library(trino_bridge_serialization STATIC ${SERIALIZATION_SOURCE})
 

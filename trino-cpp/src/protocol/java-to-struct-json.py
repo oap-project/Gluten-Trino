@@ -42,7 +42,7 @@ IGNORED_TYPES = {
 language = {
     "cpp": {
         "TypeMap": {
-            r"([ ,<])(MockColumnHandle|MockPlanNode|MockRowExpression|ConnectorMetadataUpdateHandle)([ ,>])": r"\1std::shared_ptr<\2>\3",
+            r"([ ,<])(GlutenColumnHandle|GlutenPlanNode|GlutenRowExpression|ConnectorMetadataUpdateHandle)([ ,>])": r"\1std::shared_ptr<\2>\3",
             r"Optional<int\[\]>": "Optional<List<int>>",
             r"Optional<byte\[\]>": "Optional<List<byte>>",
             r"int\[\]": "List<int>",

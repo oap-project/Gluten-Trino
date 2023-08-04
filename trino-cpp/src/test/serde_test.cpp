@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "test_utils.h"
+#include "TestUtils.h"
 
 using namespace facebook::velox;
 using namespace io::trino::bridge;

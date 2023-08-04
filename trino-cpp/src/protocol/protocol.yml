@@ -11,30 +11,30 @@
 # limitations under the License.
 
 EnumMap:
-    MockAggregationNode:
+    GlutenAggregationNode:
         Step: AggregationNodeStep
 
-    MockExchangeNode:
+    GlutenExchangeNode:
         Type: ExchangeNodeType
         Scope: ExchangeNodeScope
 
-    MockTopNNode:
+    GlutenTopNNode:
         Step: Step
 
-    MockLimitNode:
+    GlutenLimitNode:
         Step: LimitNodeStep
 
     SelectedRole:
         Type: SelectedRoleType
 
-    MockJoinNode:
+    GlutenJoinNode:
         Type: JoinNodeType
 
-    MockSemiJoinNode:
+    GlutenSemiJoinNode:
         DistributionType: SemiJoinNodeType
 
 ExtraFields:
-    MockPlanNode:
+    GlutenPlanNode:
         PlanNodeId :         id
 
     RemoteTransactionHandle:
@@ -52,46 +52,46 @@ AbstractClasses:
         - { name: TpchPartitioningHandle,     key: system:io.trino.plugin.tpch.TpchPartitioningHandle }
         - { name: HivePartitioningHandle,     key: system:io.trino.plugin.hive.HivePartitioningHandle }
 
-    MockFunctionHandle:
+    GlutenFunctionHandle:
       super: JsonEncodedSubclass
       comparable: true
       subclasses:
-        - { name: MockBuiltInFunctionHandle,  key: static}
+        - { name: GlutenBuiltInFunctionHandle,  key: static}
 
-    MockRowExpression:
+    GlutenRowExpression:
       super: JsonEncodedSubclass
       comparable: true
       subclasses:
-        - { name: MockVariableReferenceExpression,    key: variable}
-        - { name: MockCallExpression,                 key: call}
-        - { name: MockConstantExpression,             key: constant}
-        - { name: MockSpecialFormExpression,          key: special}
+        - { name: GlutenVariableReferenceExpression,    key: variable}
+        - { name: GlutenCallExpression,                 key: call}
+        - { name: GlutenConstantExpression,             key: constant}
+        - { name: GlutenSpecialFormExpression,          key: special}
 
-    MockPlanNode:
+    GlutenPlanNode:
       super: JsonEncodedSubclass
       comparable: true
       subclasses:
-        - { name: MockTableScanNode,          key: tablescan}
-        - { name: MockProjectNode,            key: project}
-        - { name: MockFilterNode,             key: filter}
-        - { name: MockAggregationNode,        key: aggregation}
-        - { name: MockOutputNode,             key: output}
-        - { name: MockExchangeNode,           key: exchange}
-        - { name: MockRemoteSourceNode,       key: remotesource}
-        - { name: MockTopNNode,               key: topn}
-        - { name: MockLimitNode,              key: limit}
-        - { name: MockSortNode,               key: sort}
-        - { name: MockValuesNode,             key: values}
-        - { name: MockJoinNode,               key: join}
-        - { name: MockSemiJoinNode,           key: semijoin}
-        - { name: MockAssignUniqueId,         key: assignuniqueid}
+        - { name: GlutenTableScanNode,          key: tablescan}
+        - { name: GlutenProjectNode,            key: project}
+        - { name: GlutenFilterNode,             key: filter}
+        - { name: GlutenAggregationNode,        key: aggregation}
+        - { name: GlutenOutputNode,             key: output}
+        - { name: GlutenExchangeNode,           key: exchange}
+        - { name: GlutenRemoteSourceNode,       key: remotesource}
+        - { name: GlutenTopNNode,               key: topn}
+        - { name: GlutenLimitNode,              key: limit}
+        - { name: GlutenSortNode,               key: sort}
+        - { name: GlutenValuesNode,             key: values}
+        - { name: GlutenJoinNode,               key: join}
+        - { name: GlutenSemiJoinNode,           key: semijoin}
+        - { name: GlutenAssignUniqueId,         key: assignuniqueid}
 
-    MockConnectorTableHandle:
+    GlutenConnectorTableHandle:
       super: JsonEncodedSubclass
       comparable: true
       subclasses:
-        - { name: MockHiveTableHandle,        key: system:io.trino.plugin.hive.protocol.MockHiveTableHandle}
-        - { name: MockTpchTableHandle,        key: system:io.trino.plugin.tpch.protocol.MockTpchTableHandle }
+        - { name: GlutenHiveTableHandle,        key: system:io.trino.plugin.hive.protocol.GlutenHiveTableHandle}
+        - { name: GlutenTpchTableHandle,        key: system:io.trino.plugin.tpch.protocol.GlutenTpchTableHandle }
 
     ValueSet:
       super: JsonEncodedSubclass
@@ -100,33 +100,33 @@ AbstractClasses:
         # - { name: SortedRangeSet,             key: sortable } //TBD: Range representation between Trino and Presto is different, fix it later.
         - { name: AllOrNoneValueSet,          key: allOrNone }
 
-    MockColumnHandle:
+    GlutenColumnHandle:
       super: JsonEncodedSubclass
       comparable: true
       subclasses:
-        - { name: MockHiveColumnHandle,      key: system:io.trino.plugin.hive.protocol.MockHiveColumnHandle }
-        - { name: MockTpchColumnHandle,      key: system:io.trino.plugin.tpch.protocol.MockTpchColumnHandle }
+        - { name: GlutenHiveColumnHandle,      key: system:io.trino.plugin.hive.protocol.GlutenHiveColumnHandle }
+        - { name: GlutenTpchColumnHandle,      key: system:io.trino.plugin.tpch.protocol.GlutenTpchColumnHandle }
 
-    MockConnectorSplit:
+    GlutenConnectorSplit:
       super: JsonEncodedSubclass
       comparable: true
       subclasses:
-        - { name: MockHiveSplit,             key: system:io.trino.plugin.hive.protocol.MockHiveSplit }
-        - { name: MockTpchSplit,             key: system:io.trino.plugin.tpch.protocol.MockTpchSplit}
-        - { name: MockRemoteSplit,           key: system:io.trino.velox.protocol.MockRemoteSplit}
+        - { name: GlutenHiveSplit,             key: system:io.trino.plugin.hive.protocol.GlutenHiveSplit }
+        - { name: GlutenTpchSplit,             key: system:io.trino.plugin.tpch.protocol.GlutenTpchSplit}
+        - { name: GlutenRemoteSplit,           key: system:io.trino.velox.protocol.GlutenRemoteSplit}
 
-    MockConnectorTableLayoutHandle:
+    GlutenConnectorTableLayoutHandle:
       super: JsonEncodedSubclass
       comparable: true
       subclasses:
-        - { name: MockTpchTableLayoutHandle,             key: system:io.trino.plugin.tpch.protocol.MockTpchTableLayoutHandle }
+        - { name: GlutenTpchTableLayoutHandle,             key: system:io.trino.plugin.tpch.protocol.GlutenTpchTableLayoutHandle }
 
-    MockConnectorTransactionHandle:
+    GlutenConnectorTransactionHandle:
       super: JsonEncodedSubclass
       comparable: true
       subclasses:
-        - { name: MockHiveTransactionHandle,    key: system:io.trino.plugin.hive.protocol.MockHiveTransactionHandle }
-        - { name: MockTpchTransactionHandle,    key: system:io.trino.plugin.tpch.protocol.MockTpchTransactionHandle }
+        - { name: GlutenHiveTransactionHandle,    key: system:io.trino.plugin.hive.protocol.GlutenHiveTransactionHandle }
+        - { name: GlutenTpchTransactionHandle,    key: system:io.trino.plugin.tpch.protocol.GlutenTpchTransactionHandle }
 
 JavaClasses:
   - client/trino-client/src/main/java/io/trino/client/ErrorLocation.java
@@ -162,71 +162,71 @@ JavaClasses:
   - plugin/trino-tpch/src/main/java/io/trino/plugin/tpch/TpchPartitioningHandle.java
 
 trinoCppJavaClasses:
-  - src/main/java/io/trino/velox/protocol/MockFunctionHandle.java
-  - src/main/java/io/trino/velox/protocol/MockCallExpression.java
-  - src/main/java/io/trino/velox/protocol/MockConstantExpression.java
-  - src/main/java/io/trino/velox/protocol/MockSpecialFormExpression.java
-  - src/main/java/io/trino/velox/protocol/MockRemoteSplit.java
-  - src/main/java/io/trino/velox/protocol/MockProjectNode.java
-  - src/main/java/io/trino/velox/protocol/MockOrderingScheme.java
+  - src/main/java/io/trino/velox/protocol/GlutenFunctionHandle.java
+  - src/main/java/io/trino/velox/protocol/GlutenCallExpression.java
+  - src/main/java/io/trino/velox/protocol/GlutenConstantExpression.java
+  - src/main/java/io/trino/velox/protocol/GlutenSpecialFormExpression.java
+  - src/main/java/io/trino/velox/protocol/GlutenRemoteSplit.java
+  - src/main/java/io/trino/velox/protocol/GlutenProjectNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenOrderingScheme.java
   - src/main/java/io/trino/velox/protocol/SplitAssignmentsMessage.java
-  - src/main/java/io/trino/velox/protocol/MockValuesNode.java
-  - src/main/java/io/trino/velox/protocol/MockPlanNode.java
-  - src/main/java/io/trino/velox/protocol/MockCatalogProperties.java
-  - src/main/java/io/trino/velox/protocol/MockPlanFragment.java
-  - src/main/java/io/trino/velox/protocol/MockAggregationNode.java
-  - src/main/java/io/trino/velox/protocol/MockRemoteSourceNode.java
-  - src/main/java/io/trino/velox/protocol/MockScheduledSplit.java
-  - src/main/java/io/trino/velox/protocol/MockAssignments.java
-  - src/main/java/io/trino/velox/protocol/MockJoinNode.java
-  - src/main/java/io/trino/velox/protocol/MockSplit.java
-  - src/main/java/io/trino/velox/protocol/MockExchangeNode.java
-  - src/main/java/io/trino/velox/protocol/MockVariableExpressionSerializer.java
-  - src/main/java/io/trino/velox/protocol/MockLimitNode.java
-  - src/main/java/io/trino/velox/protocol/MockSplitAssignment.java
-  - src/main/java/io/trino/velox/protocol/MockSignature.java
-  - src/main/java/io/trino/velox/protocol/MockAssignUniqueId.java
-  - src/main/java/io/trino/velox/protocol/MockLocation.java
-  - src/main/java/io/trino/velox/protocol/MockPartitioningHandle.java
-  - src/main/java/io/trino/velox/protocol/MockRowExpression.java
-  - src/main/java/io/trino/velox/protocol/MockOutputNode.java
-  - src/main/java/io/trino/velox/protocol/MockBuiltInFunctionHandle.java
-  - src/main/java/io/trino/velox/protocol/MockTableHandle.java
-  - src/main/java/io/trino/velox/protocol/MockSemiJoinNode.java
-  - src/main/java/io/trino/velox/protocol/MockSortNode.java
-  - src/main/java/io/trino/velox/protocol/MockTableScanNode.java
-  - src/main/java/io/trino/velox/protocol/MockTopNNode.java
-  - src/main/java/io/trino/velox/protocol/MockFilterNode.java
-  - src/main/java/io/trino/velox/protocol/MockVariableReferenceExpression.java
-  - src/main/java/io/trino/velox/protocol/MockPartitioningScheme.java
-  - src/main/java/io/trino/velox/protocol/MockConnectorId.java
-  - src/main/java/io/trino/velox/protocol/MockPartitioning.java
-  - src/main/java/io/trino/plugin/tpch/protocol/MockTpchColumnHandle.java
-  - src/main/java/io/trino/plugin/tpch/protocol/MockTpchTableLayoutHandle.java
-  - src/main/java/io/trino/plugin/tpch/protocol/MockTpchSplit.java
-  - src/main/java/io/trino/plugin/tpch/protocol/MockTpchTransactionHandle.java
-  - src/main/java/io/trino/plugin/tpch/protocol/MockTpchTableHandle.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockTableToPartitionMapping.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockBucketFunctionType.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockHiveTransactionHandle.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockDwrfEncryptionMetadata.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockHiveBucketProperty.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockEncryptionMetadata.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockHiveColumnHandle.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockHiveSplit.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockStorage.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockEncryptionInformation.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockHiveTableHandle.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockHiveFileSplit.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockCacheQuotaScope.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockCacheQuotaRequirement.java
-  - src/main/java/io/trino/plugin/hive/protocol/MockBucketConversion.java
-  - src/main/java/io/trino/spi/protocol/MockConnectorTableLayoutHandle.java
-  - src/main/java/io/trino/spi/protocol/MockColumnHandle.java
-  - src/main/java/io/trino/spi/protocol/MockSubfieldTokenizer.java
-  - src/main/java/io/trino/spi/protocol/MockConnectorSplit.java
-  - src/main/java/io/trino/spi/protocol/MockNodeSelectionStrategy.java
-  - src/main/java/io/trino/spi/protocol/MockConnectorTableHandle.java
-  - src/main/java/io/trino/spi/protocol/MockSubfield.java
-  - src/main/java/io/trino/spi/protocol/MockConnectorTransactionHandle.java
+  - src/main/java/io/trino/velox/protocol/GlutenValuesNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenPlanNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenCatalogProperties.java
+  - src/main/java/io/trino/velox/protocol/GlutenPlanFragment.java
+  - src/main/java/io/trino/velox/protocol/GlutenAggregationNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenRemoteSourceNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenScheduledSplit.java
+  - src/main/java/io/trino/velox/protocol/GlutenAssignments.java
+  - src/main/java/io/trino/velox/protocol/GlutenJoinNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenSplit.java
+  - src/main/java/io/trino/velox/protocol/GlutenExchangeNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenVariableExpressionSerializer.java
+  - src/main/java/io/trino/velox/protocol/GlutenLimitNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenSplitAssignment.java
+  - src/main/java/io/trino/velox/protocol/GlutenSignature.java
+  - src/main/java/io/trino/velox/protocol/GlutenAssignUniqueId.java
+  - src/main/java/io/trino/velox/protocol/GlutenLocation.java
+  - src/main/java/io/trino/velox/protocol/GlutenPartitioningHandle.java
+  - src/main/java/io/trino/velox/protocol/GlutenRowExpression.java
+  - src/main/java/io/trino/velox/protocol/GlutenOutputNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenBuiltInFunctionHandle.java
+  - src/main/java/io/trino/velox/protocol/GlutenTableHandle.java
+  - src/main/java/io/trino/velox/protocol/GlutenSemiJoinNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenSortNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenTableScanNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenTopNNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenFilterNode.java
+  - src/main/java/io/trino/velox/protocol/GlutenVariableReferenceExpression.java
+  - src/main/java/io/trino/velox/protocol/GlutenPartitioningScheme.java
+  - src/main/java/io/trino/velox/protocol/GlutenConnectorId.java
+  - src/main/java/io/trino/velox/protocol/GlutenPartitioning.java
+  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchColumnHandle.java
+  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchTableLayoutHandle.java
+  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchSplit.java
+  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchTransactionHandle.java
+  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchTableHandle.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenTableToPartitionMapping.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenBucketFunctionType.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveTransactionHandle.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenDwrfEncryptionMetadata.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveBucketProperty.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenEncryptionMetadata.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveColumnHandle.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveSplit.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenStorage.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenEncryptionInformation.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveTableHandle.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveFileSplit.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenCacheQuotaScope.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenCacheQuotaRequirement.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenBucketConversion.java
+  - src/main/java/io/trino/spi/protocol/GlutenConnectorTableLayoutHandle.java
+  - src/main/java/io/trino/spi/protocol/GlutenColumnHandle.java
+  - src/main/java/io/trino/spi/protocol/GlutenSubfieldTokenizer.java
+  - src/main/java/io/trino/spi/protocol/GlutenConnectorSplit.java
+  - src/main/java/io/trino/spi/protocol/GlutenNodeSelectionStrategy.java
+  - src/main/java/io/trino/spi/protocol/GlutenConnectorTableHandle.java
+  - src/main/java/io/trino/spi/protocol/GlutenSubfield.java
+  - src/main/java/io/trino/spi/protocol/GlutenConnectorTransactionHandle.java
 

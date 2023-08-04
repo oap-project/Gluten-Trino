@@ -24,7 +24,7 @@
 #include "velox/exec/Exchange.h"
 #endif
 
-#include "serialization/trino_serializer.h"
+#include "serialization/TrinoSerializer.h"
 
 using namespace facebook;
 using namespace facebook::velox;
