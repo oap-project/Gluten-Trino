@@ -23,6 +23,9 @@
 #include "velox/exec/Task.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/type/Type.h"
+#include "velox/common/caching/AsyncDataCache.h"
+#include "velox/common/caching/SsdCache.h"
+#include "velox/common/memory/MmapAllocator.h"
 
 #include "NativeConfigs.h"
 
@@ -178,12 +181,13 @@ class JniHandle {
  public:
   explicit JniHandle(const NativeConfigsPtr& nativeConfigs,
                      const NativeSqlTaskExecutionManagerPtr& javaManager)
-      : convertor_pool_(velox::memory::addDefaultLeafMemoryPool()),
-        nativeConfigs_(nativeConfigs),
+      : nativeConfigs_(nativeConfigs),
         javaManager_(javaManager) {
     driverExecutor_ = getDriverCPUExecutor(nativeConfigs_->getMaxWorkerThreads());
     exchangeIOExecutor_ =
         getExchangeIOCPUExecutor(nativeConfigs_->getExchangeClientThreads());
+
+    initializeVeloxMemory();
   }
 
   TaskHandlePtr createTaskHandle(const TrinoTaskId& id,
@@ -224,6 +228,9 @@ class JniHandle {
           memory::defaultMemoryManager().addRootPool(
               id.fullId(), nativeConfigs_->getQueryMaxMemoryPerNode()));
 
+      if (!convertor_pool_) {
+        convertor_pool_ = std::move(velox::memory::addDefaultLeafMemoryPool());
+      }
       VeloxInteractiveQueryPlanConverter convertor(convertor_pool_.get());
       core::PlanFragment fragment =
           convertor.toVeloxQueryPlan(plan, nullptr, id.fullId());
@@ -268,6 +275,71 @@ class JniHandle {
 
   NativeSqlTaskExecutionManager* getNativeSqlTaskExecutionManager() {
     return javaManager_.get();
+  }
+
+  void initializeVeloxMemory() {
+    const int64_t memoryBytes = nativeConfigs_->getMaxNodeMemory();
+    LOG(INFO) << "Starting with node memory " << (memoryBytes >> 30) << "GB";
+
+    if (nativeConfigs_->getUseMmapAllocator()) {
+      memory::MmapAllocator::Options options;
+      options.capacity = memoryBytes;
+      options.useMmapArena = nativeConfigs_->getUseMmapArena();
+      options.mmapArenaCapacityRatio = nativeConfigs_->getMmapArenaCapacityRatio();
+      allocator_ = std::make_shared<memory::MmapAllocator>(options);
+    } else {
+      allocator_ = memory::MemoryAllocator::createDefaultInstance();
+    }
+    if (nativeConfigs_->getAsyncDataCacheEnabled()) {
+      std::unique_ptr<cache::SsdCache> ssd;
+      const auto asyncCacheSsdSize = nativeConfigs_->getAsyncCacheSsdSize();
+      if (asyncCacheSsdSize > 0) {
+        constexpr int32_t kNumSsdShards = 16;
+        cacheExecutor_ =
+            std::make_unique<folly::IOThreadPoolExecutor>(kNumSsdShards);
+        auto asyncCacheSsdCheckpointSize =
+            nativeConfigs_->getAsyncCacheSsdCheckpointSize();
+        auto asyncCacheSsdDisableFileCow =
+            nativeConfigs_->getAsyncCacheSsdDisableFileCow();
+        LOG(INFO) << "Initializing SSD cache with capacity " << (asyncCacheSsdSize >> 30)
+                  << "GB, checkpoint size " << (asyncCacheSsdCheckpointSize >> 30)
+                  << "GB, file cow "
+                  << (asyncCacheSsdDisableFileCow ? "DISABLED" : "ENABLED");
+        ssd = std::make_unique<velox::cache::SsdCache>(
+            nativeConfigs_->getAsyncCacheSsdPath(),
+            asyncCacheSsdSize,
+            kNumSsdShards,
+            cacheExecutor_.get(),
+            asyncCacheSsdCheckpointSize,
+            asyncCacheSsdDisableFileCow);
+      }
+      cache_ = std::make_shared<velox::cache::AsyncDataCache>(
+          allocator_, memoryBytes, std::move(ssd));
+      allocator_ = cache_;
+    } else {
+      VELOX_CHECK_EQ(
+          nativeConfigs_->getAsyncCacheSsdSize(),
+          0,
+          "Async data cache cannot be disabled if ssd cache is enabled");
+    }
+
+    memory::MemoryAllocator::setDefaultInstance(allocator_.get());
+    // Set up velox memory manager.
+    memory::MemoryManager::Options options;
+    options.capacity = memoryBytes;
+    options.checkUsageLeak = nativeConfigs_->getEnableMemoryLeakCheck();
+    if (nativeConfigs_->getEnableMemoryArbitration()) {
+      auto& arbitratorCfg = options.arbitratorConfig;
+      arbitratorCfg.kind = memory::MemoryArbitrator::Kind::kShared;
+      arbitratorCfg.capacity =
+          memoryBytes * 100 / nativeConfigs_->getReservedMemoryPoolCapacityPercentage();
+      arbitratorCfg.initMemoryPoolCapacity =
+          nativeConfigs_->getInitMemoryPoolCapacity();
+      arbitratorCfg.minMemoryPoolCapacityTransferSize =
+          nativeConfigs_->getMinMemoryPoolTransferCapacity();
+    }
+    const auto& manager = memory::MemoryManager::getInstance(options, true);
+    LOG(INFO) << "Memory manager has been setup: " << manager.toString();
   }
 
  private:
@@ -340,6 +412,10 @@ class JniHandle {
   std::unordered_map<std::string, TaskHandlePtr> taskMap_;
   std::shared_ptr<folly::CPUThreadPoolExecutor> driverExecutor_;
   std::shared_ptr<folly::IOThreadPoolExecutor> exchangeIOExecutor_;
+
+  std::shared_ptr<velox::cache::AsyncDataCache> cache_;
+  std::unique_ptr<folly::IOThreadPoolExecutor> cacheExecutor_;
+  std::shared_ptr<velox::memory::MemoryAllocator> allocator_;
 };
 
 template <typename F, typename... Args>
@@ -367,20 +443,7 @@ T tryLogExceptionWithReturnValue(F&& func, const T& returnValueOnError, Args&&..
   return returnValueOnError;
 }
 
-};  // namespace
-
-std::shared_ptr<velox::Config> getConnectorConfig() {
-  // std::unordered_map<std::string, std::string> configs = {};
-  std::shared_ptr<velox::connector::Connector> connector =
-      velox::connector::getConnector(kHiveConnectorId);
-  // auto got = confMap_.find(kCaseSensitive);
-  // if (got != confMap_.end())
-  // {
-  //   configs[velox::connector::hive::HiveConfig::kCaseSensitive] = got->second;
-  // }
-  return std::make_shared<velox::core::MemConfig>(
-      connector->connectorProperties()->values());
-}
+}  // namespace
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
   JNIEnv* env;

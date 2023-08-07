@@ -364,10 +364,11 @@ void VeloxInitializer::init() {
   std::unordered_map<std::string, std::string> configurationValues;
 
   auto properties = std::make_shared<const velox::core::MemConfig>(configurationValues);
+  auto hiveConnectorExecutor = getConnectorIOExecutor(30, "HiveConnectorIO");
   auto hiveConnector =
       velox::connector::getConnectorFactory(
           velox::connector::hive::HiveConnectorFactory::kHiveConnectorName)
-          ->newConnector(kHiveConnectorId, properties, nullptr);
+          ->newConnector(kHiveConnectorId, properties, hiveConnectorExecutor.get());
 
   velox::connector::registerConnector(hiveConnector);
 

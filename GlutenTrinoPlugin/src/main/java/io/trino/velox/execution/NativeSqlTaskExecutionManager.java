@@ -102,12 +102,14 @@ public class NativeSqlTaskExecutionManager
             logger.debug("Task %s has already been registered.", id);
             return;
         }
-        try {
-            trinoBridge.createTask(nativeHandler, id.toString(), jsonString);
+        long ret = trinoBridge.createTask(nativeHandler, id.toString(), jsonString);
+        if (ret == 1) {
+            throw new IllegalStateException("Task " + id + " has already been created in native.");
         }
-        catch (Exception e) {
-            logger.error("Task %s register failed, reason: %s", e.getMessage());
+        else if (ret != 0) {
+            throw new IllegalStateException("Creating task " + id + " failed, caused by Unknown reason.");
         }
+
         tasks.put(id, taskExecution);
 
         // Register output partition listeners.

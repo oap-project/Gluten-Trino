@@ -384,4 +384,7 @@ std::shared_ptr<folly::CPUThreadPoolExecutor> getDriverCPUExecutor(
 
 std::shared_ptr<folly::IOThreadPoolExecutor> getExchangeIOCPUExecutor(
     size_t threadNum = 8, const std::string& name = "ExchangeIO");
+
+std::shared_ptr<folly::IOThreadPoolExecutor> getConnectorIOExecutor(
+    size_t threadNum = 8, const std::string& name = "ConnectorIO");
 }  // namespace io::trino::bridge

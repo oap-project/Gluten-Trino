@@ -15,9 +15,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved);
 
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM* vm, void* reserved);
 
-JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_getBuffer(JNIEnv*, jobject, jstring,
-                                                               jlongArray, jintArray);
-
 JNIEXPORT jlong JNICALL Java_io_trino_jni_TrinoBridge_close(JNIEnv* env, jobject obj,
                                                             jlong handlePtr);
 

@@ -33,6 +33,34 @@ class NativeConfigs {
   inline const std::unordered_map<std::string, int32_t> getLogVerboseModules() const {
     return logVerboseModules;
   }
+  inline const int64_t& getMaxNodeMemory() const { return maxNodeMemory; }
+  inline const bool& getUseMmapAllocator() const { return useMmapAllocator; }
+  inline const bool& getUseMmapArena() const { return useMmapArena; }
+  inline const int32_t& getMmapArenaCapacityRatio() const {
+    return mmapArenaCapacityRatio;
+  }
+  inline const bool& getAsyncDataCacheEnabled() const { return asyncDataCacheEnabled; }
+  inline const int64_t& getAsyncCacheSsdSize() const { return asyncCacheSsdSize; }
+  inline const int64_t& getAsyncCacheSsdCheckpointSize() const {
+    return asyncCacheSsdCheckpointSize;
+  }
+  inline const bool& getAsyncCacheSsdDisableFileCow() const {
+    return asyncCacheSsdDisableFileCow;
+  }
+  inline const std::string& getAsyncCacheSsdPath() const { return asyncCacheSsdPath; }
+  inline const bool& getEnableMemoryLeakCheck() const { return enableMemoryLeakCheck; }
+  inline const bool& getEnableMemoryArbitration() const {
+    return enableMemoryArbitration;
+  }
+  inline const int32_t& getReservedMemoryPoolCapacityPercentage() const {
+    return reservedMemoryPoolCapacityPercentage;
+  }
+  inline const uint64_t& getInitMemoryPoolCapacity() const {
+    return initMemoryPoolCapacity;
+  }
+  inline const uint64_t& getMinMemoryPoolTransferCapacity() const {
+    return minMemoryPoolTransferCapacity;
+  }
 
  private:
   // refer to io.trino.operator.DirectExchangeClientConfig#maxResponseSize
@@ -51,6 +79,20 @@ class NativeConfigs {
   int32_t exchangeClientThreads = 25;
   int64_t queryMaxMemoryPerNode = std::numeric_limits<int64_t>::max();
   std::unordered_map<std::string, int32_t> logVerboseModules;
+  int64_t maxNodeMemory = std::numeric_limits<int64_t>::max();
+  bool useMmapAllocator = false;
+  bool useMmapArena = false;
+  int32_t mmapArenaCapacityRatio = 10;
+  bool asyncDataCacheEnabled = true;
+  int64_t asyncCacheSsdSize = 0;
+  int64_t asyncCacheSsdCheckpointSize = 0;
+  bool asyncCacheSsdDisableFileCow = false;
+  std::string asyncCacheSsdPath = "/tmp/trino_bridge/cache";
+  bool enableMemoryLeakCheck = true;
+  bool enableMemoryArbitration = false;
+  int32_t reservedMemoryPoolCapacityPercentage = 10;
+  uint64_t initMemoryPoolCapacity = 120 << 20;
+  uint64_t minMemoryPoolTransferCapacity = 32 << 20;
 };
 
 using NativeConfigsPtr = std::shared_ptr<NativeConfigs>;

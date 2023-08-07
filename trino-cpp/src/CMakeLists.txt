@@ -41,12 +41,12 @@ add_subdirectory(functions)
 add_subdirectory(types)
 add_subdirectory(protocol)
 
-set(TRINO_CPP_UTILS_SOURCES utils/JniUtils.cpp utils/NativeListenableFuture.cpp)
+set(TRINO_CPP_UTILS_SOURCES utils/JniUtils.cpp)
 
 set(TRINO_EXCHANGE_SOURCES TrinoExchangeSource.cpp utils/HttpClient.cpp
                            utils/Configs.cpp)
 
-set(SOURCES TrinoBridge.cpp utils.cpp TestUtils.cpp NativeConfigs.cpp
+set(SOURCES TrinoBridge.cpp utils.cpp NativeConfigs.cpp
         ${TRINO_CPP_UTILS_SOURCES})
 
 if(ENABLE_TRINO_EXCHANGE)
@@ -88,7 +88,9 @@ set(VELOX_LIBS
     velox_tpch_connector
     velox_hdfs
     velox_exec_test_lib
-    velox_parse_parser)
+    velox_parse_parser
+    velox_parse_utils
+    velox_parse_expression)
 
 if(VELOX_ENABLE_S3)
   add_definitions(-DENABLE_TRINO_S3)

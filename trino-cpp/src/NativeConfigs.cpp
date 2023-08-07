@@ -8,27 +8,36 @@ using namespace facebook::velox;
 
 namespace io::trino::bridge {
 
+#define GET_KEY_FROM_JSON(KEY, JSON) \
+  if (JSON.contains(#KEY)) {         \
+    JSON.at(#KEY).get_to(KEY);       \
+  }
+
 NativeConfigs::NativeConfigs(const std::string& configJsonString) {
   LOG(INFO) << "Get configJsonString is " << configJsonString;
+
   nlohmann::json configJson = nlohmann::json::parse(configJsonString);
-  if (configJson.contains("maxOutputPageBytes")) {
-    configJson.at("maxOutputPageBytes").get_to(maxOutputPageBytes);
-  }
-  if (configJson.contains("maxWorkerThreads")) {
-    configJson.at("maxWorkerThreads").get_to(maxWorkerThreads);
-  }
-  if (configJson.contains("maxDriversPerTask")) {
-    configJson.at("maxDriversPerTask").get_to(maxDriversPerTask);
-  }
-  if (configJson.contains("taskConcurrency")) {
-    configJson.at("taskConcurrency").get_to(taskConcurrency);
-  }
-  if (configJson.contains("exchangeClientThreads")) {
-    configJson.at("exchangeClientThreads").get_to(exchangeClientThreads);
-  }
-  if (configJson.contains("queryMaxMemoryPerNode")) {
-    configJson.at("queryMaxMemoryPerNode").get_to(queryMaxMemoryPerNode);
-  }
+  GET_KEY_FROM_JSON(maxOutputPageBytes, configJson);
+  GET_KEY_FROM_JSON(maxWorkerThreads, configJson);
+  GET_KEY_FROM_JSON(maxDriversPerTask, configJson);
+  GET_KEY_FROM_JSON(taskConcurrency, configJson);
+  GET_KEY_FROM_JSON(exchangeClientThreads, configJson);
+  GET_KEY_FROM_JSON(queryMaxMemoryPerNode, configJson);
+  GET_KEY_FROM_JSON(maxNodeMemory, configJson);
+  GET_KEY_FROM_JSON(useMmapAllocator, configJson);
+  GET_KEY_FROM_JSON(useMmapArena, configJson);
+  GET_KEY_FROM_JSON(mmapArenaCapacityRatio, configJson);
+  GET_KEY_FROM_JSON(asyncDataCacheEnabled, configJson);
+  GET_KEY_FROM_JSON(asyncCacheSsdSize, configJson);
+  GET_KEY_FROM_JSON(asyncCacheSsdCheckpointSize, configJson);
+  GET_KEY_FROM_JSON(asyncCacheSsdDisableFileCow, configJson);
+  GET_KEY_FROM_JSON(asyncCacheSsdPath, configJson);
+  GET_KEY_FROM_JSON(enableMemoryLeakCheck, configJson);
+  GET_KEY_FROM_JSON(enableMemoryArbitration, configJson);
+  GET_KEY_FROM_JSON(reservedMemoryPoolCapacityPercentage, configJson);
+  GET_KEY_FROM_JSON(initMemoryPoolCapacity, configJson);
+  GET_KEY_FROM_JSON(minMemoryPoolTransferCapacity, configJson);
+
   if (configJson.contains("logVerboseModules")) {
     std::string _logVerboseModules;
     configJson.at("logVerboseModules").get_to(_logVerboseModules);
