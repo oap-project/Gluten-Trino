@@ -89,12 +89,11 @@ class VeloxQueryPlanConverterBase {
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
       const protocol::TaskId& taskId);
 
-  /*
   std::shared_ptr<const velox::core::GroupIdNode> toVeloxQueryPlan(
       const std::shared_ptr<const protocol::GroupIdNode>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
       const protocol::TaskId& taskId);
-
+/*
   velox::core::PlanNodePtr toVeloxQueryPlan(
       const std::shared_ptr<const protocol::DistinctLimitNode>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
@@ -104,6 +103,12 @@ class VeloxQueryPlanConverterBase {
       const std::shared_ptr<const protocol::JoinNode>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
       const protocol::TaskId& taskId);
+
+  velox::core::PlanNodePtr toVeloxQueryPlan(
+      const std::shared_ptr<const protocol::SemiJoinNode>& node,
+      const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
+      const protocol::TaskId& taskId);
+
 /*
   velox::core::PlanNodePtr toVeloxQueryPlan(
       const std::shared_ptr<const protocol::MergeJoinNode>& node,
@@ -134,22 +139,31 @@ class VeloxQueryPlanConverterBase {
       const std::shared_ptr<const protocol::UnnestNode>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
       const protocol::TaskId& taskId);
-
+  */
   std::shared_ptr<const velox::core::EnforceSingleRowNode> toVeloxQueryPlan(
       const std::shared_ptr<const protocol::EnforceSingleRowNode>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
       const protocol::TaskId& taskId);
-*/
+
   std::shared_ptr<const velox::core::AssignUniqueIdNode> toVeloxQueryPlan(
       const std::shared_ptr<const protocol::AssignUniqueId>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
       const protocol::TaskId& taskId);
-  /*
+
+  velox::core::PlanNodePtr toVeloxQueryPlan(
+      const std::shared_ptr<const protocol::MarkDistinctNode>& node,
+      const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
+      const protocol::TaskId& taskId);
+
+  std::shared_ptr<const velox::core::TopNRowNumberNode> toVeloxQueryPlan(
+      const std::shared_ptr<const protocol::TopNRowNumberNode>& node,
+      const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
+      const protocol::TaskId& taskId);
+
   std::shared_ptr<const velox::core::WindowNode> toVeloxQueryPlan(
       const std::shared_ptr<const protocol::WindowNode>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
       const protocol::TaskId& taskId);
-  */
 
   std::vector<velox::core::FieldAccessTypedExprPtr> toVeloxExprs(
       const std::vector<protocol::VariableReferenceExpression>& variables);
@@ -161,13 +175,19 @@ class VeloxQueryPlanConverterBase {
       const protocol::TaskId& taskId);
   */
 
-  /*
   velox::core::WindowNode::Function toVeloxWindowFunction(
       const protocol::Function& func);
-  */
 
   velox::memory::MemoryPool* pool_;
   VeloxExprConverter exprConverter_;
+
+  void toAggregations(
+      const std::vector<protocol::VariableReferenceExpression>& outputVariables,
+      const std::map<
+          protocol::VariableReferenceExpression,
+          protocol::Aggregation>& aggregationMap,
+      std::vector<velox::core::AggregationNode::Aggregate>& aggregates,
+      std::vector<std::string>& aggregateNames);
 };
 
 class VeloxInteractiveQueryPlanConverter : public VeloxQueryPlanConverterBase {

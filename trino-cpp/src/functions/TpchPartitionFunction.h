@@ -10,7 +10,7 @@ class TpchPartitionFunction : public core::PartitionFunction {
  public:
   explicit TpchPartitionFunction(int64_t rowsPerPartition, int numPartitions);
 
-  void partition(const RowVector& input, std::vector<uint32_t>& partitions);
+  std::optional<uint32_t> partition(const RowVector& input, std::vector<uint32_t>& partitions);
 
  private:
   int64_t rowNumberFromOrderKey(int64_t orderKey);

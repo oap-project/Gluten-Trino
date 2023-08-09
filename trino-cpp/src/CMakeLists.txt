@@ -86,6 +86,7 @@ set(VELOX_LIBS
     velox_aggregates
     velox_hive_connector
     velox_tpch_connector
+    velox_type_fbhive
     velox_hdfs
     velox_exec_test_lib
     velox_parse_parser

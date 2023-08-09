@@ -13,6 +13,7 @@
 #include "utils.h"
 #include "utils/JniUtils.h"
 #include "velox/common/base/Exceptions.h"
+#include "velox/common/caching/AsyncDataCache.h"
 #include "velox/common/memory/Memory.h"
 #include "velox/common/memory/MemoryPool.h"
 #include "velox/connectors/Connector.h"
@@ -224,7 +225,7 @@ class JniHandle {
       auto queryCtx = std::make_shared<core::QueryCtx>(
           driverExecutor_.get(), std::move(nativeConfigs_->getQueryConfigs()),
           std::move(nativeConfigs_->getConnectorConfigs()),
-          memory::MemoryAllocator::getInstance(),
+          cache::AsyncDataCache::getInstance(),
           memory::defaultMemoryManager().addRootPool(
               id.fullId(), nativeConfigs_->getQueryMaxMemoryPerNode()));
 
@@ -313,9 +314,7 @@ class JniHandle {
             asyncCacheSsdCheckpointSize,
             asyncCacheSsdDisableFileCow);
       }
-      cache_ = std::make_shared<velox::cache::AsyncDataCache>(
-          allocator_, memoryBytes, std::move(ssd));
-      allocator_ = cache_;
+      cache_ = velox::cache::AsyncDataCache::create(allocator_.get(), std::move(ssd));
     } else {
       VELOX_CHECK_EQ(
           nativeConfigs_->getAsyncCacheSsdSize(),
@@ -325,17 +324,15 @@ class JniHandle {
 
     memory::MemoryAllocator::setDefaultInstance(allocator_.get());
     // Set up velox memory manager.
-    memory::MemoryManager::Options options;
+    memory::MemoryManagerOptions options;
     options.capacity = memoryBytes;
     options.checkUsageLeak = nativeConfigs_->getEnableMemoryLeakCheck();
     if (nativeConfigs_->getEnableMemoryArbitration()) {
-      auto& arbitratorCfg = options.arbitratorConfig;
-      arbitratorCfg.kind = memory::MemoryArbitrator::Kind::kShared;
-      arbitratorCfg.capacity =
+      options.arbitratorKind = memory::MemoryArbitrator::Kind::kShared;
+      options.capacity =
           memoryBytes * 100 / nativeConfigs_->getReservedMemoryPoolCapacityPercentage();
-      arbitratorCfg.initMemoryPoolCapacity =
-          nativeConfigs_->getInitMemoryPoolCapacity();
-      arbitratorCfg.minMemoryPoolCapacityTransferSize =
+      options.memoryPoolInitCapacity = nativeConfigs_->getInitMemoryPoolCapacity();
+      options.memoryPoolTransferCapacity =
           nativeConfigs_->getMinMemoryPoolTransferCapacity();
     }
     const auto& manager = memory::MemoryManager::getInstance(options, true);
@@ -639,7 +636,7 @@ JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_noMoreBuffers(
     }
     if (taskHandle->isBroadcast) {
       for (int destination = 0; destination < jNumPartitions; ++destination) {
-        taskHandle->task->updateBroadcastOutputBuffers(destination, true);
+        taskHandle->task->updateOutputBuffers(destination, true);
       }
     }
   });

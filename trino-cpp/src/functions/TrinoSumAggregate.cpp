@@ -1,6 +1,7 @@
 #include "glog/logging.h"
 #include "velox/common/base/Exceptions.h"
 #include "velox/exec/Aggregate.h"
+#include "velox/exec/AggregateUtil.h"
 #include "velox/vector/FlatVector.h"
 
 namespace io::trino::bridge {
@@ -299,7 +300,7 @@ void checkSumCountRowType(TypePtr type) {
       "The second child type of input type for final aggregation must be BIGINT.");
 }
 
-bool registerTrinoSumAggregate(const std::string& name) {
+exec::AggregateRegistrationResult registerTrinoSumAggregate(const std::string& name) {
   std::vector<std::shared_ptr<exec::AggregateFunctionSignature>> signatures{
       exec::AggregateFunctionSignatureBuilder()
           .returnType("real")
@@ -324,7 +325,8 @@ bool registerTrinoSumAggregate(const std::string& name) {
   return exec::registerAggregateFunction(
       name, std::move(signatures),
       [name](core::AggregationNode::Step step, const std::vector<TypePtr>& argTypes,
-             const TypePtr& resultType) -> std::unique_ptr<exec::Aggregate> {
+             const TypePtr& resultType,
+             const core::QueryConfig& /*config*/) -> std::unique_ptr<exec::Aggregate> {
         VELOX_CHECK_EQ(argTypes.size(), 1, "{} takes only one argument", name);
         auto inputType = argTypes[0];
         if (exec::isRawInput(step)) {
@@ -371,9 +373,8 @@ bool registerTrinoSumAggregate(const std::string& name) {
               if (inputType->isLongDecimal()) {
                 return std::make_unique<TrinoSumAggregate<int128_t, int128_t, int128_t>>(
                     resultType);
-              } else if (
-                  inputType->isShortDecimal() ||
-                  inputType->kind() == TypeKind::VARBINARY) {
+              } else if (inputType->isShortDecimal() ||
+                         inputType->kind() == TypeKind::VARBINARY) {
                 // If the input and out type are VARBINARY, then the
                 // LongDecimalWithOverflowState is used and the template type
                 // does not matter.

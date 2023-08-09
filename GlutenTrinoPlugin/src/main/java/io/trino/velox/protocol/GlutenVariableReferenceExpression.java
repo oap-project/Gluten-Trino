@@ -17,6 +17,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.spi.type.Type;
 
+import java.util.Objects;
+
 public class GlutenVariableReferenceExpression
         extends GlutenRowExpression
 {
@@ -42,5 +44,30 @@ public class GlutenVariableReferenceExpression
     public Type getType()
     {
         return type;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(name, type);
+    }
+
+    @Override
+    public String toString()
+    {
+        return name;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        GlutenVariableReferenceExpression other = (GlutenVariableReferenceExpression) obj;
+        return Objects.equals(this.name, other.name) && Objects.equals(this.type, other.type);
     }
 }

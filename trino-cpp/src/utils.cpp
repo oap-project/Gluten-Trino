@@ -5,9 +5,9 @@
 #include "velox/common/time/Timer.h"
 #include "velox/connectors/Connector.h"
 #include "velox/connectors/hive/HiveConnector.h"
-#include "velox/connectors/hive/storage_adapters/hdfs/HdfsFileSystem.h"
+#include "velox/connectors/hive/storage_adapters/hdfs/RegisterHdfsFileSystem.h"
 #ifdef ENABLE_TRINO_S3
-#include "velox/connectors/hive/storage_adapters/s3fs/S3FileSystem.h"
+#include "velox/connectors/hive/storage_adapters/s3fs/RegisterS3FileSystem.h"
 #endif
 #include "velox/connectors/tpch/TpchConnector.h"
 #include "velox/dwio/dwrf/reader/DwrfReader.h"
@@ -379,7 +379,7 @@ void VeloxInitializer::init() {
                            ->newConnector(kTpchConnectorId_, nullptr);
   velox::connector::registerConnector(tpchConnector);
 
-  velox::parquet::registerParquetReaderFactory(velox::parquet::ParquetReaderType::NATIVE);
+  velox::parquet::registerParquetReaderFactory();
 
   velox::filesystems::registerHdfsFileSystem();
 
@@ -389,9 +389,10 @@ void VeloxInitializer::init() {
 
   velox::dwrf::registerDwrfReaderFactory();
   // Register Velox functions
-  velox::functions::prestosql::registerAllScalarFunctions("presto.default.");
-  velox::aggregate::prestosql::registerAllAggregateFunctions("presto.default.");
-  velox::window::prestosql::registerAllWindowFunctions();
+  static const std::string kPrestoDefaultPrefix{"presto.default."};
+  velox::functions::prestosql::registerAllScalarFunctions(kPrestoDefaultPrefix);
+  velox::aggregate::prestosql::registerAllAggregateFunctions(kPrestoDefaultPrefix);
+  velox::window::prestosql::registerAllWindowFunctions(kPrestoDefaultPrefix);
 
   velox::parse::registerTypeResolver();
 

@@ -36,6 +36,11 @@ import static java.util.Objects.requireNonNull;
         @JsonSubTypes.Type(value = GlutenJoinNode.class, name = "join"),
         @JsonSubTypes.Type(value = GlutenSemiJoinNode.class, name = "semijoin"),
         @JsonSubTypes.Type(value = GlutenAssignUniqueId.class, name = "assignuniqueid"),
+        @JsonSubTypes.Type(value = GlutenEnforceSingleRowNode.class, name = "enforcesinglerow"),
+        @JsonSubTypes.Type(value = GlutenGroupIdNode.class, name = "groupid"),
+        @JsonSubTypes.Type(value = GlutenMarkDistinctNode.class, name = "markdistinct"),
+        @JsonSubTypes.Type(value = GlutenWindowNode.class, name = "window"),
+        @JsonSubTypes.Type(value = GlutenTopNRowNumberNode.class, name = "topnrownumber"),
 })
 public abstract class GlutenPlanNode
 {

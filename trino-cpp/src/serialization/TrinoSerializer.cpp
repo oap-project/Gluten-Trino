@@ -4,7 +4,6 @@
 #include "velox/common/memory/ByteStream.h"
 #include "velox/common/memory/MemoryPool.h"
 #include "velox/functions/prestosql/types/TimestampWithTimeZoneType.h"
-#include "velox/type/Date.h"
 #include "velox/type/StringView.h"
 #include "velox/type/Type.h"
 #include "velox/vector/BiasVector.h"
@@ -45,8 +44,6 @@ std::string typeToEncodingName(const TypePtr& type) {
       return "VARIABLE_WIDTH";
     case TypeKind::TIMESTAMP:
       return "LONG_ARRAY";
-    case TypeKind::DATE:
-      return "INT_ARRAY";
     case TypeKind::HUGEINT:
       return "INT128_ARRAY";
     case TypeKind::ARRAY:
@@ -68,6 +65,35 @@ void writeInt32(OutputStream* out, int32_t value) {
 void writeInt64(OutputStream* out, int64_t value) {
   out->write(reinterpret_cast<char*>(&value), sizeof(value));
 }
+
+class CountingOutputStream : public OutputStream {
+ public:
+  explicit CountingOutputStream() : OutputStream{nullptr} {}
+
+  void write(const char* /*s*/, std::streamsize count) override {
+    pos_ += count;
+    if (numBytes_ < pos_) {
+      numBytes_ = pos_;
+    }
+  }
+
+  std::streampos tellp() const override {
+    return pos_;
+  }
+
+  void seekp(std::streampos pos) override {
+    pos_ = pos;
+  }
+
+  std::streamsize size() const {
+    return numBytes_;
+  }
+
+ private:
+  std::streamsize numBytes_{0};
+  std::streampos pos_{0};
+};
+
 class VectorStream {
  public:
   VectorStream(const TypePtr type, StreamArena* streamArena, int32_t initialNumRows,
@@ -173,6 +199,13 @@ class VectorStream {
   }
 
   VectorStream* childAt(int32_t index) { return children_[index].get(); }
+
+  // Returns the size to flush to OutputStream before calling `flush`.
+  size_t serializedSize() {
+    CountingOutputStream out;
+    flush(&out);
+    return out.size();
+  }
 
   // Writes out the accumulated contents. Does not change the state.
   void flush(OutputStream* out) {
@@ -303,13 +336,6 @@ void VectorStream::append(folly::Range<const Timestamp*> values) {
     for (auto& value : values) {
       appendOne(value.toMillis());
     }
-  }
-}
-
-template <>
-void VectorStream::append(folly::Range<const Date*> values) {
-  for (auto& value : values) {
-    appendOne(value.days());
   }
 }
 
@@ -692,6 +718,18 @@ class TrinoVectorSerializer : public facebook::velox::VectorSerializer {
     }
   }
 
+  size_t maxSerializedSize() const override {
+    size_t dataSize = 4; // streams_.size()
+    for (auto& stream : streams_) {
+      dataSize += stream->serializedSize();
+    }
+
+    //auto compressedSize = needCompression(*codec_)
+    //                          ? codec_->maxCompressedLength(dataSize)
+    //                          : dataSize;
+    return kHeaderSize + dataSize;
+  }
+
   void flush(OutputStream* out) override { flushInternal(numRows_, false /*rle*/, out); }
 
   void flushRle(const RowVectorPtr& vector, OutputStream* out) {
@@ -890,32 +928,6 @@ void readLosslessTimestampValues(ByteStream* source, vector_size_t size, BufferP
   } else {
     for (int32_t row = 0; row < size; ++row) {
       rawValues[row] = readLosslessTimestamp(source);
-    }
-  }
-}
-
-Date readDate(ByteStream* source) {
-  int32_t days = source->read<int32_t>();
-  return Date(days);
-}
-
-template <>
-void readValues<Date>(ByteStream* source, vector_size_t size, BufferPtr nulls,
-                      vector_size_t nullCount, BufferPtr values) {
-  auto rawValues = values->asMutable<Date>();
-  if (nullCount) {
-    int32_t toClear = 0;
-    bits::forEachSetBit(nulls->as<uint64_t>(), 0, size, [&](int32_t row) {
-      // Set the values between the last non-null and this to type default.
-      for (; toClear < row; ++toClear) {
-        rawValues[toClear] = Date();
-      }
-      rawValues[row] = readDate(source);
-      toClear = row + 1;
-    });
-  } else {
-    for (int32_t row = 0; row < size; ++row) {
-      rawValues[row] = readDate(source);
     }
   }
 }
@@ -1285,7 +1297,6 @@ void readColumns(ByteStream* source, memory::MemoryPool* pool,
           {TypeKind::REAL, &read<float>},
           {TypeKind::DOUBLE, &read<double>},
           {TypeKind::TIMESTAMP, &read<Timestamp>},
-          {TypeKind::DATE, &read<Date>},
           {TypeKind::VARCHAR, &read<StringView>},
           {TypeKind::VARBINARY, &read<StringView>},
           {TypeKind::ARRAY, &readArrayVector},

@@ -19,6 +19,8 @@ import io.trino.spi.connector.SortOrder;
 
 import java.util.List;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 public class GlutenOrderingScheme
 {
     private final List<Ordering> orderBy;
@@ -33,6 +35,11 @@ public class GlutenOrderingScheme
     public List<Ordering> getOrderBy()
     {
         return orderBy;
+    }
+
+    public List<GlutenVariableReferenceExpression> getOrderByVariables()
+    {
+        return orderBy.stream().map(Ordering::getVariable).collect(toImmutableList());
     }
 
     public static class Ordering

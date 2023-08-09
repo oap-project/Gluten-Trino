@@ -32,10 +32,13 @@ import io.trino.sql.planner.PartitioningScheme;
 import io.trino.sql.planner.Symbol;
 import io.trino.sql.planner.plan.AggregationNode;
 import io.trino.sql.planner.plan.AssignUniqueId;
+import io.trino.sql.planner.plan.EnforceSingleRowNode;
 import io.trino.sql.planner.plan.ExchangeNode;
 import io.trino.sql.planner.plan.FilterNode;
+import io.trino.sql.planner.plan.GroupIdNode;
 import io.trino.sql.planner.plan.JoinNode;
 import io.trino.sql.planner.plan.LimitNode;
+import io.trino.sql.planner.plan.MarkDistinctNode;
 import io.trino.sql.planner.plan.OutputNode;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanVisitor;
@@ -45,7 +48,9 @@ import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SortNode;
 import io.trino.sql.planner.plan.TableScanNode;
 import io.trino.sql.planner.plan.TopNNode;
+import io.trino.sql.planner.plan.TopNRankingNode;
 import io.trino.sql.planner.plan.ValuesNode;
+import io.trino.sql.planner.plan.WindowNode;
 import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.Row;
@@ -55,10 +60,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static java.util.Locale.ENGLISH;
 
 public class PlanNodeTranslator
@@ -109,6 +117,59 @@ public class PlanNodeTranslator
                 throw new IllegalStateException("Unknown symbol reference: " + symbol.getName());
             }
             return new GlutenVariableReferenceExpression(symbol.getName(), type);
+        }
+
+        private GlutenWindowNode.Function buildWindowFunction(WindowNode.Function function)
+        {
+            ImmutableList<GlutenRowExpression> arguments = function.getArguments().stream()
+                    .map(expression -> ExpressionTranslator.translateExpressionTree(expression, metadata, typeManager, blockEncodingSerde, session, symbolType))
+                    .collect(toImmutableList());
+            GlutenCallExpression functionCall = ExpressionTranslator.buildCallExpression(function.getResolvedFunction(), arguments, false);
+
+            GlutenWindowNode.Frame.WindowType type = switch (function.getFrame().getType()) {
+                case ROWS -> GlutenWindowNode.Frame.WindowType.ROWS;
+                case RANGE -> GlutenWindowNode.Frame.WindowType.RANGE;
+                case GROUPS -> GlutenWindowNode.Frame.WindowType.GROUPS;
+            };
+            GlutenWindowNode.Frame.BoundType startType = switch (function.getFrame().getStartType()) {
+                case FOLLOWING -> GlutenWindowNode.Frame.BoundType.FOLLOWING;
+                case PRECEDING -> GlutenWindowNode.Frame.BoundType.PRECEDING;
+                case CURRENT_ROW -> GlutenWindowNode.Frame.BoundType.CURRENT_ROW;
+                case UNBOUNDED_FOLLOWING -> GlutenWindowNode.Frame.BoundType.UNBOUNDED_FOLLOWING;
+                case UNBOUNDED_PRECEDING -> GlutenWindowNode.Frame.BoundType.UNBOUNDED_PRECEDING;
+            };
+            Optional<GlutenVariableReferenceExpression> startValue = Optional.empty();
+            Optional<String> originalStartValue = Optional.empty();
+            if (function.getFrame().getStartValue().isPresent()) {
+                startValue = Optional.of(buildVariableRefExpression(function.getFrame().getStartValue().get()));
+                originalStartValue = startValue.map(GlutenVariableReferenceExpression::toString);
+            }
+            Optional<GlutenVariableReferenceExpression> sortKeyCoercedForFrameStartComparison = Optional.empty();
+            if (function.getFrame().getSortKeyCoercedForFrameStartComparison().isPresent()) {
+                sortKeyCoercedForFrameStartComparison = Optional.of(buildVariableRefExpression(function.getFrame().getSortKeyCoercedForFrameStartComparison().get()));
+            }
+            GlutenWindowNode.Frame.BoundType endType = switch (function.getFrame().getEndType()) {
+                case FOLLOWING -> GlutenWindowNode.Frame.BoundType.FOLLOWING;
+                case PRECEDING -> GlutenWindowNode.Frame.BoundType.PRECEDING;
+                case CURRENT_ROW -> GlutenWindowNode.Frame.BoundType.CURRENT_ROW;
+                case UNBOUNDED_FOLLOWING -> GlutenWindowNode.Frame.BoundType.UNBOUNDED_FOLLOWING;
+                case UNBOUNDED_PRECEDING -> GlutenWindowNode.Frame.BoundType.UNBOUNDED_PRECEDING;
+            };
+            Optional<GlutenVariableReferenceExpression> endValue = Optional.empty();
+            Optional<String> originalEndValue = Optional.empty();
+            if (function.getFrame().getEndValue().isPresent()) {
+                endValue = Optional.of(buildVariableRefExpression(function.getFrame().getEndValue().get()));
+                originalEndValue = endValue.map(GlutenVariableReferenceExpression::toString);
+            }
+            Optional<GlutenVariableReferenceExpression> sortKeyCoercedForFrameEndComparison = Optional.empty();
+            if (function.getFrame().getSortKeyCoercedForFrameEndComparison().isPresent()) {
+                sortKeyCoercedForFrameEndComparison = Optional.of(buildVariableRefExpression(function.getFrame().getSortKeyCoercedForFrameEndComparison().get()));
+            }
+
+            GlutenWindowNode.Frame frame = new GlutenWindowNode.Frame(type, startType, startValue, sortKeyCoercedForFrameStartComparison, endType, endValue,
+                    sortKeyCoercedForFrameEndComparison, originalStartValue, originalEndValue);
+            boolean ignoreNulls = function.isIgnoreNulls();
+            return new GlutenWindowNode.Function(functionCall, frame, ignoreNulls);
         }
 
         @Override
@@ -178,7 +239,7 @@ public class PlanNodeTranslator
             // Translate Aggregations
             HashMap<GlutenVariableReferenceExpression, GlutenAggregationNode.Aggregation> aggregations = new HashMap<>();
             node.getAggregations().forEach(((symbol, aggregation) -> {
-//                ResolvedFunction function = mapAggregateFunction(aggregation.getResolvedFunction(), node.getStep());
+                // ResolvedFunction function = mapAggregateFunction(aggregation.getResolvedFunction(), node.getStep());
                 ResolvedFunction function = aggregation.getResolvedFunction();
                 Type aggValueType = convertAggregateResultType(function.getSignature().getReturnType(), function, node.getStep());
                 GlutenVariableReferenceExpression aggValue = new GlutenVariableReferenceExpression(symbol.getName(), aggValueType);
@@ -234,11 +295,16 @@ public class PlanNodeTranslator
                         .collect(toImmutableList());
             }
 
-            if (node.getHashSymbol().isPresent() || node.getGroupIdSymbol().isPresent()) {
-                throw new UnsupportedOperationException("Unsupported AggregationNode to translate: contains hashSymbol or groupIdVariable.");
+            Optional<GlutenVariableReferenceExpression> hashVariable = Optional.empty();
+            if (node.getHashSymbol().isPresent()) {
+                hashVariable = Optional.of(buildVariableRefExpression(node.getHashSymbol().get()));
+            }
+            Optional<GlutenVariableReferenceExpression> groupIdVariable = Optional.empty();
+            if (node.getGroupIdSymbol().isPresent()) {
+                groupIdVariable = Optional.of(buildVariableRefExpression(node.getGroupIdSymbol().get()));
             }
 
-            return new GlutenAggregationNode(node.getId(), source, aggregations, groupingSet, preGroupedSymbols, node.getStep(), Optional.empty(), Optional.empty());
+            return new GlutenAggregationNode(node.getId(), source, aggregations, groupingSet, preGroupedSymbols, node.getStep(), hashVariable, groupIdVariable);
         }
 
         @Override
@@ -438,7 +504,7 @@ public class PlanNodeTranslator
                 GlutenVariableReferenceExpression left = buildVariableRefExpression(equiJoinClause.getLeft());
                 GlutenVariableReferenceExpression right = buildVariableRefExpression(equiJoinClause.getRight());
                 return new GlutenJoinNode.EquiJoinClause(left, right);
-            }).toList();
+            }).collect(toImmutableList());
 
             Optional<GlutenRowExpression> filter = node.getFilter()
                     .map(filter_ -> ExpressionTranslator.translateExpressionTree(filter_, metadata, typeManager, blockEncodingSerde, session, symbolType));
@@ -459,7 +525,7 @@ public class PlanNodeTranslator
                     leftNode,
                     rightNode,
                     criteria,
-                    node.getOutputSymbols().stream().map(this::buildVariableRefExpression).toList(),
+                    node.getOutputSymbols().stream().map(this::buildVariableRefExpression).collect(toImmutableList()),
                     filter,
                     node.getLeftHashSymbol().map(this::buildVariableRefExpression),
                     node.getRightHashSymbol().map(this::buildVariableRefExpression),
@@ -490,6 +556,132 @@ public class PlanNodeTranslator
         {
             GlutenPlanNode source = node.getSource().accept(this, context);
             return new GlutenAssignUniqueId(node.getId(), source, buildVariableRefExpression(node.getIdColumn()));
+        }
+
+        @Override
+        public GlutenGroupIdNode visitGroupId(GroupIdNode node, Void context)
+        {
+            GlutenPlanNode source = node.getSource().accept(this, context);
+
+            List<List<GlutenVariableReferenceExpression>> groupingSets = node.getGroupingSets().stream()
+                    .map(list -> list.stream().map(this::buildVariableRefExpression).collect(toImmutableList()))
+                    .collect(toImmutableList());
+            Map<GlutenVariableReferenceExpression, GlutenVariableReferenceExpression> groupingColumns = node.getGroupingColumns().entrySet().stream()
+                    .collect(Collectors.toMap(
+                            e -> buildVariableRefExpression(e.getKey()),
+                            e -> buildVariableRefExpression(e.getValue())));
+            List<GlutenVariableReferenceExpression> aggregationArguments = node.getAggregationArguments().stream()
+                    .map(this::buildVariableRefExpression)
+                    .collect(toImmutableList());
+            GlutenVariableReferenceExpression groupIdVariable = buildVariableRefExpression(node.getGroupIdSymbol());
+
+            return new GlutenGroupIdNode(node.getId(),
+                    source,
+                    groupingSets,
+                    groupingColumns,
+                    aggregationArguments,
+                    groupIdVariable);
+        }
+
+        @Override
+        public GlutenMarkDistinctNode visitMarkDistinct(MarkDistinctNode node, Void context)
+        {
+            GlutenPlanNode source = node.getSource().accept(this, context);
+            GlutenVariableReferenceExpression markerVariable = buildVariableRefExpression(node.getMarkerSymbol());
+            List<GlutenVariableReferenceExpression> distinctVariables = node.getDistinctSymbols().stream()
+                    .map(this::buildVariableRefExpression)
+                    .collect(toImmutableList());
+            Optional<GlutenVariableReferenceExpression> hashVariable = Optional.empty();
+            if (node.getHashSymbol().isPresent()) {
+                hashVariable = Optional.of(buildVariableRefExpression(node.getHashSymbol().get()));
+            }
+            return new GlutenMarkDistinctNode(node.getId(),
+                    source,
+                    markerVariable,
+                    distinctVariables,
+                    hashVariable);
+        }
+
+        @Override
+        public GlutenEnforceSingleRowNode visitEnforceSingleRow(EnforceSingleRowNode node, Void context)
+        {
+            return new GlutenEnforceSingleRowNode(node.getId(), node.getSource().accept(this, context));
+        }
+
+        @Override
+        public GlutenWindowNode visitWindow(WindowNode node, Void context)
+        {
+            GlutenPlanNode source = node.getSource().accept(this, context);
+
+            List<GlutenVariableReferenceExpression> partitionBy = node.getSpecification().getPartitionBy().stream()
+                    .map(this::buildVariableRefExpression)
+                    .collect(toImmutableList());
+            Optional<GlutenOrderingScheme> orderingScheme = Optional.empty();
+            if (node.getSpecification().getOrderingScheme().isPresent()) {
+                OrderingScheme os = node.getSpecification().getOrderingScheme().get();
+                orderingScheme = Optional.of(new GlutenOrderingScheme(os.getOrderBy().stream().map(symbol ->
+                        new GlutenOrderingScheme.Ordering(buildVariableRefExpression(symbol), os.getOrdering(symbol))
+                ).collect(toImmutableList())));
+            }
+            GlutenWindowNode.Specification specification = new GlutenWindowNode.Specification(partitionBy, orderingScheme);
+
+            Map<GlutenVariableReferenceExpression, GlutenWindowNode.Function> windowFunctions = node.getWindowFunctions().entrySet().stream()
+                    .collect(toImmutableMap(
+                            entry -> buildVariableRefExpression(entry.getKey()),
+                            entry -> buildWindowFunction(entry.getValue())));
+
+            Optional<GlutenVariableReferenceExpression> hashVariable = Optional.empty();
+            if (node.getHashSymbol().isPresent()) {
+                hashVariable = Optional.of(buildVariableRefExpression(node.getHashSymbol().get()));
+            }
+            Set<GlutenVariableReferenceExpression> prePartitionedInputs = node.getPrePartitionedInputs().stream()
+                    .map(this::buildVariableRefExpression)
+                    .collect(toImmutableSet());
+            int preSortedOrderPrefix = node.getPreSortedOrderPrefix();
+            return new GlutenWindowNode(node.getId(),
+                    source,
+                    specification,
+                    windowFunctions,
+                    hashVariable,
+                    prePartitionedInputs,
+                    preSortedOrderPrefix);
+        }
+
+        @Override
+        public GlutenTopNRowNumberNode visitTopNRanking(TopNRankingNode node, Void context)
+        {
+            GlutenPlanNode source = node.getSource().accept(this, context);
+
+            List<GlutenVariableReferenceExpression> partitionBy = node.getSpecification().getPartitionBy().stream()
+                    .map(this::buildVariableRefExpression)
+                    .collect(toImmutableList());
+            Optional<GlutenOrderingScheme> orderingScheme = Optional.empty();
+            if (node.getSpecification().getOrderingScheme().isPresent()) {
+                OrderingScheme os = node.getSpecification().getOrderingScheme().get();
+                orderingScheme = Optional.of(new GlutenOrderingScheme(os.getOrderBy().stream().map(symbol ->
+                        new GlutenOrderingScheme.Ordering(buildVariableRefExpression(symbol), os.getOrdering(symbol))
+                ).collect(toImmutableList())));
+            }
+            GlutenWindowNode.Specification specification = new GlutenWindowNode.Specification(partitionBy, orderingScheme);
+
+            GlutenVariableReferenceExpression rowNumberVariable = buildVariableRefExpression(node.getRankingSymbol());
+
+            int maxRowCountPerPartition = node.getMaxRankingPerPartition();
+
+            boolean partial = node.isPartial();
+
+            Optional<GlutenVariableReferenceExpression> hashVariable = Optional.empty();
+            if (node.getHashSymbol().isPresent()) {
+                hashVariable = Optional.of(buildVariableRefExpression(node.getHashSymbol().get()));
+            }
+
+            return new GlutenTopNRowNumberNode(node.getId(),
+                    source,
+                    specification,
+                    rowNumberVariable,
+                    maxRowCountPerPartition,
+                    partial,
+                    hashVariable);
         }
     }
 }

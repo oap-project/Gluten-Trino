@@ -5,8 +5,8 @@ namespace io::trino::bridge {
 TpchPartitionFunction::TpchPartitionFunction(int64_t rowsPerPartition, int numPartitions)
     : _rowsPerPartition(rowsPerPartition), _numPartitions(numPartitions) {}
 
-void TpchPartitionFunction::partition(const facebook::velox::RowVector& input,
-                                      std::vector<uint32_t>& partitions) {
+std::optional<uint32_t> TpchPartitionFunction::partition(
+    const facebook::velox::RowVector& input, std::vector<uint32_t>& partitions) {
   auto size = input.size();
   partitions.resize(size);
 
@@ -29,6 +29,8 @@ void TpchPartitionFunction::partition(const facebook::velox::RowVector& input,
     }
     partitions[i] = static_cast<uint32_t>(bucket);
   }
+
+  return std::nullopt;
 }
 
 int64_t TpchPartitionFunction::rowNumberFromOrderKey(int64_t orderKey) {

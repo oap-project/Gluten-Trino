@@ -28,6 +28,7 @@ import io.trino.spi.function.FunctionKind;
 import io.trino.spi.function.OperatorType;
 import io.trino.spi.function.Signature;
 import io.trino.spi.type.FixedWidthType;
+import io.trino.spi.type.RowType;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.type.VarcharType;
@@ -58,6 +59,7 @@ import io.trino.sql.tree.Row;
 import io.trino.sql.tree.SearchedCaseExpression;
 import io.trino.sql.tree.SimpleCaseExpression;
 import io.trino.sql.tree.StringLiteral;
+import io.trino.sql.tree.SubscriptExpression;
 import io.trino.sql.tree.SymbolReference;
 import io.trino.sql.tree.WhenClause;
 import io.trino.type.TypeCoercion;
@@ -277,6 +279,25 @@ public final class ExpressionTranslator
         protected GlutenRowExpression visitDecimalLiteral(DecimalLiteral node, Void context)
         {
             return new GlutenConstantExpression(node.getValue(), DOUBLE);
+        }
+
+        @Override
+        protected GlutenRowExpression visitSubscriptExpression(SubscriptExpression node, Void context)
+        {
+            GlutenRowExpression base = process(node.getBase(), context);
+            GlutenRowExpression index = process(node.getIndex(), context);
+
+            if (base.getType() instanceof RowType) {
+                //long value = (Long) ((GlutenConstantExpression) index).getValue();
+                //return new SpecialForm(DEREFERENCE, process(node, context).getType(), base, constant((int) value - 1, INTEGER));
+
+                return new GlutenSpecialFormExpression(GlutenSpecialFormExpression.Form.DEREFERENCE, process(node, context).getType(), ImmutableList.of(base, index));
+            }
+
+            return buildCallExpression(
+                    metadata.resolveOperator(session, OperatorType.SUBSCRIPT, ImmutableList.of(base.getType(), index.getType())),
+                    ImmutableList.of(base, index),
+                    true);
         }
 
         @Override

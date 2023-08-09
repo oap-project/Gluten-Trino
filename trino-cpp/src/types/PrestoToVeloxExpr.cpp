@@ -115,8 +115,6 @@ velox::variant VeloxExprConverter::getConstantValue(const velox::TypePtr& type,
       return valueVector->as<velox::SimpleVector<int8_t>>()->valueAt(0);
     case TypeKind::TIMESTAMP:
       return valueVector->as<velox::SimpleVector<velox::Timestamp>>()->valueAt(0);
-    case TypeKind::DATE:
-      return valueVector->as<velox::SimpleVector<velox::Date>>()->valueAt(0);
     case TypeKind::BOOLEAN:
       return valueVector->as<velox::SimpleVector<bool>>()->valueAt(0);
     case TypeKind::DOUBLE:
