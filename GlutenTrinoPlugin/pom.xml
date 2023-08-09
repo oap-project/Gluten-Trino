@@ -10,9 +10,9 @@
     </parent>
 
     <groupId>io.trino</groupId>
-    <artifactId>trino-cpp-plugin</artifactId>
+    <artifactId>gluten-trino-plugin</artifactId>
     <version>411</version>
-    <name>trino-cpp-plugin</name>
+    <name>gluten-trino-plugin</name>
     <packaging>jar</packaging>
 
     <properties>
