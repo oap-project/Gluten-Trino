@@ -40,9 +40,11 @@ public class NativeExecutorModule
     {
         ServerConfig serverConfig = buildConfigObject(ServerConfig.class);
 
+        // Always bind config in case of 'Configuration was not used.'
+        configBinder(binder).bindConfig(NativeTaskConfig.class);
+        binder.bind(NativeConfigs.class).in(Scopes.SINGLETON);
+
         if (serverConfig.getLaunchNativeEngine()) {
-            configBinder(binder).bindConfig(NativeTaskConfig.class);
-            binder.bind(NativeConfigs.class).in(Scopes.SINGLETON);
             binder.bind(NativeSqlTaskExecutionManager.class).in(Scopes.SINGLETON);
             jsonCodecBinder(binder).bindJsonCodec(GlutenPlanFragment.class);
         }

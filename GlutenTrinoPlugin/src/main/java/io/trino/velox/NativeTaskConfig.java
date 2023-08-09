@@ -14,13 +14,10 @@
 
 package io.trino.velox;
 
-import com.sun.management.OperatingSystemMXBean;
 import io.airlift.configuration.Config;
 import io.airlift.units.DataSize;
 
 import javax.validation.constraints.NotNull;
-
-import java.lang.management.ManagementFactory;
 
 public class NativeTaskConfig
 {
@@ -28,10 +25,8 @@ public class NativeTaskConfig
     // the verbose log level in trino_bridge be 1, and the verbose log level in TrinoExchangeSource be 2.
     private String logVerboseModules = "";
 
-    public static final long AVAILABLE_NONHEAP_MEMORY = ((OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean())
-            .getTotalMemorySize() - Runtime.getRuntime().maxMemory();
-    private DataSize maxQueryMemoryPerNode = DataSize.ofBytes(Math.round(AVAILABLE_NONHEAP_MEMORY * 0.3));
-    private DataSize maxNodeMemory = DataSize.ofBytes(Math.round(AVAILABLE_NONHEAP_MEMORY * 0.7));
+    private DataSize maxQueryMemoryPerNode = DataSize.of(1, DataSize.Unit.GIGABYTE);
+    private DataSize maxNodeMemory = DataSize.of(1, DataSize.Unit.GIGABYTE);
     private boolean useMmapAllocator;
     private boolean useMmapArena;
     private int mmapArenaCapacityRatio = 10;
