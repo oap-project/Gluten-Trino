@@ -16,8 +16,8 @@
 
 #include <boost/algorithm/string/case_conv.hpp>
 
-#include "src/types/ParseTypeSignature.h"
 #include "src/protocol/Base64Util.h"
+#include "src/types/ParseTypeSignature.h"
 #include "velox/common/base/Exceptions.h"
 #include "velox/vector/ComplexVector.h"
 #include "velox/vector/ConstantVector.h"
@@ -411,9 +411,8 @@ std::shared_ptr<const CastTypedExpr> makeCastExpr(const TypedExprPtr& expr,
   return std::make_shared<CastTypedExpr>(type, std::move(inputs), false);
 }
 
-std::shared_ptr<const CallTypedExpr> convertSwitchExpr(
-    const velox::TypePtr& returnType,
-    std::vector<TypedExprPtr> args) {
+std::shared_ptr<const CallTypedExpr> convertSwitchExpr(const velox::TypePtr& returnType,
+                                                       std::vector<TypedExprPtr> args) {
   auto valueExpr = args.front();
   args.erase(args.begin());
 
@@ -483,14 +482,15 @@ TypedExprPtr convertBindExpr(const std::vector<TypedExprPtr>& args) {
 }
 
 template <TypeKind KIND>
-velox::ArrayVectorPtr toArrayVector(std::vector<TypedExprPtr>::const_iterator begin,
+velox::ArrayVectorPtr toArrayVector(const velox::TypePtr& elementType,
+                                    std::vector<TypedExprPtr>::const_iterator begin,
                                     std::vector<TypedExprPtr>::const_iterator end,
                                     velox::memory::MemoryPool* pool) {
   using T = typename velox::TypeTraits<KIND>::NativeType;
 
   const auto size = end - begin;
   auto elements = std::dynamic_pointer_cast<velox::FlatVector<T>>(
-      velox::BaseVector::create(velox::CppToType<T>::create(), size, pool));
+      velox::BaseVector::create(elementType, size, pool));
 
   for (auto i = 0; i < size; ++i) {
     auto constant = dynamic_cast<const ConstantTypedExpr*>((*(begin + i)).get());
@@ -524,7 +524,8 @@ TypedExprPtr convertInExpr(const std::vector<TypedExprPtr>& args,
   VELOX_USER_CHECK_GE(numArgs, 2);
 
   auto arrayVector = VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(
-      toArrayVector, args[0]->type()->kind(), args.begin() + 1, args.end(), pool);
+      toArrayVector, args[0]->type()->kind(), args[0]->type(), args.begin() + 1,
+      args.end(), pool);
   auto constantVector = std::make_shared<velox::ConstantVector<velox::ComplexType>>(
       pool, 1, 0, arrayVector);
 

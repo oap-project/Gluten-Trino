@@ -22,6 +22,7 @@ import io.trino.metadata.TableHandle;
 import io.trino.spi.block.BlockEncodingSerde;
 import io.trino.spi.protocol.GlutenColumnHandle;
 import io.trino.spi.type.BigintType;
+import io.trino.spi.type.DoubleType;
 import io.trino.spi.type.RowType;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
@@ -114,7 +115,7 @@ public class PlanNodeTranslator
         {
             Type type = symbolType.get(symbol);
             if (type == null) {
-                throw new IllegalStateException("Unknown symbol reference: " + symbol.getName());
+                throw new IllegalStateException("Unknown variable reference: " + symbol.getName());
             }
             return new GlutenVariableReferenceExpression(symbol.getName(), type);
         }
@@ -664,7 +665,15 @@ public class PlanNodeTranslator
             }
             GlutenWindowNode.Specification specification = new GlutenWindowNode.Specification(partitionBy, orderingScheme);
 
-            GlutenVariableReferenceExpression rowNumberVariable = buildVariableRefExpression(node.getRankingSymbol());
+            // The ranking symbol of rank functions is not included in fragment's symbolType map, so we have to translate rowNumberVariable manually
+            String rankName = node.getRankingSymbol().getName();
+            GlutenVariableReferenceExpression rowNumberVariable;
+            if ("percent_rank".equals(rankName)) {
+                rowNumberVariable = new GlutenVariableReferenceExpression(rankName, DoubleType.DOUBLE);
+            }
+            else {
+                rowNumberVariable = new GlutenVariableReferenceExpression(rankName, BigintType.BIGINT);
+            }
 
             int maxRowCountPerPartition = node.getMaxRankingPerPartition();
 

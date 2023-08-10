@@ -85,11 +85,11 @@ AbstractClasses:
         - { name: GlutenJoinNode,               key: join}
         - { name: GlutenSemiJoinNode,           key: semijoin}
         - { name: GlutenAssignUniqueId,         key: assignuniqueid}
-        - { name: GlutenEnforceSingleRowNode,     key: enforcesinglerow}
-        - { name: GlutenGroupIdNode,              key: groupid}
-        - { name: GlutenMarkDistinctNode,         key: markdistinct}
-        - { name: GlutenWindowNode,               key: window}
-        - { name: GlutenTopNRowNumberNode,        key: topnrownumber}
+        - { name: GlutenEnforceSingleRowNode,   key: enforcesinglerow}
+        - { name: GlutenGroupIdNode,            key: groupid}
+        - { name: GlutenMarkDistinctNode,       key: markdistinct}
+        - { name: GlutenWindowNode,             key: window}
+        - { name: GlutenTopNRowNumberNode,      key: topnrownumber}
 
     GlutenConnectorTableHandle:
       super: JsonEncodedSubclass
