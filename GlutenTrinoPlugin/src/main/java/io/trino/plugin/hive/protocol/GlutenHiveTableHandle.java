@@ -17,6 +17,8 @@ package io.trino.plugin.hive.protocol;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.spi.protocol.GlutenConnectorTableHandle;
+import io.trino.spi.protocol.GlutenSubfield;
+import io.trino.spi.protocol.GlutenTupleDomain;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,17 +30,19 @@ public class GlutenHiveTableHandle
 {
     private final String schemaName;
     private final String tableName;
-
+    private final GlutenTupleDomain<GlutenSubfield> domainPredicate;
     private final Optional<List<List<String>>> analyzePartitionValues;
 
     @JsonCreator
     public GlutenHiveTableHandle(
             @JsonProperty("schemaName") String schemaName,
             @JsonProperty("tableName") String tableName,
+            @JsonProperty("domainPredicate") GlutenTupleDomain<GlutenSubfield> domainPredicate,
             @JsonProperty("analyzePartitionValues") Optional<List<List<String>>> analyzePartitionValues)
     {
         this.schemaName = requireNonNull(schemaName, "schemaName is null");
         this.tableName = requireNonNull(tableName, "tableName is null");
+        this.domainPredicate = requireNonNull(domainPredicate, "domainPredicate is null");
         this.analyzePartitionValues = requireNonNull(analyzePartitionValues, "analyzePartitionValues is null");
     }
 
@@ -52,6 +56,12 @@ public class GlutenHiveTableHandle
     public String getTableName()
     {
         return tableName;
+    }
+
+    @JsonProperty
+    public GlutenTupleDomain<GlutenSubfield> getDomainPredicate()
+    {
+        return domainPredicate;
     }
 
     @JsonProperty

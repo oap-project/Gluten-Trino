@@ -27,12 +27,17 @@ import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.protocol.GlutenDomain;
+import io.trino.spi.protocol.GlutenSubfield;
+import io.trino.spi.protocol.GlutenTupleDomain;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
 import static io.trino.plugin.hive.acid.AcidTransaction.NO_ACID_TRANSACTION;
@@ -510,6 +515,13 @@ public class HiveTableHandle
     @Override
     public GlutenHiveTableHandle getProtocol()
     {
-        return new GlutenHiveTableHandle(schemaName, tableName, analyzePartitionValues);
+        Map<GlutenSubfield, GlutenDomain> domains = compactEffectivePredicate
+                .getDomains().get()
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(k -> new GlutenSubfield(k.getKey().getName(), new ArrayList<>()),
+                        v -> GlutenDomain.create(v.getValue().getValues().getProtocol(), v.getValue().isNullAllowed())));
+        GlutenTupleDomain<GlutenSubfield> domainPredicate = GlutenTupleDomain.withColumnDomains(domains);
+        return new GlutenHiveTableHandle(schemaName, tableName, domainPredicate, analyzePartitionValues);
     }
 }

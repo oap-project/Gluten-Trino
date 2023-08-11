@@ -11,6 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 namespace io::trino::protocol {
 
 template <typename T>
@@ -35,7 +36,7 @@ struct TupleDomain<std::shared_ptr<T>> {
 template <class T>
 struct ColumnDomain {
   T column;
-  Domain domain; // dependency
+  GlutenDomain domain; // dependency
 };
 
 } // namespace io::trino::protocol

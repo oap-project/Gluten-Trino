@@ -98,12 +98,12 @@ AbstractClasses:
         - { name: GlutenHiveTableHandle,        key: system:io.trino.plugin.hive.protocol.GlutenHiveTableHandle}
         - { name: GlutenTpchTableHandle,        key: system:io.trino.plugin.tpch.protocol.GlutenTpchTableHandle }
 
-    ValueSet:
+    GlutenValueSet:
       super: JsonEncodedSubclass
       subclasses:
-        - { name: EquatableValueSet,          key: equatable }
-        # - { name: SortedRangeSet,             key: sortable } //TBD: Range representation between Trino and Presto is different, fix it later.
-        - { name: AllOrNoneValueSet,          key: allOrNone }
+        - { name: GlutenEquatableValueSet,          key: equatable }
+        - { name: GlutenSortedRangeSet,             key: sortable }
+        - { name: GlutenAllOrNoneValueSet,          key: allOrNone }
 
     GlutenColumnHandle:
       super: JsonEncodedSubclass
@@ -155,11 +155,6 @@ JavaClasses:
 #  - core/trino-spi/src/main/java/io/trino/spi/connector/ConnectorTableHandle.java
   - core/trino-spi/src/main/java/io/trino/spi/connector/SortOrder.java
   - core/trino-spi/src/main/java/io/trino/spi/function/FunctionKind.java
-  - core/trino-spi/src/main/java/io/trino/spi/predicate/AllOrNoneValueSet.java
-  - core/trino-spi/src/main/java/io/trino/spi/predicate/Domain.java
-  - core/trino-spi/src/main/java/io/trino/spi/predicate/EquatableValueSet.java
-# - core/trino-spi/src/main/java/io/trino/spi/predicate/SortedRangeSet.java
-  - core/trino-spi/src/main/java/io/trino/spi/predicate/ValueSet.java
   - plugin/trino-hive/src/main/java/io/trino/plugin/hive/HivePartitionKey.java
   - plugin/trino-hive/src/main/java/io/trino/plugin/hive/metastore/Column.java
   - plugin/trino-hive/src/main/java/io/trino/plugin/hive/metastore/SortingColumn.java
@@ -239,3 +234,41 @@ trinoCppJavaClasses:
   - src/main/java/io/trino/velox/protocol/GlutenVariableExpressionSerializer.java
   - src/main/java/io/trino/velox/protocol/GlutenVariableReferenceExpression.java
   - src/main/java/io/trino/velox/protocol/SplitAssignmentsMessage.java
+  - src/main/java/io/trino/velox/protocol/GlutenPartitioningScheme.java
+  - src/main/java/io/trino/velox/protocol/GlutenConnectorId.java
+  - src/main/java/io/trino/velox/protocol/GlutenPartitioning.java
+  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchColumnHandle.java
+  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchTableLayoutHandle.java
+  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchSplit.java
+  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchTransactionHandle.java
+  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchTableHandle.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenTableToPartitionMapping.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenBucketFunctionType.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveTransactionHandle.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenDwrfEncryptionMetadata.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveBucketProperty.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenEncryptionMetadata.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveColumnHandle.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveSplit.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenStorage.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenEncryptionInformation.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveTableHandle.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveFileSplit.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenCacheQuotaScope.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenCacheQuotaRequirement.java
+  - src/main/java/io/trino/plugin/hive/protocol/GlutenBucketConversion.java
+  - src/main/java/io/trino/spi/predicate/GlutenMarker.java
+  - src/main/java/io/trino/spi/protocol/GlutenAllOrNoneValueSet.java
+  - src/main/java/io/trino/spi/protocol/GlutenConnectorTableLayoutHandle.java
+  - src/main/java/io/trino/spi/protocol/GlutenColumnHandle.java
+  - src/main/java/io/trino/spi/protocol/GlutenDomain.java
+  - src/main/java/io/trino/spi/protocol/GlutenEquatableValueSet.java
+  - src/main/java/io/trino/spi/protocol/GlutenSubfieldTokenizer.java
+  - src/main/java/io/trino/spi/protocol/GlutenConnectorSplit.java
+  - src/main/java/io/trino/spi/protocol/GlutenNodeSelectionStrategy.java
+  - src/main/java/io/trino/spi/protocol/GlutenRange.java
+  - src/main/java/io/trino/spi/protocol/GlutenConnectorTableHandle.java
+  - src/main/java/io/trino/spi/protocol/GlutenSortedRangeSet.java
+  - src/main/java/io/trino/spi/protocol/GlutenSubfield.java
+  - src/main/java/io/trino/spi/protocol/GlutenConnectorTransactionHandle.java
+  - src/main/java/io/trino/spi/protocol/GlutenValueSet.java

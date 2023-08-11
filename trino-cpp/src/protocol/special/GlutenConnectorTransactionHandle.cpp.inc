@@ -1,4 +1,5 @@
 // dependency GlutenTpchTransactionHandle
+// dependency GlutenTupleDomain
 
 namespace io::trino::protocol {
 void to_json(json& j, const std::shared_ptr<ConnectorTransactionHandle>& p) {

@@ -156,7 +156,14 @@ int64_t toInt64(const std::shared_ptr<protocol::Block>& block,
   return VariantConverter::convert<velox::TypeKind::BIGINT>(value).value<int64_t>();
 }
 
-/*
+int128_t toInt128(
+    const std::shared_ptr<protocol::Block>& block,
+    const VeloxExprConverter& exprConverter,
+    const TypePtr& type) {
+  auto value = exprConverter.getConstantValue(type, *block);
+  return value.value<velox::TypeKind::HUGEINT>();
+}
+
 std::unique_ptr<common::BigintRange> bigintRangeToFilter(
     const protocol::Range& range,
     bool nullAllowed,
@@ -179,12 +186,34 @@ std::unique_ptr<common::BigintRange> bigintRangeToFilter(
   return std::make_unique<common::BigintRange>(low, high, nullAllowed);
 }
 
+std::unique_ptr<common::HugeintRange> hugeintRangeToFilter(
+    const protocol::Range& range,
+    bool nullAllowed,
+    const VeloxExprConverter& exprConverter,
+    const TypePtr& type) {
+  bool lowUnbounded = range.low.valueBlock == nullptr;
+  auto low = lowUnbounded ? std::numeric_limits<int128_t>::min()
+                          : toInt128(range.low.valueBlock, exprConverter, type);
+  if (!lowUnbounded && range.low.bound == protocol::Bound::ABOVE) {
+    low++;
+  }
+
+  bool highUnbounded = range.high.valueBlock == nullptr;
+  auto high = highUnbounded
+      ? std::numeric_limits<int128_t>::max()
+      : toInt128(range.high.valueBlock, exprConverter, type);
+  if (!highUnbounded && range.high.bound == protocol::Bound::BELOW) {
+    high--;
+  }
+  return std::make_unique<common::HugeintRange>(low, high, nullAllowed);
+}
+
 int64_t dateToInt64(
     const std::shared_ptr<protocol::Block>& block,
     const VeloxExprConverter& exprConverter,
     const TypePtr& type) {
   auto value = exprConverter.getConstantValue(type, *block);
-  return value.value<Date>().days();
+  return value.value<int32_t>();
 }
 
 double toDouble(
@@ -538,17 +567,23 @@ std::unique_ptr<common::Filter> combineBytesRanges(
   return std::make_unique<common::MultiRange>(
       std::move(bytesGeneric), nullAllowed, false);
 }
+
 std::unique_ptr<common::Filter> toFilter(
     const TypePtr& type,
     const protocol::Range& range,
     bool nullAllowed,
     const VeloxExprConverter& exprConverter) {
+  if (type->isDate()) {
+    return dateRangeToFilter(range, nullAllowed, exprConverter, type);
+  }
   switch (type->kind()) {
     case TypeKind::TINYINT:
     case TypeKind::SMALLINT:
     case TypeKind::INTEGER:
     case TypeKind::BIGINT:
       return bigintRangeToFilter(range, nullAllowed, exprConverter, type);
+    case TypeKind::HUGEINT:
+      return hugeintRangeToFilter(range, nullAllowed, exprConverter, type);
     case TypeKind::DOUBLE:
       return doubleRangeToFilter(range, nullAllowed, exprConverter, type);
     case TypeKind::VARCHAR:
@@ -557,8 +592,6 @@ std::unique_ptr<common::Filter> toFilter(
       return boolRangeToFilter(range, nullAllowed, exprConverter, type);
     case TypeKind::REAL:
       return floatRangeToFilter(range, nullAllowed, exprConverter, type);
-    case TypeKind::DATE:
-      return dateRangeToFilter(range, nullAllowed, exprConverter, type);
     default:
       VELOX_UNSUPPORTED("Unsupported range type: {}", type->toString());
   }
@@ -592,6 +625,17 @@ std::unique_ptr<common::Filter> toFilter(
       }
 
       return toFilter(type, ranges[0], nullAllowed, exprConverter);
+    }
+
+    if (type->isDate()) {
+      std::vector<std::unique_ptr<common::BigintRange>> dateFilters;
+      dateFilters.reserve(ranges.size());
+      for (const auto& range : ranges) {
+        dateFilters.emplace_back(
+            dateRangeToFilter(range, nullAllowed, exprConverter, type));
+      }
+      return std::make_unique<common::BigintMultiRange>(
+          std::move(dateFilters), nullAllowed);
     }
 
     if (type->kind() == TypeKind::BIGINT || type->kind() == TypeKind::INTEGER ||
@@ -654,8 +698,9 @@ std::unique_ptr<common::Filter> toFilter(
       }
     }
     VELOX_UNSUPPORTED(
-        "EquatableValueSet (with non-empty entries) to Velox filter conversion is not
-supported yet."); } else if ( auto allOrNoneValueSet =
+        "EquatableValueSet (with non-empty entries) to Velox filter conversion is not supported yet.");
+  } else if (
+      auto allOrNoneValueSet =
           std::dynamic_pointer_cast<protocol::AllOrNoneValueSet>(
               domain.values)) {
     VELOX_UNSUPPORTED(
@@ -663,7 +708,6 @@ supported yet."); } else if ( auto allOrNoneValueSet =
   }
   VELOX_UNSUPPORTED("Unsupported filter found.");
 }
-*/
 
 std::shared_ptr<connector::ConnectorTableHandle> toConnectorTableHandle(
     const protocol::TableHandle& tableHandle, const VeloxExprConverter& exprConverter,
@@ -678,7 +722,12 @@ std::shared_ptr<connector::ConnectorTableHandle> toConnectorTableHandle(
             : fmt::format("{}.{}", hiveTable->schemaName, hiveTable->tableName);
 
     connector::hive::SubfieldFilters subfieldFilters;
-
+    auto domains = hiveTable->domainPredicate.domains;
+    for (const auto& domain : *domains) {
+      auto filter = domain.second;
+      subfieldFilters[common::Subfield(domain.first)] =
+          toFilter(domain.second, exprConverter);
+    }
     return std::make_shared<connector::hive::HiveTableHandle>(
         tableHandle.connectorId.catalogName, tableName, true, std::move(subfieldFilters),
         nullptr);
