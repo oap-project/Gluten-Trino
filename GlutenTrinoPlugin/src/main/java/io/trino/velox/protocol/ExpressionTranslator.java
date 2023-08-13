@@ -28,6 +28,7 @@ import io.trino.spi.function.FunctionKind;
 import io.trino.spi.function.OperatorType;
 import io.trino.spi.function.Signature;
 import io.trino.spi.type.FixedWidthType;
+import io.trino.spi.type.IntegerType;
 import io.trino.spi.type.RowType;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
@@ -303,6 +304,9 @@ public final class ExpressionTranslator
         @Override
         protected GlutenRowExpression visitLongLiteral(LongLiteral node, Void context)
         {
+            if (node.getValue() >= Integer.MIN_VALUE && node.getValue() <= Integer.MAX_VALUE) {
+                return new GlutenConstantExpression(node.getValue(), IntegerType.INTEGER);
+            }
             return new GlutenConstantExpression(node.getValue(), BIGINT);
         }
 

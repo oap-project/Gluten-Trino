@@ -356,8 +356,6 @@ exec::AggregateRegistrationResult registerTrinoSumAggregate(const std::string& n
                          inputType->kindName());
           }
         } else {
-          VLOG(google::INFO) << "inputType is " << inputType->name() << " "
-                             << inputType->kindName();
           checkSumCountRowType(inputType);
           switch (resultType->kind()) {
             case TypeKind::DOUBLE:

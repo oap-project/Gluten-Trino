@@ -808,11 +808,13 @@ void readColumns(ByteStream* source, memory::MemoryPool* pool,
                  const std::vector<TypePtr>& types, std::vector<VectorPtr>* result,
                  bool useLosslessTimestamp);
 
+// if the column is not nullable, returns -1.
+// if the column is nullable, but null count is 0, return 0.
 vector_size_t readNulls(ByteStream* source, vector_size_t size, BaseVector* result) {
   if (source->readByte() == 0) {
     result->clearNulls(0, size);
     result->setNullCount(0);
-    return 0;
+    return -1; // means the column is not nullable.
   }
 
   BufferPtr nulls = result->mutableNulls(size);
@@ -824,13 +826,14 @@ vector_size_t readNulls(ByteStream* source, vector_size_t size, BaseVector* resu
   bits::negate(reinterpret_cast<char*>(rawNulls), numBytes * 8);
   vector_size_t nullCount = nulls ? BaseVector::countNulls(nulls, 0, size) : 0;
   result->setNullCount(nullCount);
+  // null count could be 0
   return nullCount;
 }
 
 template <typename T>
 void readValues(ByteStream* source, vector_size_t size, BufferPtr nulls,
                 vector_size_t nullCount, BufferPtr values) {
-  if (nullCount) {
+  if (nullCount != -1) {
     // Reference:
     //   io.trino.spi.block.LongArrayBlockEncoding#readBlock
     //   io.trino.spi.block.IntArrayBlockEncoding#readBlock
@@ -839,7 +842,6 @@ void readValues(ByteStream* source, vector_size_t size, BufferPtr nulls,
     if (nonNullPositionCount) {
       auto rawValues = values->asMutable<T>();
       int32_t sliceSize = Unsafe::instance().arraySliceSize<T>(nonNullPositionCount);
-      VLOG(1) << "Read slice size is " << sliceSize;
       source->readBytes(reinterpret_cast<uint8_t*>(rawValues), sliceSize);
 
       int position = nonNullPositionCount - 1;
@@ -1224,7 +1226,7 @@ void readRowVector(ByteStream* source, std::shared_ptr<const Type> type,
   // refer to io.trino.spi.block.RowBlockEncoding#readBlock
   // todo: handle fieldBlockOffsets
   // It should be 'size + 1' in Trino, but 'size' indeed works.
-  if (nullCount) {
+  if (nullCount != -1) {
     int32_t fieldBlockOffsetsSkipSize =
         Unsafe::instance().arraySliceSize<int32_t>(size + 1);
     source->skip(fieldBlockOffsetsSkipSize);
@@ -1257,7 +1259,6 @@ void readRowVector(ByteStream* source, std::shared_ptr<const Type> type,
 
 std::string readLengthPrefixedString(ByteStream* source) {
   int32_t size = source->read<int32_t>();
-  VLOG(google::INFO) << "Length Prefixed String Size is " << size;
   std::string value;
   value.resize(size);
   source->readBytes(&value[0], size);
