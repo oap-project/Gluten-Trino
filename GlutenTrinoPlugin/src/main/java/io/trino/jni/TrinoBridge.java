@@ -102,7 +102,7 @@ public class TrinoBridge
 
     public native String getTaskStatus(long handlePtr, String taskId);
 
-    public native String getTaskInfo(long handlePtr, String taskId);
+    public native String getTaskStats(long handlePtr, String taskId);
 
     static {
         System.loadLibrary("trino_bridge");

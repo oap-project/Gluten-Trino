@@ -20,6 +20,7 @@ import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.airlift.json.JsonBinder;
 import io.airlift.json.JsonCodecBinder;
 import io.trino.execution.TaskStatus;
+import io.trino.operator.TaskStats;
 import io.trino.server.ServerConfig;
 import io.trino.sql.planner.PlanFragment;
 import io.trino.velox.NativeConfigs;
@@ -58,5 +59,6 @@ public class NativeExecutorModule
         JsonCodecBinder.jsonCodecBinder(binder).bindJsonCodec(SplitAssignmentsMessage.class);
         JsonCodecBinder.jsonCodecBinder(binder).bindJsonCodec(TaskStatus.class);
         JsonCodecBinder.jsonCodecBinder(binder).bindJsonCodec(NativeConfigs.class);
+        JsonCodecBinder.jsonCodecBinder(binder).bindJsonCodec(TaskStats.class);
     }
 }

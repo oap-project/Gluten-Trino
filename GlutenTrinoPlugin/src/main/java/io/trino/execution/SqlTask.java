@@ -41,6 +41,7 @@ import io.trino.spi.predicate.Domain;
 import io.trino.sql.planner.PlanFragment;
 import io.trino.sql.planner.plan.DynamicFilterId;
 import io.trino.sql.planner.plan.PlanNodeId;
+import io.trino.velox.execution.NativeSqlTaskExecution;
 import org.joda.time.DateTime;
 
 import javax.annotation.Nullable;
@@ -394,6 +395,9 @@ public class SqlTask
         }
         TaskExecution taskExecution = taskHolder.getTaskExecution();
         if (taskExecution != null) {
+            if (taskExecution instanceof NativeSqlTaskExecution) {
+                return ((NativeSqlTaskExecution) taskExecution).getTaskStats();
+            }
             return taskExecution.getTaskContext().getTaskStats();
         }
         // if the task completed without creation, set end time

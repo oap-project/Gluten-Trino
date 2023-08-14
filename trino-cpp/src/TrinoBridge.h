@@ -27,7 +27,7 @@ JNIEXPORT jstring JNICALL Java_io_trino_jni_TrinoBridge_getTaskStatus(JNIEnv* en
                                                                       jlong handlePtr,
                                                                       jstring jTaskId);
 
-JNIEXPORT jstring JNICALL Java_io_trino_jni_TrinoBridge_getTaskInfo(JNIEnv* env,
+JNIEXPORT jstring JNICALL Java_io_trino_jni_TrinoBridge_getTaskStats(JNIEnv* env,
                                                                     jobject obj,
                                                                     jlong handlePtr,
                                                                     jstring jTaskId);

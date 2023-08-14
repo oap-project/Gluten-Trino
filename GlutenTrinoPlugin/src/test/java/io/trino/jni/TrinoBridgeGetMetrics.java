@@ -15,7 +15,6 @@ package io.trino.jni;
 
 import io.airlift.json.JsonCodec;
 import io.airlift.json.JsonCodecFactory;
-import io.trino.execution.TaskInfo;
 import io.trino.execution.TaskStatus;
 
 public class TrinoBridgeGetMetrics
@@ -33,17 +32,6 @@ public class TrinoBridgeGetMetrics
         System.out.println(taskStatus.toString());
     }
 
-    static void testTaskInfo(TrinoBridge bridge, long handle)
-    {
-        String info = bridge.getTaskInfo(handle, "aaa");
-        System.out.println(info);
-
-        JsonCodec<TaskInfo> codec = new JsonCodecFactory().jsonCodec(TaskInfo.class);
-        TaskInfo taskInfo = codec.fromJson(info);
-
-        System.out.println(taskInfo.toString());
-    }
-
     public static void main(String[] args)
     {
         TrinoBridge bridge = new TrinoBridge();
@@ -54,7 +42,6 @@ public class TrinoBridgeGetMetrics
             System.out.println(task1 == 0);
 
             testTaskStatus(bridge, handle);
-            testTaskInfo(bridge, handle);
 
             long task2 = bridge.createTestTask(handle, "aaa");
             System.out.println(task2 == 1);

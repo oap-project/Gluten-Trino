@@ -14,8 +14,10 @@
 #include "utils/JniUtils.h"
 #include "velox/common/base/Exceptions.h"
 #include "velox/common/caching/AsyncDataCache.h"
+#include "velox/common/caching/SsdCache.h"
 #include "velox/common/memory/Memory.h"
 #include "velox/common/memory/MemoryPool.h"
+#include "velox/common/memory/MmapAllocator.h"
 #include "velox/connectors/Connector.h"
 #include "velox/core/PlanFragment.h"
 #include "velox/core/QueryConfig.h"
@@ -24,9 +26,6 @@
 #include "velox/exec/Task.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/type/Type.h"
-#include "velox/common/caching/AsyncDataCache.h"
-#include "velox/common/caching/SsdCache.h"
-#include "velox/common/memory/MmapAllocator.h"
 
 #include "NativeConfigs.h"
 
@@ -182,8 +181,7 @@ class JniHandle {
  public:
   explicit JniHandle(const NativeConfigsPtr& nativeConfigs,
                      const NativeSqlTaskExecutionManagerPtr& javaManager)
-      : nativeConfigs_(nativeConfigs),
-        javaManager_(javaManager) {
+      : nativeConfigs_(nativeConfigs), javaManager_(javaManager) {
     driverExecutor_ = getDriverCPUExecutor(nativeConfigs_->getMaxWorkerThreads());
     exchangeIOExecutor_ =
         getExchangeIOCPUExecutor(nativeConfigs_->getExchangeClientThreads());
@@ -296,8 +294,7 @@ class JniHandle {
       const auto asyncCacheSsdSize = nativeConfigs_->getAsyncCacheSsdSize();
       if (asyncCacheSsdSize > 0) {
         constexpr int32_t kNumSsdShards = 16;
-        cacheExecutor_ =
-            std::make_unique<folly::IOThreadPoolExecutor>(kNumSsdShards);
+        cacheExecutor_ = std::make_unique<folly::IOThreadPoolExecutor>(kNumSsdShards);
         auto asyncCacheSsdCheckpointSize =
             nativeConfigs_->getAsyncCacheSsdCheckpointSize();
         auto asyncCacheSsdDisableFileCow =
@@ -307,19 +304,14 @@ class JniHandle {
                   << "GB, file cow "
                   << (asyncCacheSsdDisableFileCow ? "DISABLED" : "ENABLED");
         ssd = std::make_unique<velox::cache::SsdCache>(
-            nativeConfigs_->getAsyncCacheSsdPath(),
-            asyncCacheSsdSize,
-            kNumSsdShards,
-            cacheExecutor_.get(),
-            asyncCacheSsdCheckpointSize,
+            nativeConfigs_->getAsyncCacheSsdPath(), asyncCacheSsdSize, kNumSsdShards,
+            cacheExecutor_.get(), asyncCacheSsdCheckpointSize,
             asyncCacheSsdDisableFileCow);
       }
       cache_ = velox::cache::AsyncDataCache::create(allocator_.get(), std::move(ssd));
     } else {
-      VELOX_CHECK_EQ(
-          nativeConfigs_->getAsyncCacheSsdSize(),
-          0,
-          "Async data cache cannot be disabled if ssd cache is enabled");
+      VELOX_CHECK_EQ(nativeConfigs_->getAsyncCacheSsdSize(), 0,
+                     "Async data cache cannot be disabled if ssd cache is enabled");
     }
 
     memory::MemoryAllocator::setDefaultInstance(allocator_.get());
@@ -345,6 +337,12 @@ class JniHandle {
     ss << fmt::format("Task {} status:\n", id.fullId());
 
     auto&& taskStatus = task->taskStats();
+    ss << fmt::format(
+        "\tCreateTime: {} ms, FirstSplitStart: {} ms, LastSplitStart: {} ms, "
+        "LastSplitEnd: {} ms, FinishingTime: {} ms\n",
+        taskStatus.executionStartTimeMs, taskStatus.firstSplitStartTimeMs,
+        taskStatus.lastSplitStartTimeMs, taskStatus.executionEndTimeMs,
+        taskStatus.endTimeMs);
     ss << fmt::format("\tSplitProcessingTime: {} ms, TaskExecutionTime: {} ms\n",
                       taskStatus.executionEndTimeMs - taskStatus.firstSplitStartTimeMs,
                       taskStatus.endTimeMs - taskStatus.executionStartTimeMs)
@@ -787,26 +785,25 @@ JNIEXPORT jstring JNICALL Java_io_trino_jni_TrinoBridge_getTaskStatus(JNIEnv* en
       static_cast<jstring>(nullptr));
 }
 
-JNIEXPORT jstring JNICALL Java_io_trino_jni_TrinoBridge_getTaskInfo(JNIEnv* env,
-                                                                    jobject obj,
-                                                                    jlong handlePtr,
-                                                                    jstring jTaskId) {
+JNIEXPORT jstring JNICALL Java_io_trino_jni_TrinoBridge_getTaskStats(JNIEnv* env,
+                                                                     jobject obj,
+                                                                     jlong handlePtr,
+                                                                     jstring jTaskId) {
   return tryLogExceptionWithReturnValue(
       [env, handlePtr, jTaskId]() {
         io::trino::TrinoTaskId taskId(JniUtils::jstringToString(env, jTaskId));
         JniHandle* handle = reinterpret_cast<JniHandle*>(handlePtr);
         TaskHandlePtr taskHandle = handle->getTaskHandle(taskId);
 
-        if (!taskHandle) {  // not found, return empty.
-          io::trino::protocol::TaskInfo emptyTaskInfo;
-          nlohmann::json j;
-          io::trino::protocol::to_json(j, emptyTaskInfo);
-          return env->NewStringUTF(j.dump().c_str());
+        if (!taskHandle) {
+          VLOG(google::ERROR) << "Attempt to get a removed task stats, id="
+                              << taskId.fullId();
+          return static_cast<jstring>(nullptr);
         } else {
           std::shared_ptr<velox::exec::Task> task = taskHandle->task;
-          io::trino::protocol::TaskInfo taskInfo = getTaskInfo(task, taskId.fullId());
+          io::trino::protocol::TaskStats taskStats = getTaskStats(task, taskId);
           nlohmann::json j;
-          io::trino::protocol::to_json(j, taskInfo);
+          io::trino::protocol::to_json(j, taskStats);
           return env->NewStringUTF(j.dump().c_str());
         }
       },

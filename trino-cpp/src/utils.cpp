@@ -75,6 +75,173 @@ io::trino::protocol::TaskStatus getTaskStatus(
   return taskStatus;
 }
 
+io::trino::protocol::TaskStats getTaskStats(
+    const std::shared_ptr<facebook::velox::exec::Task>& task, const TrinoTaskId& taskId) {
+  io::trino::protocol::TaskStats stats;
+  auto&& veloxStats = task->taskStats();
+
+  stats.firstStartTime = toISOTimestamp(veloxStats.firstSplitStartTimeMs);
+  stats.lastStartTime = toISOTimestamp(veloxStats.lastSplitStartTimeMs);
+  stats.lastEndTime =
+      toISOTimestamp(veloxStats.endTimeMs);  // Note: same as the Presto-CPP
+
+  stats.createTime = toISOTimestamp(0);  // TODO: Padding, remove in the future
+  stats.endTime = toISOTimestamp(0);     // TODO: Padding, remove in the future
+
+  stats.totalDrivers = veloxStats.numTotalSplits;
+  stats.queuedDrivers = veloxStats.numQueuedSplits;
+  stats.runningDrivers = veloxStats.numRunningSplits;
+  stats.completedDrivers = veloxStats.numFinishedSplits;
+
+  int blockedDrivers = 0;
+  // List<BlockedReason> blockedReasons; // TODO: No similar semantic in Trino
+  for (auto&& blocked : veloxStats.numBlockedDrivers) {
+    blockedDrivers += blocked.second;
+  }
+  stats.blockedDrivers = blockedDrivers;
+
+  stats.totalScheduledTime = Duration(0, protocol::TimeUnit::NANOSECONDS);
+  stats.totalBlockedTime = Duration(0, protocol::TimeUnit::NANOSECONDS);
+  stats.totalCpuTime = Duration(0, protocol::TimeUnit::NANOSECONDS);
+
+  stats.pipelines.resize(veloxStats.pipelineStats.size());
+  for (int i = 0; i < veloxStats.pipelineStats.size(); ++i) {
+    auto& pipelineStats = stats.pipelines[i];
+    auto& veloxPipelineStats = veloxStats.pipelineStats[i];
+    pipelineStats.inputPipeline = veloxPipelineStats.inputPipeline;
+    pipelineStats.outputPipeline = veloxPipelineStats.outputPipeline;
+    pipelineStats.firstStartTime = stats.createTime;
+    pipelineStats.lastStartTime = stats.endTime;
+    pipelineStats.lastEndTime = stats.endTime;
+
+    pipelineStats.operatorSummaries.resize(veloxPipelineStats.operatorStats.size());
+
+    pipelineStats.totalScheduledTime = Duration(0, protocol::TimeUnit::NANOSECONDS);
+    pipelineStats.totalBlockedTime = Duration(0, protocol::TimeUnit::NANOSECONDS);
+    pipelineStats.totalCpuTime = Duration(0, protocol::TimeUnit::NANOSECONDS);
+
+    // tasks may fail before any operators are created;
+    // collect stats only when we have operators
+    if (!veloxPipelineStats.operatorStats.empty()) {
+      const auto& firstOperatorStats = veloxPipelineStats.operatorStats[0];
+      const auto& lastOperatorStats = veloxPipelineStats.operatorStats.back();
+
+      pipelineStats.pipelineId = firstOperatorStats.pipelineId;
+      pipelineStats.totalDrivers = firstOperatorStats.numDrivers;  // Why?
+      pipelineStats.rawInputPositions = firstOperatorStats.rawInputPositions;
+      pipelineStats.rawInputDataSize = {
+          static_cast<double>(firstOperatorStats.rawInputBytes),
+          protocol::DataUnit::BYTE};
+      pipelineStats.processedInputPositions = firstOperatorStats.inputPositions;
+      pipelineStats.processedInputDataSize = {
+          static_cast<double>(firstOperatorStats.inputBytes), protocol::DataUnit::BYTE};
+      pipelineStats.outputPositions = lastOperatorStats.outputPositions;
+      pipelineStats.outputDataSize = {static_cast<double>(lastOperatorStats.outputBytes),
+                                      protocol::DataUnit::BYTE};
+    }
+
+    if (pipelineStats.inputPipeline) {
+      stats.rawInputPositions += pipelineStats.rawInputPositions;
+      stats.rawInputDataSize += pipelineStats.rawInputDataSize;
+      stats.processedInputPositions += pipelineStats.processedInputPositions;
+      stats.processedInputDataSize += pipelineStats.processedInputDataSize;
+    }
+
+    if (pipelineStats.outputPipeline) {
+      stats.outputPositions += pipelineStats.outputPositions;
+      stats.outputDataSize += pipelineStats.outputDataSize;
+    }
+
+    for (auto j = 0; j < veloxPipelineStats.operatorStats.size(); ++j) {
+      auto& opOut = pipelineStats.operatorSummaries[j];
+      auto& op = veloxPipelineStats.operatorStats[j];
+
+      opOut.stageId = taskId.stageId();
+      opOut.pipelineId = i;
+      opOut.planNodeId = op.planNodeId;
+      opOut.operatorId = op.operatorId;
+      opOut.operatorType = toTrinoOperatorType(op.operatorType);
+
+      opOut.totalDrivers = op.numDrivers;
+      opOut.inputPositions = op.inputPositions;
+      opOut.sumSquaredInputPositions =
+          ((double)op.inputPositions) * op.inputPositions;  // Purpose?
+      opOut.inputDataSize = protocol::DataSize(op.inputBytes, protocol::DataUnit::BYTE);
+
+      // Report raw input statistics on the Project node following TableScan, if
+      // exists.
+      if (j == 1 && op.operatorType == "FilterProject" &&
+          veloxPipelineStats.operatorStats[0].operatorType == "TableScan") {
+        const auto& scanOp = veloxPipelineStats.operatorStats[0];
+        opOut.rawInputDataSize =
+            protocol::DataSize(scanOp.rawInputBytes, protocol::DataUnit::BYTE);
+        // TBD: There is no rawInputPositions in Trino, we use physicalInputPositions to
+        // represent.
+        opOut.physicalInputPositions = scanOp.rawInputPositions;
+        opOut.physicalInputDataSize = opOut.rawInputDataSize;
+      }
+
+      opOut.outputPositions = op.outputPositions;
+      opOut.outputDataSize = protocol::DataSize(op.outputBytes, protocol::DataUnit::BYTE);
+
+      setTiming(op.addInputTiming, opOut.addInputCalls, opOut.addInputWall,
+                opOut.addInputCpu);
+      setTiming(op.getOutputTiming, opOut.getOutputCalls, opOut.getOutputWall,
+                opOut.getOutputCpu);
+      setTiming(op.finishTiming, opOut.finishCalls, opOut.finishWall, opOut.finishCpu);
+
+      opOut.blockedWall =
+          protocol::Duration(op.blockedWallNanos, protocol::TimeUnit::NANOSECONDS);
+
+      // TODO: Align the memory management semantic between Velox and Trino
+
+      // opOut.userMemoryReservation = protocol::DataSize(
+      //     op.memoryStats.userMemoryReservation, protocol::DataUnit::BYTE);
+      // opOut.revocableMemoryReservation = protocol::DataSize(
+      //     op.memoryStats.revocableMemoryReservation, protocol::DataUnit::BYTE);
+      // opOut.systemMemoryReservation = protocol::DataSize(
+      //     op.memoryStats.systemMemoryReservation, protocol::DataUnit::BYTE);
+      // opOut.peakUserMemoryReservation = protocol::DataSize(
+      //     op.memoryStats.peakUserMemoryReservation, protocol::DataUnit::BYTE);
+      // opOut.peakSystemMemoryReservation = protocol::DataSize(
+      //     op.memoryStats.peakSystemMemoryReservation, protocol::DataUnit::BYTE);
+      // opOut.peakTotalMemoryReservation = protocol::DataSize(
+      //     op.memoryStats.peakTotalMemoryReservation, protocol::DataUnit::BYTE);
+
+      opOut.spilledDataSize =
+          protocol::DataSize(op.spilledBytes, protocol::DataUnit::BYTE);
+
+      auto wallNanos = op.addInputTiming.wallNanos + op.getOutputTiming.wallNanos +
+                       op.finishTiming.wallNanos;
+      auto cpuNanos = op.addInputTiming.cpuNanos + op.getOutputTiming.cpuNanos +
+                      op.finishTiming.cpuNanos;
+
+      auto totalScheduledTime = Duration(wallNanos, protocol::TimeUnit::NANOSECONDS);
+      auto totalBlockedTime = Duration(op.blockedWallNanos, protocol::TimeUnit::NANOSECONDS);
+      auto totalCpuTime = Duration(cpuNanos, protocol::TimeUnit::NANOSECONDS);
+
+      pipelineStats.totalScheduledTime += totalScheduledTime;
+      pipelineStats.totalCpuTime += totalCpuTime;
+      pipelineStats.totalBlockedTime += totalBlockedTime;
+
+      // TODO: Align the memory management semantic between Velox and Trino
+
+      // pipelineStats.userMemoryReservationInBytes +=
+      // op.memoryStats.userMemoryReservation;
+      // pipelineStats.revocableMemoryReservationInBytes +=
+      //     op.memoryStats.revocableMemoryReservation;
+      // pipelineStats.systemMemoryReservationInBytes +=
+      //     op.memoryStats.systemMemoryReservation;
+
+      stats.totalScheduledTime += totalScheduledTime;
+      stats.totalCpuTime += totalCpuTime;
+      stats.totalBlockedTime += totalBlockedTime;
+    }  // pipeline's operators loop
+  }    // task's pipelines loop
+
+  return stats;
+}
+
 io::trino::protocol::TaskInfo getTaskInfo(
     std::shared_ptr<facebook::velox::exec::Task>& task, TaskId taskId) {
   io::trino::protocol::TaskInfo taskInfo;

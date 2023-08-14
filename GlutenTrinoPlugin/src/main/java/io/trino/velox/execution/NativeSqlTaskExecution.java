@@ -26,6 +26,7 @@ import io.trino.execution.TaskStateMachine;
 import io.trino.execution.buffer.BufferState;
 import io.trino.execution.buffer.OutputBuffer;
 import io.trino.operator.TaskContext;
+import io.trino.operator.TaskStats;
 import io.trino.spi.TrinoException;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.velox.protocol.GlutenPlanFragment;
@@ -59,6 +60,7 @@ public class NativeSqlTaskExecution
     private final AtomicInteger finishedOutputPartitionNum = new AtomicInteger(0);
     private final HashSet<PlanNodeId> noMoreSplitPlanNodes = new HashSet<>();
     private final StateMachine<TaskState> nativeWorkerState;
+    private TaskStats nativeFinalStats;
 
     public NativeSqlTaskExecution(TaskContext taskContext, NativeSqlTaskExecutionManager taskExecutionManager, TaskStateMachine taskStateMachine, OutputBuffer outputBuffer, GlutenPlanFragment planFragment, Executor taskNotificationExecutor)
     {
@@ -73,6 +75,79 @@ public class NativeSqlTaskExecution
         this.partitionSequenceId = new long[this.outputPartitionNum];
         Arrays.fill(this.partitionSequenceId, 0);
         this.nativeWorkerState = new StateMachine<>("nativeTask" + taskId, taskNotificationExecutor, RUNNING, TERMINAL_TASK_STATES);
+        this.nativeFinalStats = null;
+    }
+
+    public synchronized TaskStats getTaskStats()
+    {
+        try (SetThreadName ignored = new SetThreadName("Task-%s", taskId)) {
+            TaskStats javaStats = taskContext.getTaskStats();
+            TaskStats nativeStats;
+            if (nativeWorkerState.get().isDone()) {
+                if (nativeFinalStats == null) {
+                    nativeFinalStats = taskExecutionManager.removeNativeTask(taskId);
+                }
+                nativeStats = nativeFinalStats;
+            }
+            else {
+                nativeStats = taskExecutionManager.getTaskStats(taskId);
+            }
+
+            return generateTaskStats(javaStats, nativeStats);
+        }
+        catch (Exception e) {
+            logger.error("Exception in getTaskStats, %s", e.getMessage());
+            return null;
+        }
+    }
+
+    private TaskStats generateTaskStats(TaskStats javaStats, TaskStats nativeStats)
+    {
+        return new TaskStats(
+                javaStats.getCreateTime(),
+                nativeStats.getFirstStartTime().isEqual(0) ? null : nativeStats.getFirstStartTime(),
+                nativeStats.getLastStartTime().isEqual(0) ? null : nativeStats.getLastStartTime(),
+                javaStats.getTerminatingStartTime(),
+                isNativeTaskDone() ? nativeStats.getLastEndTime() : null,
+                javaStats.getEndTime(),
+                javaStats.getElapsedTime(),
+                javaStats.getQueuedTime(),
+                nativeStats.getTotalDrivers(),
+                nativeStats.getQueuedDrivers(),
+                javaStats.getQueuedPartitionedDrivers(), // TODO
+                javaStats.getQueuedPartitionedSplitsWeight(), // TODO
+                nativeStats.getRunningDrivers(),
+                javaStats.getRunningPartitionedDrivers(), // TODO
+                javaStats.getRunningPartitionedSplitsWeight(), // TODO
+                nativeStats.getBlockedDrivers(),
+                nativeStats.getCompletedDrivers(),
+                javaStats.getCumulativeUserMemory(), // TODO
+                javaStats.getUserMemoryReservation(), // TODO
+                javaStats.getPeakUserMemoryReservation(), // TODO
+                javaStats.getRevocableMemoryReservation(), // TODO
+                nativeStats.getTotalScheduledTime(),
+                nativeStats.getTotalCpuTime(),
+                nativeStats.getTotalBlockedTime(),
+                javaStats.isFullyBlocked(), // TODO
+                nativeStats.getBlockedReasons(),
+                javaStats.getPhysicalInputDataSize(), // TODO
+                javaStats.getPhysicalInputPositions(), // TODO
+                javaStats.getPhysicalInputReadTime(), // TODO
+                javaStats.getInternalNetworkInputDataSize(), // TODO
+                javaStats.getInternalNetworkInputPositions(), // TODO
+                nativeStats.getRawInputDataSize(),
+                nativeStats.getRawInputPositions(),
+                nativeStats.getProcessedInputDataSize(), // TODO
+                nativeStats.getProcessedInputPositions(), // TODO
+                javaStats.getInputBlockedTime(), // TODO
+                nativeStats.getOutputDataSize(),
+                nativeStats.getOutputPositions(),
+                javaStats.getOutputBlockedTime(), // TODO
+                javaStats.getPhysicalWrittenDataSize(), // TODO
+                javaStats.getMaxWriterCount(), // TODO
+                javaStats.getFullGcCount(),
+                javaStats.getFullGcTime(),
+                nativeStats.getPipelines());
     }
 
     @Override

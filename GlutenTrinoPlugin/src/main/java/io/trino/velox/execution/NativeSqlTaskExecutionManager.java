@@ -22,6 +22,7 @@ import io.trino.execution.TaskId;
 import io.trino.execution.TaskStatus;
 import io.trino.jni.TrinoBridge;
 import io.trino.metadata.Metadata;
+import io.trino.operator.TaskStats;
 import io.trino.spi.block.BlockEncodingSerde;
 import io.trino.spi.type.TypeManager;
 import io.trino.velox.NativeConfigs;
@@ -50,6 +51,7 @@ public class NativeSqlTaskExecutionManager
     private final JsonCodec<GlutenPlanFragment> glutenPlanFragmentJsonCodec;
     private final JsonCodec<SplitAssignmentsMessage> splitAssignmentsMessageJsonCodec;
     private final JsonCodec<TaskStatus> taskStatusJsonCodec;
+    private final JsonCodec<TaskStats> taskStatsJsonCodec;
     private final TrinoBridge trinoBridge = new TrinoBridge();
     private final long nativeHandler;
     private final ConcurrentHashMap<TaskId, NativeSqlTaskExecution> tasks = new ConcurrentHashMap<>();
@@ -64,6 +66,7 @@ public class NativeSqlTaskExecutionManager
             JsonCodec<SplitAssignmentsMessage> splitAssignmentsMessageJsonCodec,
             JsonCodec<TaskStatus> taskStatusJsonCodec,
             JsonCodec<NativeConfigs> nativeConfigsJsonCodec,
+            JsonCodec<TaskStats> taskStatsJsonCodec,
             NativeConfigs config)
     {
         System.out.println(ProcessHandle.current().pid());
@@ -73,6 +76,7 @@ public class NativeSqlTaskExecutionManager
         this.glutenPlanFragmentJsonCodec = glutenPlanFragmentJsonCodec;
         this.splitAssignmentsMessageJsonCodec = splitAssignmentsMessageJsonCodec;
         this.taskStatusJsonCodec = taskStatusJsonCodec;
+        this.taskStatsJsonCodec = taskStatsJsonCodec;
         this.executor = Executors.newFixedThreadPool(defaultExecutorThreadNum);
 
         String configJson = nativeConfigsJsonCodec.toJson(config);
@@ -146,11 +150,25 @@ public class NativeSqlTaskExecutionManager
         return blockEncodingSerde;
     }
 
-    private void removeNativeTask(TaskId taskId)
+    public TaskStats getTaskStats(TaskId id)
     {
-        tasks.remove(taskId);
+        String json = trinoBridge.getTaskStats(nativeHandler, id.toString());
+        return taskStatsJsonCodec.fromJson(json);
+    }
+
+    public TaskStats removeNativeTask(TaskId taskId)
+    {
+        TaskStats stats = getTaskStats(taskId);
         trinoBridge.removeTask(nativeHandler, taskId.toString());
-        logger.info("Native task %s is removed.", taskId);
+        logger.info("Native task %s is removed on the native side.", taskId);
+        return stats;
+    }
+
+    private void removeNativeTaskFromManager(TaskId taskId)
+    {
+        // Here, the task is only removed from the Java manager to end the scheduling. The task on the native side is waiting for the SqlTask to fetch the final stats and remove it.
+        tasks.remove(taskId);
+        logger.info("Native task %s is removed from the manager on Java side.", taskId);
     }
 
     public void fetchOutputFromNative(String id, int partitionId)
@@ -176,7 +194,7 @@ public class NativeSqlTaskExecutionManager
                     else {
                         // Only partition-finished cases can enter this branch.
                         if (taskExecution.outputPartitionFinished() && taskExecution.isNativeTaskDone()) {
-                            removeNativeTask(taskId);
+                            removeNativeTaskFromManager(taskId);
                         }
                         logger.info("Native Task %s, Partition %d is finished.", taskId, partitionId);
                     }
@@ -205,7 +223,7 @@ public class NativeSqlTaskExecutionManager
                     taskExecution.nativeTaskFinished(status.getState());
 
                     if (taskExecution.isNativeTaskDone() && taskExecution.allOutputPartitionFinished()) {
-                        removeNativeTask(taskId);
+                        removeNativeTaskFromManager(taskId);
                     }
                 }
                 catch (Exception e) {

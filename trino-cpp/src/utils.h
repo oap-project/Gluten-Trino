@@ -4,6 +4,7 @@
 #include "velox/exec/Task.h"
 
 #include "protocol/trino_protocol.h"
+#include "types/TrinoTaskId.h"
 
 #include <fmt/format.h>
 #include <memory>
@@ -20,6 +21,9 @@ io::trino::protocol::DateTime toISOTimestamp(uint64_t timeMilli);
 
 io::trino::protocol::TaskStatus getTaskStatus(
     std::shared_ptr<facebook::velox::exec::Task>& task, TaskId taskId);
+
+io::trino::protocol::TaskStats getTaskStats(
+    const std::shared_ptr<facebook::velox::exec::Task>& task, const TrinoTaskId& taskId);
 
 io::trino::protocol::TaskInfo getTaskInfo(
     std::shared_ptr<facebook::velox::exec::Task>& task, TaskId taskId);
