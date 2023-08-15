@@ -846,7 +846,6 @@ void readValues(ByteStream* source, vector_size_t size, BufferPtr nulls,
 
       int position = nonNullPositionCount - 1;
       auto rawNulls = nulls->as<uint64_t>();
-      // Handle Last (positionCount % 8) values
       for (int i = size - 1; i >= 0; i--) {
         rawValues[i] = rawValues[position];
         if (!bits::isBitNull(rawNulls, i)) {
@@ -866,7 +865,7 @@ template <>
 void readValues<bool>(ByteStream* source, vector_size_t size, BufferPtr nulls,
                       vector_size_t nullCount, BufferPtr values) {
   auto rawValues = values->asMutable<uint64_t>();
-  if (nullCount) {
+  if (nullCount != -1) {
     int32_t toClear = 0;
     bits::forEachSetBit(nulls->as<uint64_t>(), 0, size, [&](int32_t row) {
       // Set the values between the last non-null and this to type default.
@@ -892,7 +891,7 @@ template <>
 void readValues<Timestamp>(ByteStream* source, vector_size_t size, BufferPtr nulls,
                            vector_size_t nullCount, BufferPtr values) {
   auto rawValues = values->asMutable<Timestamp>();
-  if (nullCount) {
+  if (nullCount != -1) {
     int32_t toClear = 0;
     bits::forEachSetBit(nulls->as<uint64_t>(), 0, size, [&](int32_t row) {
       // Set the values between the last non-null and this to type default.
@@ -937,7 +936,7 @@ void readLosslessTimestampValues(ByteStream* source, vector_size_t size, BufferP
 void readDecimalValues(ByteStream* source, vector_size_t size, BufferPtr nulls,
                        vector_size_t nullCount, BufferPtr values) {
   auto rawValues = values->asMutable<int128_t>();
-  if (nullCount) {
+  if (nullCount != -1) {
     int32_t nonNullPositionCount = source->read<int32_t>();
     if (nonNullPositionCount) {
       int32_t sliceSize =

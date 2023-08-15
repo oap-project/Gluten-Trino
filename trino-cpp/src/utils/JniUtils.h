@@ -41,9 +41,12 @@ class Unsafe {
   explicit Unsafe() = default;
 
   static int32_t multiplyExact(int x, int y);
+  static int32_t getUnsafeArrayIndexScale(JNIEnv* env, jclass unsafeClass,
+                                          const std::string& name);
 
   int32_t arrayIntIndexScale;
   int32_t arrayLongIndexScale;
+  int32_t arrayBooleanIndexScale;
 };
 
 class NativeSqlTaskExecutionManager {

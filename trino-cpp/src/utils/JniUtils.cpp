@@ -108,6 +108,11 @@ Unsafe& Unsafe::instance() {
 }
 
 template <>
+int32_t Unsafe::arraySliceSize<bool>(int32_t length) const {
+  return multiplyExact(length, arrayBooleanIndexScale);
+}
+
+template <>
 int32_t Unsafe::arraySliceSize<double>(int32_t length) const {
   return multiplyExact(length, sizeof(double));
 }
@@ -149,21 +154,12 @@ void Unsafe::initialize(JNIEnv* env) {
     JniUtils::throwJavaRuntimeException(env, "Cannot find the class of sun.misc.Unsafe.");
   }
 
-  jfieldID arrayIntIndexScaleFieldId =
-      env->GetStaticFieldID(unsafeClass, "ARRAY_INT_INDEX_SCALE", "I");
-  if (!arrayIntIndexScaleFieldId) {
-    JniUtils::throwJavaRuntimeException(
-        env, "Cannot find the field ARRAY_INT_INDEX_SCALE in sun.misc.Unsafe");
-  }
-  arrayIntIndexScale = env->GetStaticIntField(unsafeClass, arrayIntIndexScaleFieldId);
-
-  jfieldID arrayLongIndexScaleFieldId =
-      env->GetStaticFieldID(unsafeClass, "ARRAY_LONG_INDEX_SCALE", "I");
-  if (!arrayLongIndexScaleFieldId) {
-    JniUtils::throwJavaRuntimeException(
-        env, "Cannot find the field ARRAY_LONG_INDEX_SCALE in sun.misc.Unsafe");
-  }
-  arrayLongIndexScale = env->GetStaticIntField(unsafeClass, arrayLongIndexScaleFieldId);
+  arrayIntIndexScale =
+      getUnsafeArrayIndexScale(env, unsafeClass, "ARRAY_INT_INDEX_SCALE");
+  arrayLongIndexScale =
+      getUnsafeArrayIndexScale(env, unsafeClass, "ARRAY_LONG_INDEX_SCALE");
+  arrayBooleanIndexScale =
+      getUnsafeArrayIndexScale(env, unsafeClass, "ARRAY_BOOLEAN_INDEX_SCALE");
 }
 
 int32_t Unsafe::multiplyExact(int x, int y) {
@@ -172,6 +168,17 @@ int32_t Unsafe::multiplyExact(int x, int y) {
     JniUtils::throwJavaRuntimeException(JniUtils::getJNIEnv(), "integer overflow");
   }
   return static_cast<int32_t>(r);
+}
+
+int32_t Unsafe::getUnsafeArrayIndexScale(JNIEnv* env, jclass unsafeClass,
+                                         const std::string& name) {
+  jfieldID arrayBooleanIndexScaleFieldId =
+      env->GetStaticFieldID(unsafeClass, name.c_str(), "I");
+  if (!arrayBooleanIndexScaleFieldId) {
+    JniUtils::throwJavaRuntimeException(
+        env, "Cannot find the field " + name + " in sun.misc.Unsafe");
+  }
+  return env->GetStaticIntField(unsafeClass, arrayBooleanIndexScaleFieldId);
 }
 
 NativeSqlTaskExecutionManager::NativeSqlTaskExecutionManager(jobject managerObj)
