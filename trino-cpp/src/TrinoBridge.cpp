@@ -281,15 +281,17 @@ class JniHandle {
                                              id.fullId());
       }
     });
-    switch (state) {
-      case exec::TaskState::kCanceled:
-        task_handle->task->requestCancel().wait();
-        break;
-      case exec::TaskState::kAborted:
-        task_handle->task->requestAbort().wait();
-        break;
-      default:
-        break;
+    if (task_handle) {
+      switch (state) {
+        case exec::TaskState::kCanceled:
+          task_handle->task->requestCancel().wait();
+          break;
+        case exec::TaskState::kAborted:
+          task_handle->task->requestAbort().wait();
+          break;
+        default:
+          break;
+      }
     }
   }
 
