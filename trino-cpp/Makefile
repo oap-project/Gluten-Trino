@@ -32,4 +32,4 @@ sanitizer:
 	echo 1 > /proc/sys/vm/overcommit_memory
 
 velox-patch:
-	cd velox && git checkout -f && git apply --whitespace=fix ../velox.patch && git apply --whitespace=fix ../velox_cast.patch && git apply --whitespace=fix ../velox_task.patch
+	cd velox && git checkout -f && git apply --whitespace=fix ../velox.patch && git apply --whitespace=fix ../velox_cast.patch
