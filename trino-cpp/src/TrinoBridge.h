@@ -28,9 +28,9 @@ JNIEXPORT jstring JNICALL Java_io_trino_jni_TrinoBridge_getTaskStatus(JNIEnv* en
                                                                       jstring jTaskId);
 
 JNIEXPORT jstring JNICALL Java_io_trino_jni_TrinoBridge_getTaskStats(JNIEnv* env,
-                                                                    jobject obj,
-                                                                    jlong handlePtr,
-                                                                    jstring jTaskId);
+                                                                     jobject obj,
+                                                                     jlong handlePtr,
+                                                                     jstring jTaskId);
 
 JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_registerConnector(
     JNIEnv* env, jobject obj, jstring jCatalogProperties);
@@ -69,6 +69,14 @@ JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_getBufferStep3(
     jint results_num, jlongArray jAddressArray);
 
 JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_removeTask(JNIEnv* env, jobject obj,
+                                                                jlong handlePtr,
+                                                                jstring jTaskId);
+
+JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_abortTask(JNIEnv* env, jobject obj,
+                                                               jlong handlePtr,
+                                                               jstring jTaskId);
+
+JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_cancelTask(JNIEnv* env, jobject obj,
                                                                 jlong handlePtr,
                                                                 jstring jTaskId);
 #ifdef __cplusplus

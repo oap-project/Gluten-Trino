@@ -270,6 +270,29 @@ class JniHandle {
     });
   }
 
+  void terminateTask(const TrinoTaskId& id, exec::TaskState state) {
+    TaskHandlePtr task_handle;
+    withRLock([this, &id, state, &task_handle]() {
+      if (auto taskIter = taskMap_.find(id.fullId()); taskIter != taskMap_.end()) {
+        TaskHandlePtr new_ptr(taskIter->second);
+        task_handle.swap(new_ptr);
+      } else {
+        VLOG(google::WARNING) << fmt::format("Attempt to terminate a removed task {}",
+                                             id.fullId());
+      }
+    });
+    switch (state) {
+      case exec::TaskState::kCanceled:
+        task_handle->task->requestCancel().wait();
+        break;
+      case exec::TaskState::kAborted:
+        task_handle->task->requestAbort().wait();
+        break;
+      default:
+        break;
+    }
+  }
+
   NativeConfigsPtr getConfig() { return nativeConfigs_; }
 
   NativeSqlTaskExecutionManager* getNativeSqlTaskExecutionManager() {
@@ -835,4 +858,20 @@ JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_registerConnector(
       velox::connector::registerConnector(connector);
     }
   });
+}
+
+JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_abortTask(JNIEnv* env, jobject obj,
+                                                               jlong handlePtr,
+                                                               jstring jTaskId) {
+  JniHandle* handle = reinterpret_cast<JniHandle*>(handlePtr);
+  io::trino::TrinoTaskId taskId(JniUtils::jstringToString(env, jTaskId));
+  handle->terminateTask(taskId, exec::kAborted);
+}
+
+JNIEXPORT void JNICALL Java_io_trino_jni_TrinoBridge_cancelTask(JNIEnv* env, jobject obj,
+                                                                jlong handlePtr,
+                                                                jstring jTaskId) {
+  JniHandle* handle = reinterpret_cast<JniHandle*>(handlePtr);
+  io::trino::TrinoTaskId taskId(JniUtils::jstringToString(env, jTaskId));
+  handle->terminateTask(taskId, exec::kCanceled);
 }

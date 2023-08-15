@@ -76,6 +76,18 @@ public class NativeSqlTaskExecution
         Arrays.fill(this.partitionSequenceId, 0);
         this.nativeWorkerState = new StateMachine<>("nativeTask" + taskId, taskNotificationExecutor, RUNNING, TERMINAL_TASK_STATES);
         this.nativeFinalStats = null;
+
+        initializeTaskHandlers();
+    }
+
+    private void initializeTaskHandlers()
+    {
+        taskStateMachine.addStateChangeListener(newState -> {
+            if (newState.isTerminating()) {
+                taskExecutionManager.terminateTask(taskId, newState);
+                taskStateMachine.terminationComplete();
+            }
+        });
     }
 
     public synchronized TaskStats getTaskStats()
@@ -203,8 +215,6 @@ public class NativeSqlTaskExecution
         switch (state) {
             case FINISHED -> taskStateMachine.transitionToFlushing();
             case FAILED -> taskStateMachine.failed(new TrinoException(GENERIC_INTERNAL_ERROR, "Native task is failed"));
-            case ABORTED -> taskStateMachine.abort();
-            case CANCELED -> taskStateMachine.cancel();
         }
         outputBuffer.setNoMorePages();
         logger.info("Native task %s is transferred to %s.", taskId.toString(), state.toString());
@@ -224,7 +234,6 @@ public class NativeSqlTaskExecution
     {
         TaskState taskState = taskStateMachine.getState();
         if (taskState.isTerminatingOrDone()) {
-            logger.info("Terminating task " + taskId + " with state " + taskState);
             return;
         }
 

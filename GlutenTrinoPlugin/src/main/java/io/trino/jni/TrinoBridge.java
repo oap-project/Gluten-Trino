@@ -104,6 +104,10 @@ public class TrinoBridge
 
     public native String getTaskStats(long handlePtr, String taskId);
 
+    public native void abortTask(long handlePtr, String taskId);
+
+    public native void cancelTask(long handlePtr, String taskId);
+
     static {
         System.loadLibrary("trino_bridge");
     }

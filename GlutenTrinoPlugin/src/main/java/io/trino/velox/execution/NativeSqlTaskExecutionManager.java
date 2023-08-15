@@ -19,6 +19,7 @@ import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
 import io.trino.execution.SplitAssignment;
 import io.trino.execution.TaskId;
+import io.trino.execution.TaskState;
 import io.trino.execution.TaskStatus;
 import io.trino.jni.TrinoBridge;
 import io.trino.metadata.Metadata;
@@ -154,6 +155,15 @@ public class NativeSqlTaskExecutionManager
     {
         String json = trinoBridge.getTaskStats(nativeHandler, id.toString());
         return taskStatsJsonCodec.fromJson(json);
+    }
+
+    public void terminateTask(TaskId id, TaskState state)
+    {
+        switch (state) {
+            case CANCELING -> trinoBridge.cancelTask(nativeHandler, id.toString());
+            case ABORTING -> trinoBridge.abortTask(nativeHandler, id.toString());
+            default -> logger.error("Unexpected task state %s in terminateTask for task %s", state, id);
+        }
     }
 
     public TaskStats removeNativeTask(TaskId taskId)
