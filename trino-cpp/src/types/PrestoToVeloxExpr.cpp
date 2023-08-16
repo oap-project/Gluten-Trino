@@ -207,7 +207,7 @@ std::optional<TypedExprPtr> tryConvertLiteralArray(const protocol::Signature& si
                                                    const std::string& returnType,
                                                    const std::vector<TypedExprPtr>& args,
                                                    velox::memory::MemoryPool* pool) {
-  static const char* kLiteralArray = "presto.default.$literal$array";
+  static const char* kLiteralArray = "presto.default.$literal$";
   static const char* kFromBase64 = "presto.default.from_base64";
 
   if (signature.kind != protocol::FunctionKind::SCALAR) {

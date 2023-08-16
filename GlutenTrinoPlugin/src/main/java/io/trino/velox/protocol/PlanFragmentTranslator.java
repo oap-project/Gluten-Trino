@@ -64,8 +64,15 @@ public class PlanFragmentTranslator
     {
         List<GlutenRowExpression> partitionKeys = partitioningScheme.getPartitioning().getArguments()
                 .stream()
-                .map(argumentBinding -> ExpressionTranslator.translateExpressionTree(
-                        argumentBinding.getExpression(), metadata, typeManager, blockEncodingSerde, session, symbolTypeHashMap))
+                .map(argumentBinding -> {
+                    if (argumentBinding.isConstant()) {
+                        return ExpressionTranslator.translateNullableValue(argumentBinding.getConstant());
+                    }
+                    else {
+                        return ExpressionTranslator.translateExpressionTree(
+                                argumentBinding.getExpression(), metadata, typeManager, blockEncodingSerde, session, symbolTypeHashMap);
+                    }
+                })
                 .collect(toImmutableList());
         GlutenPartitioning glutenPartitioning = new GlutenPartitioning(
                 partitioningScheme.getPartitioning().getHandle().getProtocol(),

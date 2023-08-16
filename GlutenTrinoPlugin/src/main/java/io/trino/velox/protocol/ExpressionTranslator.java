@@ -27,6 +27,7 @@ import io.trino.spi.function.BoundSignature;
 import io.trino.spi.function.FunctionKind;
 import io.trino.spi.function.OperatorType;
 import io.trino.spi.function.Signature;
+import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.type.FixedWidthType;
 import io.trino.spi.type.IntegerType;
 import io.trino.spi.type.RowType;
@@ -115,6 +116,11 @@ public final class ExpressionTranslator
     {
         Visitor visitor = new Visitor(metadata, typeManager, blockEncodingSerde, session, symbolTypes);
         return visitor.process(root, null);
+    }
+
+    public static GlutenRowExpression translateNullableValue(NullableValue constant)
+    {
+        return new GlutenConstantExpression(constant.getValue(), constant.getType());
     }
 
     private static GlutenSignature.FunctionQualifiedName renameTrinoBridgeFunction(String originName)
