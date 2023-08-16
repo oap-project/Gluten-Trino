@@ -14,6 +14,7 @@
 package io.trino.velox.protocol;
 
 import com.google.common.collect.ImmutableList;
+import io.airlift.log.Logger;
 import io.airlift.slice.BasicSliceInput;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
@@ -28,7 +29,11 @@ import io.trino.spi.function.FunctionKind;
 import io.trino.spi.function.OperatorType;
 import io.trino.spi.function.Signature;
 import io.trino.spi.predicate.NullableValue;
+import io.trino.spi.type.DecimalParseResult;
+import io.trino.spi.type.DecimalType;
+import io.trino.spi.type.Decimals;
 import io.trino.spi.type.FixedWidthType;
+import io.trino.spi.type.Int128;
 import io.trino.spi.type.IntegerType;
 import io.trino.spi.type.RowType;
 import io.trino.spi.type.Type;
@@ -84,8 +89,8 @@ import static io.trino.spi.function.OperatorType.SUBTRACT;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.BooleanType.BOOLEAN;
 import static io.trino.spi.type.DateType.DATE;
+import static io.trino.spi.type.DecimalType.createDecimalType;
 import static io.trino.spi.type.DoubleType.DOUBLE;
-import static io.trino.spi.type.IntegerType.INTEGER;
 import static io.trino.spi.type.VarbinaryType.VARBINARY;
 import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.sql.analyzer.TypeSignatureProvider.fromTypes;
@@ -93,11 +98,13 @@ import static io.trino.sql.analyzer.TypeSignatureTranslator.toTypeSignature;
 import static io.trino.type.LikePatternType.LIKE_PATTERN;
 import static io.trino.velox.protocol.GlutenSpecialFormExpression.Form.IS_NULL;
 import static io.trino.velox.protocol.GlutenSpecialFormExpression.Form.ROW_CONSTRUCTOR;
+import static java.lang.String.format;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 
 public final class ExpressionTranslator
 {
+    private static final Logger log = Logger.get(PlanNodeTranslator.class);
     private static final String OPERATOR_PREFIX = "$operator$";
 
     private static final List<String> TRINO_BRIDGE_ADDED_FUNCTION_NAMES = ImmutableList.of("sum");
@@ -217,26 +224,22 @@ public final class ExpressionTranslator
             return node;
         }
 
-        private boolean isConvertible(GlutenConstantExpression constant, Type toType)
+        private boolean isConvertible(GlutenRowExpression constant, Type toType)
         {
             requireNonNull(constant, "constant is null.");
             requireNonNull(toType, "toType is null.");
-
+            TypeCoercion typeCoercion = new TypeCoercion(typeManager::getType);
             Type fromType = constant.getType();
-            // todo: add more types to convert
+            // For date type
             if (fromType instanceof FixedWidthType && toType instanceof FixedWidthType) {
-                if (fromType.equals(BIGINT) && toType.equals(INTEGER)) {
-                    long value = (long) constant.getValue();
-                    return ((int) value) == value;
-                }
                 if (((FixedWidthType) fromType).getFixedSize() < ((FixedWidthType) toType).getFixedSize()) {
                     return true;
                 }
             }
-            return false;
+            return typeCoercion.canCoerce(constant.getType(), toType);
         }
 
-        private GlutenRowExpression castConstantExpressionIfNeeded(Type toType, GlutenRowExpression node)
+        private GlutenRowExpression castConstantExpressionIfNeeded(GlutenRowExpression node, Type toType)
         {
             requireNonNull(toType, "toType is null.");
             requireNonNull(node, "node is null.");
@@ -245,10 +248,16 @@ public final class ExpressionTranslator
                 // Maybe should throw unsupported exception here.
                 return node;
             }
-
             if (!toType.equals(constant.getType()) && isConvertible(constant, toType)) {
+                if (toType instanceof DecimalType decimalType) {
+                    // LongDecimal use int128, must cast here
+                    if (!decimalType.isShort() && constant.getValue() instanceof Long value) {
+                        return new GlutenConstantExpression(Int128.valueOf(0L, value), toType);
+                    }
+                }
                 return new GlutenConstantExpression(constant.getValue(), toType);
             }
+            log.warn("Constant Expression %s is not converted to %s!", constant.getValue(), toType.getBaseName());
             return constant;
         }
 
@@ -264,7 +273,7 @@ public final class ExpressionTranslator
             }
 
             Type compareType = glutenValue.getType();
-            inListNode.getValues().forEach(value -> expressionList.add(castConstantExpressionIfNeeded(compareType, process(value, context))));
+            inListNode.getValues().forEach(value -> expressionList.add(castConstantExpressionIfNeeded(process(value, context), compareType)));
 
             GlutenSpecialFormExpression.Form form = GlutenSpecialFormExpression.Form.IN;
             return new GlutenSpecialFormExpression(form, BOOLEAN, expressionList);
@@ -285,7 +294,8 @@ public final class ExpressionTranslator
         @Override
         protected GlutenRowExpression visitDecimalLiteral(DecimalLiteral node, Void context)
         {
-            return new GlutenConstantExpression(node.getValue(), DOUBLE);
+            DecimalParseResult parseResult = Decimals.parse(node.getValue());
+            return new GlutenConstantExpression(parseResult.getObject(), createDecimalType(parseResult.getType().getPrecision(), parseResult.getType().getScale()));
         }
 
         @Override
@@ -338,7 +348,33 @@ public final class ExpressionTranslator
             List<GlutenRowExpression> glutenOperands = node.getOperands().stream()
                     .map(operand -> process(operand, context))
                     .collect(toImmutableList());
-            return new GlutenSpecialFormExpression(form, glutenOperands.get(0).getType(), glutenOperands);
+            // Test: only compare the first one and the last one
+            GlutenRowExpression left = glutenOperands.get(0);
+            GlutenRowExpression right = glutenOperands.get(glutenOperands.size() - 1);
+            List<GlutenRowExpression> arguments = new ArrayList<>();
+            if (!left.getType().equals(right.getType())) {
+                if (isConvertible(left, right.getType())) {
+                    for (GlutenRowExpression argument : glutenOperands) {
+                        argument = castIfNeeded(argument, right.getType());
+                        arguments.add(argument);
+                    }
+                }
+                else if (isConvertible(right, left.getType())) {
+                    for (GlutenRowExpression argument : glutenOperands) {
+                        argument = castIfNeeded(argument, left.getType());
+                        arguments.add(argument);
+                    }
+                }
+                else {
+                    throw new IllegalStateException(format("Type of the expressions '%s' and '%s' may not be comparable.",
+                            left.getType().getDisplayName(), right.getType().getDisplayName()));
+                }
+            }
+            if (arguments.isEmpty()) {
+                arguments = glutenOperands;
+            }
+
+            return new GlutenSpecialFormExpression(form, arguments.get(0).getType(), arguments);
         }
 
         @Override
@@ -431,16 +467,15 @@ public final class ExpressionTranslator
             GlutenRowExpression right = process(node.getRight(), context);
 
             if (!left.getType().equals(right.getType())) {
-                TypeCoercion typeCoercion = new TypeCoercion(typeManager::getType);
-
-                if (typeCoercion.canCoerce(left.getType(), right.getType())) {
+                if (isConvertible(left, right.getType())) {
                     left = castIfNeeded(left, right.getType());
                 }
-                else if (typeCoercion.canCoerce(right.getType(), left.getType())) {
+                else if (isConvertible(right, left.getType())) {
                     right = castIfNeeded(right, left.getType());
                 }
                 else {
-                    throw new IllegalStateException("Type of the expressions may not be comparable.");
+                    throw new IllegalStateException(format("Type of the expressions '%s' and '%s' may not be comparable.",
+                            left.getType().getDisplayName(), right.getType().getDisplayName()));
                 }
             }
             ComparisonExpression.Operator op = node.getOperator();
@@ -495,16 +530,15 @@ public final class ExpressionTranslator
             GlutenRowExpression max = process(node.getMax(), context);
 
             if (max.getType().equals(min.getType()) && !value.getType().equals(min.getType())) {
-                TypeCoercion typeCoercion = new TypeCoercion(typeManager::getType);
-
-                if (typeCoercion.canCoerce(value.getType(), min.getType())) {
+                if (isConvertible(value, min.getType())) {
                     value = castIfNeeded(value, min.getType());
                 }
-                else if (typeCoercion.canCoerce(min.getType(), value.getType())) {
+                else if (isConvertible(min, value.getType())) {
                     min = castIfNeeded(min, value.getType());
                 }
                 else {
-                    throw new IllegalStateException("Type of the expressions may not be comparable.");
+                    throw new IllegalStateException(format("Type of the expressions '%s' and '%s' may not be comparable.",
+                            value.getType().getDisplayName(), min.getType().getDisplayName()));
                 }
             }
 
@@ -518,16 +552,15 @@ public final class ExpressionTranslator
             GlutenRowExpression right = process(node.getRight(), context);
 
             if (!left.getType().equals(right.getType())) {
-                TypeCoercion typeCoercion = new TypeCoercion(typeManager::getType);
-
-                if (typeCoercion.canCoerce(left.getType(), right.getType())) {
+                if (isConvertible(left, right.getType())) {
                     left = castIfNeeded(left, right.getType());
                 }
-                else if (typeCoercion.canCoerce(right.getType(), left.getType())) {
+                else if (isConvertible(right, left.getType())) {
                     right = castIfNeeded(right, left.getType());
                 }
                 else {
-                    throw new IllegalStateException("Type of the expressions may not be comparable.");
+                    throw new IllegalStateException(format("Type of the expressions '%s' and '%s' may not be comparable.",
+                            left.getType().getDisplayName(), right.getType().getDisplayName()));
                 }
             }
 
@@ -732,7 +765,7 @@ public final class ExpressionTranslator
 
             if (node.getExpression() instanceof Literal) {
                 GlutenConstantExpression temp = (GlutenConstantExpression) process(node.getExpression());
-                return new GlutenConstantExpression(temp.getValueBlock(), returnType);
+                return castConstantExpressionIfNeeded(temp, returnType);
             }
             GlutenRowExpression value = process(node.getExpression(), context);
 

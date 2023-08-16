@@ -514,7 +514,7 @@ velox::ArrayVectorPtr toArrayVector(const velox::TypePtr& elementType,
   auto rawSizes = sizes->asMutable<velox::vector_size_t>();
   rawSizes[0] = size;
 
-  return std::make_shared<velox::ArrayVector>(pool, ARRAY(velox::Type::create<KIND>()),
+  return std::make_shared<velox::ArrayVector>(pool, ARRAY(elementType),
                                               nullptr, 1, offsets, sizes, elements);
 }
 
