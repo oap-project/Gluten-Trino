@@ -73,15 +73,6 @@ void HttpResponse::append(std::unique_ptr<folly::IOBuf>&& iobuf) {
 }
 
 void HttpResponse::freeBuffers() {
-  for (auto& iobuf : bodyChain_) {
-    if (iobuf != nullptr) {
-      try {
-        pool_->free(iobuf->writableData(), iobuf->capacity());
-      } catch (std::exception& e) {
-        VLOG(1) << "Free Buffers failed: " << e.what();
-      }
-    }
-  }
   bodyChain_.clear();
 }
 
