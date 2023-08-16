@@ -214,6 +214,7 @@ class JniHandle {
           VLOG(google::INFO) << fmt::format("Task {} contains broadcast output buffer.",
                                             id.fullId());
           isBroadcast = true;
+          numPartitions = 1;
         }
       }
 

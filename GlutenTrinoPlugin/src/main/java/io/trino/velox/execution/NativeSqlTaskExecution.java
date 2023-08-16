@@ -28,6 +28,7 @@ import io.trino.execution.buffer.OutputBuffer;
 import io.trino.operator.TaskContext;
 import io.trino.operator.TaskStats;
 import io.trino.spi.TrinoException;
+import io.trino.sql.planner.SystemPartitioningHandle;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.velox.protocol.GlutenPlanFragment;
 
@@ -69,15 +70,29 @@ public class NativeSqlTaskExecution
         this.taskExecutionManager = requireNonNull(taskExecutionManager, "taskExecutionManager is null.");
         this.taskStateMachine = requireNonNull(taskStateMachine, "taskStateMachine is null.");
         this.outputBuffer = requireNonNull(outputBuffer, "outputBuffer is null.");
-        this.outputPartitionNum = 1 + planFragment.getPartitionScheme().getBucketToPartition()
-                .map(bucketToPartitions -> Arrays.stream(bucketToPartitions).reduce(Integer::max).orElse(0))
-                .orElse(0);
+        this.outputPartitionNum = initOutputPartitionNum(planFragment);
         this.partitionSequenceId = new long[this.outputPartitionNum];
         Arrays.fill(this.partitionSequenceId, 0);
         this.nativeWorkerState = new StateMachine<>("nativeTask" + taskId, taskNotificationExecutor, RUNNING, TERMINAL_TASK_STATES);
         this.nativeFinalStats = null;
 
         initializeTaskHandlers();
+    }
+
+    private int initOutputPartitionNum(GlutenPlanFragment planFragment)
+    {
+        int outputPartitionNum = 1 + planFragment.getPartitionScheme().getBucketToPartition()
+                .map(bucketToPartitions -> Arrays.stream(bucketToPartitions).reduce(Integer::max).orElse(0))
+                .orElse(0);
+
+        if (1 != outputPartitionNum && planFragment.getPartitionScheme().getPartitioning().getHandle().getConnectorHandle() instanceof SystemPartitioningHandle) {
+            SystemPartitioningHandle handle = (SystemPartitioningHandle) planFragment.getPartitionScheme().getPartitioning().getHandle().getConnectorHandle();
+            if (handle.getFunction().equals(SystemPartitioningHandle.SystemPartitionFunction.BROADCAST)) {
+                outputPartitionNum = 1;
+            }
+        }
+
+        return outputPartitionNum;
     }
 
     private void initializeTaskHandlers()
