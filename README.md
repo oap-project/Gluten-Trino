@@ -31,6 +31,21 @@ For exchange and output data, we will serialize Velox RowVector to trino protoca
 ### Current Status
 
 We can pass all TPC-H queries with all plan fragments offloaded. TPC-DS support is WIP.
+## Get the Source
+```
+git clone --recursive https://github.com/oap-project/gluten-trino.git
+cd libraries.databases.thirdparty.trino-velox-bridge
+# if you are updating an existing checkout
+git submodule sync --recursive
+git submodule update --init --recursive
+```
+
+## Setting up on x86_64 Linux (Ubuntu 20.04 or later)
+```
+# python3
+$ pip install regex pyyaml chevron clang-format
+$ apt-get install jq
+```
 
 ## how to build
 
