@@ -23,6 +23,9 @@ namespace io::trino::bridge {
 constexpr folly::StringPiece kRLE{"RLE"};
 
 std::string typeToEncodingName(const TypePtr& type) {
+  if (type->isDate()) {
+    return "INT_ARRAY";
+  }
   switch (type->kind()) {
     case TypeKind::BOOLEAN:
       return "BYTE_ARRAY";
@@ -77,17 +80,11 @@ class CountingOutputStream : public OutputStream {
     }
   }
 
-  std::streampos tellp() const override {
-    return pos_;
-  }
+  std::streampos tellp() const override { return pos_; }
 
-  void seekp(std::streampos pos) override {
-    pos_ = pos;
-  }
+  void seekp(std::streampos pos) override { pos_ = pos; }
 
-  std::streamsize size() const {
-    return numBytes_;
-  }
+  std::streamsize size() const { return numBytes_; }
 
  private:
   std::streamsize numBytes_{0};
@@ -114,7 +111,7 @@ class VectorStream {
       switch (type_->kind()) {
         case TypeKind::ROW:
           hasOffset_ = true;
-          offset_.startWrite((initialNumRows+1) * sizeof(vector_size_t));
+          offset_.startWrite((initialNumRows + 1) * sizeof(vector_size_t));
           if (isTimestampWithTimeZoneType(type_)) {
             values_.startWrite(initialNumRows * 4);
             break;
@@ -175,7 +172,7 @@ class VectorStream {
   }
 
   // for row type
-  void appendOffset(int32_t length) {    
+  void appendOffset(int32_t length) {
     if (nullCount_ + nonNullCount_ == 1) {
       // The first element in the offsets in the wire format is always 0 for
       // nested types but not for string.
@@ -311,7 +308,7 @@ class VectorStream {
   // ByteStream nulls_;
   TrinoNullByteStream nulls_;
   ByteStream lengths_;
-  ByteStream offset_; // For Row Type.
+  ByteStream offset_;  // For Row Type.
   int32_t offsetValue{0};
   ByteStream values_;
   std::vector<std::unique_ptr<VectorStream>> children_;
@@ -615,7 +612,7 @@ void serializeArrayVector(const BaseVector* vector,
       } else {
         stream->appendNonNull();
         auto size = rawSizes[offset];
-        stream->appendLength(size); // To be fixed.
+        stream->appendLength(size);  // To be fixed.
         if (size > 0) {
           childRanges.emplace_back<IndexRange>({rawOffsets[offset], size});
         }
@@ -642,7 +639,7 @@ void serializeMapVector(const BaseVector* vector,
       } else {
         stream->appendNonNull();
         auto size = rawSizes[offset];
-        stream->appendLength(size); // To be fixed.
+        stream->appendLength(size);  // To be fixed.
         if (size > 0) {
           childRanges.emplace_back<IndexRange>({rawOffsets[offset], size});
         }
@@ -719,14 +716,14 @@ class TrinoVectorSerializer : public facebook::velox::VectorSerializer {
   }
 
   size_t maxSerializedSize() const override {
-    size_t dataSize = 4; // streams_.size()
+    size_t dataSize = 4;  // streams_.size()
     for (auto& stream : streams_) {
       dataSize += stream->serializedSize();
     }
 
-    //auto compressedSize = needCompression(*codec_)
-    //                          ? codec_->maxCompressedLength(dataSize)
-    //                          : dataSize;
+    // auto compressedSize = needCompression(*codec_)
+    //                           ? codec_->maxCompressedLength(dataSize)
+    //                           : dataSize;
     return kHeaderSize + dataSize;
   }
 
@@ -814,7 +811,7 @@ vector_size_t readNulls(ByteStream* source, vector_size_t size, BaseVector* resu
   if (source->readByte() == 0) {
     result->clearNulls(0, size);
     result->setNullCount(0);
-    return -1; // means the column is not nullable.
+    return -1;  // means the column is not nullable.
   }
 
   BufferPtr nulls = result->mutableNulls(size);
@@ -1191,7 +1188,7 @@ void readRowVector(ByteStream* source, std::shared_ptr<const Type> type,
 
   auto childTypes = type->as<TypeKind::ROW>().children();
   readColumns(source, pool, childTypes, children, useLosslessTimestamp);
-  
+
   if (reused) {
     reused->resize(size);
   } else {
@@ -1301,8 +1298,8 @@ void readColumns(ByteStream* source, memory::MemoryPool* pool,
           {TypeKind::VARBINARY, &read<StringView>},
           {TypeKind::ARRAY, &readArrayVector},
           {TypeKind::MAP, &readMapVector},
-          {TypeKind::ROW, &readRowVector}//,
-          //{TypeKind::UNKNOWN, &read<UnknownValue>}
+          {TypeKind::ROW, &readRowVector}  //,
+                                           //{TypeKind::UNKNOWN, &read<UnknownValue>}
       };
 
   for (int32_t i = 0; i < types.size(); ++i) {

@@ -29,6 +29,7 @@ import io.trino.spi.function.FunctionKind;
 import io.trino.spi.function.OperatorType;
 import io.trino.spi.function.Signature;
 import io.trino.spi.predicate.NullableValue;
+import io.trino.spi.type.DateType;
 import io.trino.spi.type.DecimalParseResult;
 import io.trino.spi.type.DecimalType;
 import io.trino.spi.type.Decimals;
@@ -72,6 +73,7 @@ import io.trino.sql.tree.WhenClause;
 import io.trino.type.TypeCoercion;
 import io.trino.type.UnknownType;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -104,7 +106,7 @@ import static java.util.Objects.requireNonNull;
 
 public final class ExpressionTranslator
 {
-    private static final Logger log = Logger.get(PlanNodeTranslator.class);
+    private static final Logger log = Logger.get(ExpressionTranslator.class);
     private static final String OPERATOR_PREFIX = "$operator$";
 
     private static final List<String> TRINO_BRIDGE_ADDED_FUNCTION_NAMES = ImmutableList.of("sum");
@@ -209,7 +211,6 @@ public final class ExpressionTranslator
             requireNonNull(node, "node is null.");
             if (!toType.equals(node.getType())) {
                 String displayName = "CAST";
-
                 GlutenSignature newSignature = new GlutenSignature(
                         OPERATOR_PREFIX + displayName.toLowerCase(ENGLISH),
                         SCALAR,
@@ -248,6 +249,11 @@ public final class ExpressionTranslator
                 // Maybe should throw unsupported exception here.
                 return node;
             }
+            // IN predicate can only receive constant expression, convert here
+            // eg: select d_week_seq from date_dim where d_date in (cast('2000-06-30' as date),cast('2000-09-27' as date),cast('2000-11-17' as date));
+            if (toType instanceof DateType && constant.getValue() instanceof String stringDate) {
+                return new GlutenConstantExpression(LocalDate.parse(stringDate).toEpochDay(), toType);
+            }
             if (!toType.equals(constant.getType()) && isConvertible(constant, toType)) {
                 if (toType instanceof DecimalType decimalType) {
                     // LongDecimal use int128, must cast here
@@ -273,7 +279,13 @@ public final class ExpressionTranslator
             }
 
             Type compareType = glutenValue.getType();
-            inListNode.getValues().forEach(value -> expressionList.add(castConstantExpressionIfNeeded(process(value, context), compareType)));
+            for (Expression expression : inListNode.getValues()) {
+                GlutenRowExpression rowExpression = process(expression, context);
+                if (compareType instanceof DateType && expression instanceof GenericLiteral date) {
+                    rowExpression = new GlutenConstantExpression(date.getValue(), compareType);
+                }
+                expressionList.add(castConstantExpressionIfNeeded(rowExpression, compareType));
+            }
 
             GlutenSpecialFormExpression.Form form = GlutenSpecialFormExpression.Form.IN;
             return new GlutenSpecialFormExpression(form, BOOLEAN, expressionList);
