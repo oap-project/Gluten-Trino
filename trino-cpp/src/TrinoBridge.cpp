@@ -228,10 +228,7 @@ class JniHandle {
           memory::defaultMemoryManager().addRootPool(
               id.fullId(), nativeConfigs_->getQueryMaxMemoryPerNode()));
 
-      if (!convertor_pool_) {
-        convertor_pool_ = std::move(velox::memory::addDefaultLeafMemoryPool());
-      }
-      VeloxInteractiveQueryPlanConverter convertor(convertor_pool_.get());
+      VeloxInteractiveQueryPlanConverter convertor(getPlanConvertorMemPool().get());
       core::PlanFragment fragment =
           convertor.toVeloxQueryPlan(plan, nullptr, id.fullId());
 
@@ -302,6 +299,13 @@ class JniHandle {
     return javaManager_.get();
   }
 
+ private:
+  static std::shared_ptr<memory::MemoryPool> getPlanConvertorMemPool() {
+    static std::shared_ptr<memory::MemoryPool> pool =
+        velox::memory::addDefaultLeafMemoryPool("PlanConvertor");
+    return pool;
+  }
+
   void initializeVeloxMemory() {
     const int64_t memoryBytes = nativeConfigs_->getMaxNodeMemory();
     LOG(INFO) << "Starting with node memory " << (memoryBytes >> 30) << "GB";
@@ -315,6 +319,8 @@ class JniHandle {
     } else {
       allocator_ = memory::MemoryAllocator::createDefaultInstance();
     }
+    memory::MemoryAllocator::setDefaultInstance(allocator_.get());
+
     if (nativeConfigs_->getAsyncDataCacheEnabled()) {
       std::unique_ptr<cache::SsdCache> ssd;
       const auto asyncCacheSsdSize = nativeConfigs_->getAsyncCacheSsdSize();
@@ -340,7 +346,6 @@ class JniHandle {
                      "Async data cache cannot be disabled if ssd cache is enabled");
     }
 
-    memory::MemoryAllocator::setDefaultInstance(allocator_.get());
     // Set up velox memory manager.
     memory::MemoryManagerOptions options;
     options.capacity = memoryBytes;
@@ -357,7 +362,6 @@ class JniHandle {
     LOG(INFO) << "Memory manager has been setup: " << manager.toString();
   }
 
- private:
   void printTaskStatus(const TrinoTaskId& id, const std::shared_ptr<exec::Task>& task) {
     std::stringstream ss;
     ss << fmt::format("Task {} status:\n", id.fullId());
@@ -425,8 +429,6 @@ class JniHandle {
   }
 
  private:
-  // Variables below must be singleton under process.
-  std::shared_ptr<memory::MemoryPool> convertor_pool_;
   mutable std::shared_mutex taskMapLock_;
   NativeConfigsPtr nativeConfigs_;
   NativeSqlTaskExecutionManagerPtr javaManager_;
@@ -637,6 +639,7 @@ JNIEXPORT jlong JNICALL Java_io_trino_jni_TrinoBridge_close(JNIEnv* env, jobject
   return tryLogExceptionWithReturnValue(
       [handlePtr]() {
         JniHandle* handle = reinterpret_cast<JniHandle*>(handlePtr);
+        VLOG(google::INFO) << "JNIHandle closed";
         delete handle;
         return 0;
       },
