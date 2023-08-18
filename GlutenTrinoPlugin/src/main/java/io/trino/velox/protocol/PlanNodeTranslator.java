@@ -228,6 +228,9 @@ public class PlanNodeTranslator
                 if (function.getFunctionId().toString().toLowerCase(ENGLISH).startsWith("sum")) {
                     return RowType.anonymousRow(origin, BigintType.BIGINT);
                 }
+                if (function.getFunctionId().toString().toLowerCase(ENGLISH).startsWith("stddev")) {
+                    return RowType.anonymousRow(BigintType.BIGINT, DoubleType.DOUBLE, DoubleType.DOUBLE);
+                }
             }
             return origin;
         }
