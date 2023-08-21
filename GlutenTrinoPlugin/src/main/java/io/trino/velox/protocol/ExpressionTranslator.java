@@ -29,7 +29,6 @@ import io.trino.spi.function.FunctionKind;
 import io.trino.spi.function.OperatorType;
 import io.trino.spi.function.Signature;
 import io.trino.spi.predicate.NullableValue;
-import io.trino.spi.type.DateType;
 import io.trino.spi.type.DecimalParseResult;
 import io.trino.spi.type.DecimalType;
 import io.trino.spi.type.Decimals;
@@ -249,11 +248,6 @@ public final class ExpressionTranslator
                 // Maybe should throw unsupported exception here.
                 return node;
             }
-            // IN predicate can only receive constant expression, convert here
-            // eg: select d_week_seq from date_dim where d_date in (cast('2000-06-30' as date),cast('2000-09-27' as date),cast('2000-11-17' as date));
-            if (toType instanceof DateType && constant.getValue() instanceof String stringDate) {
-                return new GlutenConstantExpression(LocalDate.parse(stringDate).toEpochDay(), toType);
-            }
             if (!toType.equals(constant.getType()) && isConvertible(constant, toType)) {
                 if (toType instanceof DecimalType decimalType) {
                     // LongDecimal use int128, must cast here
@@ -279,13 +273,8 @@ public final class ExpressionTranslator
             }
 
             Type compareType = glutenValue.getType();
-            for (Expression expression : inListNode.getValues()) {
-                GlutenRowExpression rowExpression = process(expression, context);
-                if (compareType instanceof DateType && expression instanceof GenericLiteral date) {
-                    rowExpression = new GlutenConstantExpression(date.getValue(), compareType);
-                }
-                expressionList.add(castConstantExpressionIfNeeded(rowExpression, compareType));
-            }
+            inListNode.getValues().stream().map(expression
+                    -> process(expression, context)).map(value -> castConstantExpressionIfNeeded(value, compareType)).forEach(expressionList::add);
 
             GlutenSpecialFormExpression.Form form = GlutenSpecialFormExpression.Form.IN;
             return new GlutenSpecialFormExpression(form, BOOLEAN, expressionList);
@@ -317,9 +306,6 @@ public final class ExpressionTranslator
             GlutenRowExpression index = process(node.getIndex(), context);
 
             if (base.getType() instanceof RowType) {
-                //long value = (Long) ((GlutenConstantExpression) index).getValue();
-                //return new SpecialForm(DEREFERENCE, process(node, context).getType(), base, constant((int) value - 1, INTEGER));
-
                 return new GlutenSpecialFormExpression(GlutenSpecialFormExpression.Form.DEREFERENCE, process(node, context).getType(), ImmutableList.of(base, index));
             }
 
@@ -742,8 +728,7 @@ public final class ExpressionTranslator
         {
             Type type = stringToType(node.getType());
             if (DATE.equals(type)) {
-                GlutenRowExpression arg = new GlutenConstantExpression(Slices.utf8Slice(node.getValue()), VARCHAR);
-                return buildCallExpression("date", SCALAR, DATE, ImmutableList.of(arg));
+                return new GlutenConstantExpression(LocalDate.parse(node.getValue()).toEpochDay(), DATE);
             }
             else if (BIGINT.equals(type)) {
                 return new GlutenConstantExpression(Long.parseLong(node.getValue()), BIGINT);
