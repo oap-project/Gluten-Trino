@@ -34,6 +34,7 @@ NativeConfigs::NativeConfigs(const std::string& configJsonString) {
   GET_KEY_FROM_JSON(asyncCacheSsdPath, configJson);
   GET_KEY_FROM_JSON(enableMemoryLeakCheck, configJson);
   GET_KEY_FROM_JSON(enableMemoryArbitration, configJson);
+  GET_KEY_FROM_JSON(memoryArbitratorKind, configJson);
   GET_KEY_FROM_JSON(reservedMemoryPoolCapacityPercentage, configJson);
   GET_KEY_FROM_JSON(initMemoryPoolCapacity, configJson);
   GET_KEY_FROM_JSON(minMemoryPoolTransferCapacity, configJson);

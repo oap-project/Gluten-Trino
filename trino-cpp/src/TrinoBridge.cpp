@@ -351,14 +351,14 @@ class JniHandle {
     options.capacity = memoryBytes;
     options.checkUsageLeak = nativeConfigs_->getEnableMemoryLeakCheck();
     if (nativeConfigs_->getEnableMemoryArbitration()) {
-      options.arbitratorKind = memory::MemoryArbitrator::Kind::kShared;
+      options.arbitratorKind = nativeConfigs_->getMemoryArbitratorKind();
       options.capacity =
           memoryBytes * 100 / nativeConfigs_->getReservedMemoryPoolCapacityPercentage();
       options.memoryPoolInitCapacity = nativeConfigs_->getInitMemoryPoolCapacity();
       options.memoryPoolTransferCapacity =
           nativeConfigs_->getMinMemoryPoolTransferCapacity();
     }
-    const auto& manager = memory::MemoryManager::getInstance(options, true);
+    const auto& manager = memory::MemoryManager::getInstance(options);
     LOG(INFO) << "Memory manager has been setup: " << manager.toString();
   }
 

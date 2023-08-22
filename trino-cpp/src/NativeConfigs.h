@@ -52,6 +52,9 @@ class NativeConfigs {
   inline const bool& getEnableMemoryArbitration() const {
     return enableMemoryArbitration;
   }
+  inline const std::string& getMemoryArbitratorKind() const {
+    return memoryArbitratorKind;
+  }
   inline const int32_t& getReservedMemoryPoolCapacityPercentage() const {
     return reservedMemoryPoolCapacityPercentage;
   }
@@ -90,6 +93,7 @@ class NativeConfigs {
   std::string asyncCacheSsdPath = "/tmp/trino_bridge/cache";
   bool enableMemoryLeakCheck = true;
   bool enableMemoryArbitration = false;
+  std::string memoryArbitratorKind = "";
   int32_t reservedMemoryPoolCapacityPercentage = 10;
   uint64_t initMemoryPoolCapacity = 120 << 20;
   uint64_t minMemoryPoolTransferCapacity = 32 << 20;

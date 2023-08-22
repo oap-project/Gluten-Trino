@@ -1,12 +1,188 @@
-Index: velox/docs/functions/presto/conversion.rst
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
+From cdc02f08f14c79b96aafbff4fdf9008100021d22 Mon Sep 17 00:00:00 2001
+From: "wuxueyang.wxy" <wuxueyang.wxy@alibaba-inc.com>
+Date: Sat, 5 Aug 2023 01:05:30 +0800
+Subject: [PATCH 1/2] Add rescale double utility function.
+
+---
+ velox/type/DecimalUtil.h         | 45 +++++++++++++++++
+ velox/type/tests/DecimalTest.cpp | 83 ++++++++++++++++++++++++++++++++
+ 2 files changed, 128 insertions(+)
+
+diff --git a/velox/type/DecimalUtil.h b/velox/type/DecimalUtil.h
+index dec802c0431..60c11ca8416 100644
+--- a/velox/type/DecimalUtil.h
++++ b/velox/type/DecimalUtil.h
+@@ -16,6 +16,7 @@
+
+ #pragma once
+
++#include <folly/Conv.h>
+ #include <string>
+ #include "velox/common/base/CheckedArithmetic.h"
+ #include "velox/common/base/Exceptions.h"
+@@ -193,6 +194,50 @@ class DecimalUtil {
+     return static_cast<TOutput>(rescaledValue);
+   }
+
++  /// Rescale a double value to decimal value.
++  ///
++  /// Use `folly::tryTo` to convert a double value to int128_t or int64_t. It
++  /// returns an error when overflow occurs so that we could determine whether
++  /// an overflow occurs through checking the result.
++  ///
++  /// Normally, return the rescaled value. Otherwise, if the `toValue` overflows
++  /// the TOutput's limits or the `toValue` exceeds the precision's limits, it
++  /// will throw an exception.
++  template <typename TOutput>
++  inline static TOutput
++  rescaleDouble(double inputValue, const int toPrecision, const int toScale) {
++    VELOX_USER_CHECK(
++        std::isfinite(inputValue),
++        "Cannot cast DOUBLE '{}' to DECIMAL({},{})",
++        inputValue,
++        toPrecision,
++        toScale);
++
++    auto toValue =
++        inputValue * static_cast<double>(DecimalUtil::kPowersOfTen[toScale]);
++
++    TOutput rescaledValue;
++    bool isOverflow = !std::isfinite(toValue);
++    if (!isOverflow) {
++      auto result = folly::tryTo<TOutput>(std::round(toValue));
++      if (result.hasError()) {
++        isOverflow = true;
++      } else {
++        rescaledValue = result.value();
++      }
++    }
++
++    if (isOverflow || rescaledValue < -DecimalUtil::kPowersOfTen[toPrecision] ||
++        rescaledValue > DecimalUtil::kPowersOfTen[toPrecision]) {
++      VELOX_USER_FAIL(
++          "Cannot cast DOUBLE '{:f}' to DECIMAL({},{})",
++          inputValue,
++          toPrecision,
++          toScale);
++    }
++    return rescaledValue;
++  }
++
+   template <typename R, typename A, typename B>
+   inline static R divideWithRoundUp(
+       R& r,
+diff --git a/velox/type/tests/DecimalTest.cpp b/velox/type/tests/DecimalTest.cpp
+index dbaf8f316ef..0e0176d3eac 100644
+--- a/velox/type/tests/DecimalTest.cpp
++++ b/velox/type/tests/DecimalTest.cpp
+@@ -177,5 +177,88 @@ TEST(DecimalTest, toByteArray) {
+   testToByteArray(DecimalUtil::kLongDecimalMax, expected8, 16);
+ }
+
++TEST(DecimalTest, rescaleDouble) {
++  std::vector<double> inputs{-3333.03, -2222.02, -1.0, 0.00, 100, 99999.99};
++  std::vector<int64_t> precision10scale1{
++      -33'330'300, -22'220'200, -10'000, 0, 1'000'000, 999'999'900};
++  std::vector<int128_t> precision20scale1{
++      -33'330, -22'220, -10, 0, 1'000, 1'000'000};
++  std::vector<int128_t> precision20scale10{
++      -33'330'300'000'000,
++      -22'220'200'000'000,
++      -10'000'000'000,
++      0,
++      1'000'000'000'000,
++      999'999'900'000'000};
++
++  for (size_t index = 0; index < inputs.size(); ++index) {
++    ASSERT_EQ(
++        precision10scale1[index],
++        DecimalUtil::rescaleDouble<int64_t>(inputs[index], 10, 4));
++    ASSERT_EQ(
++        precision20scale1[index],
++        DecimalUtil::rescaleDouble<int128_t>(inputs[index], 20, 1));
++    ASSERT_EQ(
++        precision20scale10[index],
++        DecimalUtil::rescaleDouble<int128_t>(inputs[index], 20, 10));
++  }
++
++  auto checkThrowError = [](double value, TypePtr& type) {
++    if (type->isShortDecimal()) {
++      auto shortDecimalType = type->asShortDecimal();
++      VELOX_ASSERT_THROW(
++          DecimalUtil::rescaleDouble<int64_t>(
++              value, shortDecimalType.precision(), shortDecimalType.scale()),
++          fmt::format(
++              "Cannot cast DOUBLE '{:f}' to {}",
++              value,
++              shortDecimalType.toString()));
++    } else {
++      auto longDecimalType = type->asLongDecimal();
++      VELOX_ASSERT_THROW(
++          DecimalUtil::rescaleDouble<int128_t>(
++              value, longDecimalType.precision(), longDecimalType.scale()),
++          fmt::format(
++              "Cannot cast DOUBLE '{:f}' to {}",
++              value,
++              longDecimalType.toString()));
++    }
++  };
++
++  auto decimalTypePrecision10Scale2 = DECIMAL(10, 2);
++  auto decimalTypePrecision20Scale2 = DECIMAL(20, 2);
++  auto decimalTypePrecision38Scale2 = DECIMAL(38, 2);
++
++  // Test infinity double type numbers.
++  checkThrowError(NAN, decimalTypePrecision10Scale2);
++  checkThrowError(INFINITY, decimalTypePrecision10Scale2);
++
++  // Expected failures.
++  double numberExceededPrecision = 9999999999999999999999.99;
++  checkThrowError(numberExceededPrecision, decimalTypePrecision10Scale2);
++
++  double numberBiggerThanInt64Max = static_cast<double>(
++      static_cast<int128_t>(std::numeric_limits<int64_t>::max()) + 1);
++  checkThrowError(numberBiggerThanInt64Max, decimalTypePrecision10Scale2);
++
++  double numberSmallerThanInt64Min = static_cast<double>(
++      static_cast<int128_t>(std::numeric_limits<int64_t>::min()) - 1);
++  checkThrowError(numberSmallerThanInt64Min, decimalTypePrecision10Scale2);
++
++  double numberBiggerThanDecimal20 =
++      static_cast<double>(DecimalUtil::kLongDecimalMax);
++  checkThrowError(numberBiggerThanDecimal20, decimalTypePrecision20Scale2);
++
++  double numberSmallerThanDecimal20 =
++      static_cast<double>(DecimalUtil::kLongDecimalMin);
++  checkThrowError(numberSmallerThanDecimal20, decimalTypePrecision20Scale2);
++
++  double doubleMax = std::numeric_limits<double>::max();
++  checkThrowError(doubleMax, decimalTypePrecision38Scale2);
++
++  double doubleMin = std::numeric_limits<double>::min();
++  ASSERT_EQ(0, DecimalUtil::rescaleDouble<int128_t>(doubleMin, 38, 2));
++}
++
+ } // namespace
+ } // namespace facebook::velox
+
+From 8ce863707131e7ae77cb1fb37ae5edda30795a58 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E6=9E=A2=E6=9C=A8?= <wuxueyang.wxy@alibaba-inc.com>
+Date: Fri, 21 Jul 2023 15:26:00 +0800
+Subject: [PATCH 2/2] Add support for casting Double to Decimal.
+
+---
+ velox/docs/functions/presto/conversion.rst | 26 +++++++-
+ velox/expression/CastExpr-inl.h            | 24 +++++++
+ velox/expression/CastExpr.cpp              |  4 ++
+ velox/expression/CastExpr.h                |  8 +++
+ velox/expression/tests/CastExprTest.cpp    | 74 ++++++++++++++++++++++
+ 5 files changed, 134 insertions(+), 2 deletions(-)
+
 diff --git a/velox/docs/functions/presto/conversion.rst b/velox/docs/functions/presto/conversion.rst
---- a/velox/docs/functions/presto/conversion.rst	(revision 7cbcc4dffc85a03f2f7973e04455f9522edd16c5)
-+++ b/velox/docs/functions/presto/conversion.rst	(revision 85eeb246f6c4ba532e0438227002d71460bf434c)
-@@ -128,7 +128,7 @@
+index 9ecd14ca925..9a36863d2ce 100644
+--- a/velox/docs/functions/presto/conversion.rst
++++ b/velox/docs/functions/presto/conversion.rst
+@@ -128,7 +128,7 @@ supported conversions to/from JSON are listed in :doc:`json`.
       - Y
       -
       -
@@ -15,19 +191,19 @@ diff --git a/velox/docs/functions/presto/conversion.rst b/velox/docs/functions/p
     * - varchar
       - Y
       - Y
-@@ -482,7 +482,7 @@
+@@ -488,7 +488,7 @@ Cast to Decimal
  From integral types
  ^^^^^^^^^^^^^^^^^^^
- 
+
 -Casting an integral numberto a decimal of given precision and scale is allowed
 +Casting an integral number to a decimal of given precision and scale is allowed
  if the input value can be represented by the precision and scale. Casting from
  invalid input values throws.
- 
-@@ -501,6 +501,28 @@
+
+@@ -507,6 +507,28 @@ Invalid examples
    SELECT cast(123 as decimal(6, 4)); -- Out of range
    SELECT cast(123 as decimal(4, 2)); -- Out of range
- 
+
 +From double precision floating-point types
 +^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 +
@@ -52,19 +228,15 @@ diff --git a/velox/docs/functions/presto/conversion.rst b/velox/docs/functions/p
 +
  From decimal
  ^^^^^^^^^^^^
- 
-Index: velox/expression/CastExpr-inl.h
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
+
 diff --git a/velox/expression/CastExpr-inl.h b/velox/expression/CastExpr-inl.h
---- a/velox/expression/CastExpr-inl.h	(revision 7cbcc4dffc85a03f2f7973e04455f9522edd16c5)
-+++ b/velox/expression/CastExpr-inl.h	(revision 85eeb246f6c4ba532e0438227002d71460bf434c)
-@@ -206,6 +206,35 @@
+index 6680243f643..ff05a400c24 100644
+--- a/velox/expression/CastExpr-inl.h
++++ b/velox/expression/CastExpr-inl.h
+@@ -206,6 +206,30 @@ void CastExpr::applyIntToDecimalCastKernel(
        });
  }
- 
+
 +template <typename TOutput>
 +void CastExpr::applyDoubleToDecimal(
 +    const SelectivityVector& rows,
@@ -73,39 +245,30 @@ diff --git a/velox/expression/CastExpr-inl.h b/velox/expression/CastExpr-inl.h
 +    const TypePtr& toType,
 +    VectorPtr& castResult) {
 +  auto sourceVector = input.as<SimpleVector<double>>();
-+  auto castResultRawBuffer =
++  auto rawResults =
 +      castResult->asUnchecked<FlatVector<TOutput>>()->mutableRawValues();
-+  const auto& toPrecisionScale = getDecimalPrecisionScale(*toType);
++  const auto toPrecisionScale = getDecimalPrecisionScale(*toType);
 +  applyToSelectedNoThrowLocal(
 +      context, rows, castResult, [&](vector_size_t row) {
 +        if (sourceVector->isNullAt(row)) {
 +          castResult->setNull(row, true);
 +          return;
 +        }
-+        auto rescaledValue = DecimalUtil::rescaleDouble<TOutput>(
++        rawResults[row] = DecimalUtil::rescaleDouble<TOutput>(
 +            sourceVector->valueAt(row),
 +            toPrecisionScale.first,
 +            toPrecisionScale.second);
-+        if (rescaledValue.has_value()) {
-+          castResultRawBuffer[row] = rescaledValue.value();
-+        } else {
-+          castResult->setNull(row, true);
-+        }
 +      });
 +}
 +
- template <typename TInput>
- VectorPtr CastExpr::applyDecimalToDoubleCast(
+ template <typename FromNativeType, TypeKind ToKind>
+ VectorPtr CastExpr::applyDecimalToFloatCast(
      const SelectivityVector& rows,
-Index: velox/expression/CastExpr.cpp
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
 diff --git a/velox/expression/CastExpr.cpp b/velox/expression/CastExpr.cpp
---- a/velox/expression/CastExpr.cpp	(revision 7cbcc4dffc85a03f2f7973e04455f9522edd16c5)
-+++ b/velox/expression/CastExpr.cpp	(revision 85eeb246f6c4ba532e0438227002d71460bf434c)
-@@ -447,6 +447,10 @@
+index ac0a7e8203b..ea6b410ca94 100644
+--- a/velox/expression/CastExpr.cpp
++++ b/velox/expression/CastExpr.cpp
+@@ -457,6 +457,10 @@ VectorPtr CastExpr::applyDecimal(
        applyIntToDecimalCastKernel<int32_t, toDecimalType>(
            rows, input, context, toType, castResult);
        break;
@@ -116,18 +279,14 @@ diff --git a/velox/expression/CastExpr.cpp b/velox/expression/CastExpr.cpp
      case TypeKind::BIGINT: {
        if (fromType->isShortDecimal()) {
          applyDecimalCastKernel<int64_t, toDecimalType>(
-Index: velox/expression/CastExpr.h
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
 diff --git a/velox/expression/CastExpr.h b/velox/expression/CastExpr.h
---- a/velox/expression/CastExpr.h	(revision 7cbcc4dffc85a03f2f7973e04455f9522edd16c5)
-+++ b/velox/expression/CastExpr.h	(revision 85eeb246f6c4ba532e0438227002d71460bf434c)
-@@ -211,6 +211,14 @@
+index 1572a2e014c..513e3367a57 100644
+--- a/velox/expression/CastExpr.h
++++ b/velox/expression/CastExpr.h
+@@ -211,6 +211,14 @@ class CastExpr : public SpecialForm {
        const TypePtr& toType,
        VectorPtr& castResult);
- 
+
 +  template <typename TOutput>
 +  void applyDoubleToDecimal(
 +      const SelectivityVector& rows,
@@ -136,21 +295,17 @@ diff --git a/velox/expression/CastExpr.h b/velox/expression/CastExpr.h
 +      const TypePtr& toType,
 +      VectorPtr& castResult);
 +
-   template <typename TInput>
-   VectorPtr applyDecimalToDoubleCast(
+   template <typename FromNativeType, TypeKind ToKind>
+   VectorPtr applyDecimalToFloatCast(
        const SelectivityVector& rows,
-Index: velox/expression/tests/CastExprTest.cpp
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
 diff --git a/velox/expression/tests/CastExprTest.cpp b/velox/expression/tests/CastExprTest.cpp
---- a/velox/expression/tests/CastExprTest.cpp	(revision 7cbcc4dffc85a03f2f7973e04455f9522edd16c5)
-+++ b/velox/expression/tests/CastExprTest.cpp	(revision 85eeb246f6c4ba532e0438227002d71460bf434c)
-@@ -943,6 +943,133 @@
-   ASSERT_EQ("cast((a) as ARRAY<VARCHAR>)", exprSet.exprs()[1]->toString());
+index d5cf922916e..57c1c2dc362 100644
+--- a/velox/expression/tests/CastExprTest.cpp
++++ b/velox/expression/tests/CastExprTest.cpp
+@@ -1476,6 +1476,80 @@ TEST_F(CastExprTest, integerToDecimal) {
+   testIntToDecimalCasts<int64_t>();
  }
- 
+
 +TEST_F(CastExprTest, doubleToDecimal) {
 +  // Double to short decimal.
 +  auto input =
@@ -180,166 +335,52 @@ diff --git a/velox/expression/tests/CastExprTest.cpp b/velox/expression/tests/Ca
 +      makeFlatVector<int128_t>(
 +          {-33'330, -22'220, -10, 0, 1'000, 1'000'000}, DECIMAL(20, 1)));
 +
++  auto checkThrowError = [this](double value, TypePtr& type) {
++    auto trivialResult = type->isShortDecimal()
++        ? makeConstant<int64_t>(0, 1, type)
++        : makeConstant<int128_t>(0, 1, type);
++    VELOX_ASSERT_THROW(
++        testComplexCast("c0", makeConstant<double>(value, 1), trivialResult),
++        fmt::format(
++            "Cannot cast DOUBLE '{:f}' to {}", value, type->toString()));
++  };
++
 +  auto numberBiggerThanInt64Max = static_cast<double>(
 +      static_cast<int128_t>(std::numeric_limits<int64_t>::max()) + 1);
 +  auto numberSmallerThanInt64Min = static_cast<double>(
 +      static_cast<int128_t>(std::numeric_limits<int64_t>::min()) - 1);
++  auto decimalTypePrecision10Scale2 = DECIMAL(10, 2);
++
++  // Expected failures.
++  checkThrowError(9999999999999999999999.99, decimalTypePrecision10Scale2);
++  checkThrowError(numberBiggerThanInt64Max, decimalTypePrecision10Scale2);
++  checkThrowError(numberSmallerThanInt64Min, decimalTypePrecision10Scale2);
++
 +  auto numberBiggerThanDecimal20 =
 +      static_cast<double>(DecimalUtil::kLongDecimalMax);
 +  auto numberSmallerThanDecimal20 =
 +      static_cast<double>(DecimalUtil::kLongDecimalMin);
++  auto decimalTypePrecision20Scale2 = DECIMAL(20, 2);
 +
-+  // Expected failures.
-+  VELOX_ASSERT_THROW(
-+      testComplexCast(
-+          "c0",
-+          makeFlatVector<double>(
-+              std::vector<double>{9999999999999999999999.99}),
-+          makeFlatVector<int64_t>(std::vector<int64_t>{0}, DECIMAL(10, 2))),
-+      fmt::format(
-+          "Cannot cast {} '{:f}' to DECIMAL(10,2)",
-+          CppToType<double>::name,
-+          9999999999999999999999.99));
-+  VELOX_ASSERT_THROW(
-+      testComplexCast(
-+          "c0",
-+          makeFlatVector<double>(std::vector<double>{numberBiggerThanInt64Max}),
-+          makeFlatVector<int64_t>(std::vector<int64_t>{0}, DECIMAL(10, 2))),
-+      fmt::format(
-+          "Cannot cast {} '{:f}' to DECIMAL(10,2)",
-+          CppToType<double>::name,
-+          numberBiggerThanInt64Max));
-+  VELOX_ASSERT_THROW(
-+      testComplexCast(
-+          "c0",
-+          makeFlatVector<double>(
-+              std::vector<double>{numberSmallerThanInt64Min}),
-+          makeFlatVector<int64_t>(std::vector<int64_t>{0}, DECIMAL(10, 2))),
-+      fmt::format(
-+          "Cannot cast {} '{:f}' to DECIMAL(10,2)",
-+          CppToType<double>::name,
-+          numberSmallerThanInt64Min));
-+  VELOX_ASSERT_THROW(
-+      testComplexCast(
-+          "c0",
-+          makeFlatVector<double>(
-+              std::vector<double>{numberBiggerThanDecimal20}),
-+          makeFlatVector<int128_t>(std::vector<int128_t>{0}, DECIMAL(20, 2))),
-+      fmt::format(
-+          "Cannot cast {} '{:f}' to DECIMAL(20,2)",
-+          CppToType<double>::name,
-+          numberBiggerThanDecimal20));
-+  VELOX_ASSERT_THROW(
-+      testComplexCast(
-+          "c0",
-+          makeFlatVector<double>(
-+              std::vector<double>{numberSmallerThanDecimal20}),
-+          makeFlatVector<int128_t>(std::vector<int128_t>{0}, DECIMAL(20, 2))),
-+      fmt::format(
-+          "Cannot cast {} '{:f}' to DECIMAL(20,2)",
-+          CppToType<double>::name,
-+          numberSmallerThanDecimal20));
-+
-+  auto doubleMax = std::numeric_limits<double>::max();
-+  auto doubleMin = std::numeric_limits<double>::min();
-+  VELOX_ASSERT_THROW(
-+      testComplexCast(
-+          "c0",
-+          makeFlatVector<double>(std::vector<double>{doubleMax}),
-+          makeFlatVector<int128_t>(std::vector<int128_t>{0}, DECIMAL(38, 2))),
-+      fmt::format(
-+          "Cannot cast {} '{:f}' to DECIMAL(38,2)",
-+          CppToType<double>::name,
-+          doubleMax));
-+  testComplexCast(
-+      "c0",
-+      makeFlatVector<double>(std::vector<double>{doubleMin}),
-+      makeFlatVector<int128_t>(std::vector<int128_t>{0}, DECIMAL(38, 2)));
++  checkThrowError(numberBiggerThanDecimal20, decimalTypePrecision20Scale2);
++  checkThrowError(numberSmallerThanDecimal20, decimalTypePrecision20Scale2);
 +
 +  double inf = INFINITY;
 +  double nan = NAN;
-+  VELOX_ASSERT_THROW(
-+      testComplexCast(
-+          "c0",
-+          makeFlatVector<double>(std::vector<double>{inf}),
-+          makeFlatVector<int128_t>(std::vector<int128_t>{0}, DECIMAL(38, 2))),
-+      fmt::format(
-+          "Cannot cast {} '{:f}' to DECIMAL(38,2)",
-+          CppToType<double>::name,
-+          inf));
-+  VELOX_ASSERT_THROW(
-+      testComplexCast(
-+          "c0",
-+          makeFlatVector<double>(std::vector<double>{nan}),
-+          makeFlatVector<int128_t>(std::vector<int128_t>{0}, DECIMAL(38, 2))),
-+      fmt::format(
-+          "Cannot cast {} '{:f}' to DECIMAL(38,2)",
-+          CppToType<double>::name,
-+          nan));
++  auto doubleMax = std::numeric_limits<double>::max();
++  auto doubleMin = std::numeric_limits<double>::min();
++  auto decimalTypePrecision38Scale2 = DECIMAL(38, 2);
++
++  checkThrowError(inf, decimalTypePrecision38Scale2);
++  checkThrowError(nan, decimalTypePrecision38Scale2);
++  checkThrowError(doubleMax, decimalTypePrecision38Scale2);
++  testComplexCast(
++      "c0",
++      makeConstant<double>(doubleMin, 1),
++      makeConstant<int128_t>(0, 1, decimalTypePrecision38Scale2));
 +}
 +
- TEST_F(CastExprTest, decimalToDouble) {
-   // short to short, scale up.
-   auto shortFlat = makeNullableFlatVector<int64_t>(
-Index: velox/type/DecimalUtil.h
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
-diff --git a/velox/type/DecimalUtil.h b/velox/type/DecimalUtil.h
---- a/velox/type/DecimalUtil.h	(revision 7cbcc4dffc85a03f2f7973e04455f9522edd16c5)
-+++ b/velox/type/DecimalUtil.h	(revision 85eeb246f6c4ba532e0438227002d71460bf434c)
-@@ -19,6 +19,7 @@
- #include <string>
- #include "velox/common/base/CheckedArithmetic.h"
- #include "velox/common/base/Exceptions.h"
-+#include "velox/type/Conversions.h"
- #include "velox/type/Type.h"
- 
- namespace facebook::velox {
-@@ -146,6 +147,45 @@
-     }
-     return static_cast<TOutput>(rescaledValue);
-   }
-+
-+  /// Rescale a double value to decimal value.
-+  ///
-+  /// Use `folly::convertTo` to convert a double value to int128_t or int64_t,
-+  /// it will throw an exception like 'loss of precision' when the `toValue`
-+  /// overflows the limits of int128_t or int64_t. The exception will be caught
-+  /// here to judge whether there is a overflow.
-+  ///
-+  /// Normally, return the rescaled value. Otherwise, if the `toValue` overflows
-+  /// the TOutput's limits or the `toValue` exceeds the precision's limits, it
-+  /// will throw an exception.
-+  template <typename TOutput>
-+  inline static std::optional<TOutput> rescaleDouble(
-+      const double inputValue,
-+      const int toPrecision,
-+      const int toScale) {
-+    auto toValue =
-+        inputValue * static_cast<double>(DecimalUtil::kPowersOfTen[toScale]);
-+
-+    bool isOverflow = !std::isfinite(toValue);
-+    TOutput rescaledValue;
-+    try {
-+      rescaledValue =
-+          util::Converter<CppToType<TOutput>::typeKind>::cast(toValue);
-+    } catch (const std::exception& e) {
-+      isOverflow = true;
-+    }
-+
-+    if (rescaledValue < -DecimalUtil::kPowersOfTen[toPrecision] ||
-+        rescaledValue > DecimalUtil::kPowersOfTen[toPrecision] || isOverflow) {
-+      VELOX_USER_FAIL(
-+          "Cannot cast {} '{:f}' to DECIMAL({},{})",
-+          SimpleTypeTrait<double>::name,
-+          inputValue,
-+          toPrecision,
-+          toScale);
-+    }
-+    return static_cast<TOutput>(rescaledValue);
-+  }
- 
-   template <typename R, typename A, typename B>
-   inline static R divideWithRoundUp(
+ TEST_F(CastExprTest, castInTry) {
+   // Test try(cast(array(varchar) as array(bigint))) whose input vector is
+   // wrapped in dictinary encoding. The row of ["2a"] should trigger an error
+

@@ -16,6 +16,8 @@ class TrinoExchangeSource : public facebook::velox::exec::ExchangeSource {
                       const std::string& clientCertAndKeyPath_ = "",
                       const std::string& ciphers_ = "");
 
+  bool supportsFlowControl() const override { return true; }
+
   bool shouldRequestLocked() override;
 
   static std::unique_ptr<ExchangeSource> createExchangeSource(
