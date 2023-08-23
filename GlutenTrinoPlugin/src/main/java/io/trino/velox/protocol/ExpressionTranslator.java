@@ -96,6 +96,7 @@ import static io.trino.spi.type.VarbinaryType.VARBINARY;
 import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.sql.analyzer.TypeSignatureProvider.fromTypes;
 import static io.trino.sql.analyzer.TypeSignatureTranslator.toTypeSignature;
+import static io.trino.type.IntervalDayTimeType.INTERVAL_DAY_TIME;
 import static io.trino.type.LikePatternType.LIKE_PATTERN;
 import static io.trino.velox.protocol.GlutenSpecialFormExpression.Form.IS_NULL;
 import static io.trino.velox.protocol.GlutenSpecialFormExpression.Form.ROW_CONSTRUCTOR;
@@ -257,7 +258,7 @@ public final class ExpressionTranslator
                 }
                 return new GlutenConstantExpression(constant.getValue(), toType);
             }
-            log.warn("Constant Expression %s is not converted to %s!", constant.getValue(), toType.getBaseName());
+            log.debug("Constant Expression %s is not converted to %s!", constant.getValue(), toType.getBaseName());
             return constant;
         }
 
@@ -549,7 +550,8 @@ public final class ExpressionTranslator
             GlutenRowExpression left = process(node.getLeft(), context);
             GlutenRowExpression right = process(node.getRight(), context);
 
-            if (!left.getType().equals(right.getType())) {
+            // Do not convert interval time, do it native side
+            if (!left.getType().equals(right.getType()) && !left.getType().equals(INTERVAL_DAY_TIME) && !right.getType().equals(INTERVAL_DAY_TIME)) {
                 if (isConvertible(left, right.getType())) {
                     left = castIfNeeded(left, right.getType());
                 }

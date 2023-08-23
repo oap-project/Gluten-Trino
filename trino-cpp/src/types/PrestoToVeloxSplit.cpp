@@ -43,10 +43,20 @@ velox::exec::Split toVeloxSplit(const protocol::ScheduledSplit& scheduledSplit) 
           std::dynamic_pointer_cast<const protocol::HiveSplit>(connectorSplit)) {
     std::unordered_map<std::string, std::optional<std::string>> partitionKeys;
     for (const auto& entry : hiveSplit->partitionKeys) {
-      partitionKeys.emplace(entry.name,
-                            entry.value.empty()
-                                ? std::nullopt
-                                : std::make_optional<std::string>(entry.value));
+      VLOG(1) << entry.name << " " << entry.value;
+      std::optional<std::string> partitionValue;
+      if (entry.value.empty()) {
+        partitionValue = std::nullopt;
+      } else {
+        // Transfer __HIVE_DEFAULT_PARTITION__ to 0
+        // __HIVE_DEFAULT_PARTITION__ is set to '\\N' in trino, see HivePartitionKey.java
+        if (entry.value == "\\N") {
+          partitionValue = std::make_optional<std::string>("0");
+        } else {
+          partitionValue = std::make_optional<std::string>(entry.value);
+        }
+      }
+      partitionKeys.emplace(entry.name, partitionValue);
     }
     std::unordered_map<std::string, std::string> customSplitInfo;
     for (const auto& [key, value] : hiveSplit->fileSplit.customSplitInfo) {

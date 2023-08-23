@@ -14,7 +14,7 @@
 
 #include "src/types/PrestoToVeloxExpr.h"
 
-#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "src/protocol/Base64Util.h"
 #include "src/types/ParseTypeSignature.h"
@@ -203,22 +203,29 @@ std::optional<TypedExprPtr> tryConvertTry(const protocol::Signature& signature,
   return std::make_shared<CallTypedExpr>(type, newArgs, "try");
 }
 
-std::optional<TypedExprPtr> tryConvertLiteralArray(const protocol::Signature& signature,
-                                                   const std::string& returnType,
-                                                   const std::vector<TypedExprPtr>& args,
-                                                   velox::memory::MemoryPool* pool) {
-  static const char* kLiteralArray = "presto.default.$literal$";
+std::optional<TypedExprPtr> tryConvertLiteral(const protocol::Signature& signature,
+                                              const std::string& returnType,
+                                              const std::vector<TypedExprPtr>& args,
+                                              velox::memory::MemoryPool* pool) {
+  static const char* kLiteral = "presto.default.$literal$";
   static const char* kFromBase64 = "presto.default.from_base64";
 
   if (signature.kind != protocol::FunctionKind::SCALAR) {
     return std::nullopt;
   }
 
-  if (signature.name.compare(0, strlen(kLiteralArray), kLiteralArray) != 0) {
+  if (signature.name.compare(0, strlen(kLiteral), kLiteral) != 0) {
     return std::nullopt;
   }
 
   VELOX_CHECK_EQ(args.size(), 1);
+
+  // interval day to second contains constant value, will return null when casting call
+  // expression, so we have to construct constant type early here.
+  if (boost::iequals(returnType, "interval day to second")) {
+    int64_t value = std::stoi(args[0].get()->toString());
+    return std::make_shared<ConstantTypedExpr>(parseTypeSignature(returnType), value);
+  }
 
   auto call = std::dynamic_pointer_cast<const CallTypedExpr>(args[0]);
   VELOX_CHECK_NOT_NULL(call);
@@ -343,16 +350,14 @@ TypedExprPtr VeloxExprConverter::toVeloxExpr(
       return tryExpr.value();
     }
 
-    auto literal = tryConvertLiteralArray(signature, pexpr.returnType, args, pool_);
+    auto literal = tryConvertLiteral(signature, pexpr.returnType, args, pool_);
     if (literal.has_value()) {
       return literal.value();
     }
 
     auto returnType = parseTypeSignature(pexpr.returnType);
     return std::make_shared<CallTypedExpr>(returnType, args, getFunctionName(signature));
-  }
-  /*
-  } else if (
+  } /* else if (
       auto sqlFunctionHandle =
           std::dynamic_pointer_cast<protocol::SqlFunctionHandle>(
               pexpr.functionHandle)) {
@@ -514,8 +519,8 @@ velox::ArrayVectorPtr toArrayVector(const velox::TypePtr& elementType,
   auto rawSizes = sizes->asMutable<velox::vector_size_t>();
   rawSizes[0] = size;
 
-  return std::make_shared<velox::ArrayVector>(pool, ARRAY(elementType),
-                                              nullptr, 1, offsets, sizes, elements);
+  return std::make_shared<velox::ArrayVector>(pool, ARRAY(elementType), nullptr, 1,
+                                              offsets, sizes, elements);
 }
 
 TypedExprPtr convertInExpr(const std::vector<TypedExprPtr>& args,

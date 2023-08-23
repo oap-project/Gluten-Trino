@@ -17,7 +17,6 @@
 #include "velox/exec/Split.h"
 
 namespace io::trino {
-// using namespace facebook;
 
 // Creates and returns exec::Split (with connector::ConnectorSplit inside) based
 // on the given protocol split.
