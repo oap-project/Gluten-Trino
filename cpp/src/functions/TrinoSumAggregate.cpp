@@ -1,3 +1,17 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#include <thread>
 #include "glog/logging.h"
 #include "velox/common/base/Exceptions.h"
 #include "velox/exec/Aggregate.h"
@@ -17,7 +31,8 @@ struct LongAndDoubleState {
 template <typename TInput, typename TAccumulator, typename TResult>
 class TrinoSumAggregate : public exec::Aggregate {
  public:
-  explicit TrinoSumAggregate(TypePtr resultType) : exec::Aggregate(std::move(resultType)) {}
+  explicit TrinoSumAggregate(TypePtr resultType)
+      : exec::Aggregate(std::move(resultType)) {}
 
   int32_t accumulatorFixedWidthSize() const override {
     return sizeof(LongAndDoubleState<TAccumulator>);
@@ -345,6 +360,13 @@ exec::AggregateRegistrationResult registerTrinoSumAggregate(const std::string& n
               return std::make_unique<TrinoSumAggregate<int64_t, int64_t, int64_t>>(
                   resultType);
             }
+            case TypeKind::HUGEINT: {
+              if (inputType->isLongDecimal()) {
+                return std::make_unique<TrinoSumAggregate<int128_t, int128_t, int128_t>>(
+                    resultType);
+              }
+              VELOX_NYI();
+            }
             case TypeKind::REAL:
               return std::make_unique<TrinoSumAggregate<float, double, float>>(
                   resultType);
@@ -358,6 +380,9 @@ exec::AggregateRegistrationResult registerTrinoSumAggregate(const std::string& n
         } else {
           checkSumCountRowType(inputType);
           switch (resultType->kind()) {
+            case TypeKind::REAL:
+              return std::make_unique<TrinoSumAggregate<float, double, float>>(
+                  resultType);
             case TypeKind::DOUBLE:
               return std::make_unique<TrinoSumAggregate<double, double, double>>(
                   resultType);

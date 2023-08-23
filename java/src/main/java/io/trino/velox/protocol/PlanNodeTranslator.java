@@ -15,6 +15,7 @@ package io.trino.velox.protocol;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.airlift.log.Logger;
 import io.trino.Session;
 import io.trino.metadata.Metadata;
 import io.trino.metadata.ResolvedFunction;
@@ -27,7 +28,6 @@ import io.trino.spi.type.RowType;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
 import io.trino.sql.DynamicFilters;
-import io.trino.sql.analyzer.TypeSignatureProvider;
 import io.trino.sql.planner.OrderingScheme;
 import io.trino.sql.planner.PartitioningScheme;
 import io.trino.sql.planner.Symbol;
@@ -53,7 +53,6 @@ import io.trino.sql.planner.plan.TopNRankingNode;
 import io.trino.sql.planner.plan.ValuesNode;
 import io.trino.sql.planner.plan.WindowNode;
 import io.trino.sql.tree.Expression;
-import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.Row;
 
 import java.util.ArrayList;
@@ -72,6 +71,7 @@ import static java.util.Locale.ENGLISH;
 
 public class PlanNodeTranslator
 {
+    private static final Logger log = Logger.get(PlanNodeTranslator.class);
     private final Metadata metadata;
     private final TypeManager typeManager;
     private final BlockEncodingSerde blockEncodingSerde;
@@ -211,14 +211,6 @@ public class PlanNodeTranslator
             return new GlutenTableScanNode(node.getId(), glutenTableHandle, assignments, outputSymbols);
         }
 
-        private ResolvedFunction mapAggregateFunction(ResolvedFunction origin, AggregationNode.Step step)
-        {
-            if (step.equals(AggregationNode.Step.PARTIAL) && origin.getFunctionId().toString().startsWith("sum")) {
-                return metadata.resolveFunction(session, QualifiedName.of("avg"), TypeSignatureProvider.fromTypes(origin.getSignature().getArgumentTypes()));
-            }
-            return origin;
-        }
-
         private Type convertAggregateResultType(Type origin, ResolvedFunction function, AggregationNode.Step step)
         {
             if (step.equals(AggregationNode.Step.PARTIAL)) {
@@ -243,7 +235,6 @@ public class PlanNodeTranslator
             // Translate Aggregations
             HashMap<GlutenVariableReferenceExpression, GlutenAggregationNode.Aggregation> aggregations = new HashMap<>();
             node.getAggregations().forEach(((symbol, aggregation) -> {
-                // ResolvedFunction function = mapAggregateFunction(aggregation.getResolvedFunction(), node.getStep());
                 ResolvedFunction function = aggregation.getResolvedFunction();
                 Type aggValueType = convertAggregateResultType(function.getSignature().getReturnType(), function, node.getStep());
                 GlutenVariableReferenceExpression aggValue = new GlutenVariableReferenceExpression(symbol.getName(), aggValueType);
@@ -263,7 +254,6 @@ public class PlanNodeTranslator
                 Optional<GlutenOrderingScheme> ordering = Optional.empty();
                 if (aggregation.getOrderingScheme().isPresent()) {
                     Optional<OrderingScheme> trinoOrderingScheme = aggregation.getOrderingScheme();
-                    Optional<GlutenOrderingScheme> orderingScheme = Optional.empty();
                     if (trinoOrderingScheme.isPresent()) {
                         OrderingScheme os = trinoOrderingScheme.get();
                         ordering = Optional.of(
