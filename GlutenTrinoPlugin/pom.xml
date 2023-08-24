@@ -952,6 +952,11 @@
 
             <dependency>
                 <groupId>io.netty</groupId>
+                <artifactId>netty</artifactId>
+                <version>3.9.8.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
                 <version>4.1.72.Final</version>
             </dependency>
@@ -1033,7 +1038,11 @@
                 <version>5.12.1</version>
                 <scope>runtime</scope>
             </dependency>
-
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>2.4.9</version>
+            </dependency>
             <dependency>
                 <groupId>net.sf.opencsv</groupId>
                 <artifactId>opencsv</artifactId>
@@ -1189,6 +1198,11 @@
                 </exclusions>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.ivy</groupId>
+                <artifactId>ivy</artifactId>
+                <version>2.5.1</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
@@ -1381,7 +1395,7 @@
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.1.8.4</version>
+                <version>1.1.10.1</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.osgi</groupId>
