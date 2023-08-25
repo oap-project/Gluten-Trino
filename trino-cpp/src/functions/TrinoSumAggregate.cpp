@@ -17,7 +17,7 @@ struct LongAndDoubleState {
 template <typename TInput, typename TAccumulator, typename TResult>
 class TrinoSumAggregate : public exec::Aggregate {
  public:
-  explicit TrinoSumAggregate(TypePtr resultType) : exec::Aggregate(resultType) {}
+  explicit TrinoSumAggregate(TypePtr resultType) : exec::Aggregate(std::move(resultType)) {}
 
   int32_t accumulatorFixedWidthSize() const override {
     return sizeof(LongAndDoubleState<TAccumulator>);

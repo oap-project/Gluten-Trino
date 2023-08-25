@@ -416,6 +416,7 @@ void serializeFlatVector(const BaseVector* vector,
                          VectorStream* stream) {
   using T = typename TypeTraits<kind>::NativeType;
   auto flatVector = dynamic_cast<const FlatVector<T>*>(vector);
+  VELOX_CHECK(flatVector, "Not a FlatVector, cannot serailize");
   auto rawValues = flatVector->rawValues();
   if (!flatVector->mayHaveNulls()) {
     for (auto& range : ranges) {
@@ -492,6 +493,7 @@ void serializeConstantVector(const BaseVector* vector,
                              VectorStream* stream) {
   using T = typename KindToFlatVector<kind>::WrapperType;
   auto constVector = dynamic_cast<const ConstantVector<T>*>(vector);
+  VELOX_CHECK(constVector, "Not a ConstantVector, cannot serialize.");
   if (constVector->valueVector()) {
     serializeWrapped(constVector, ranges, stream);
     return;
@@ -516,6 +518,7 @@ void serializeBiasVector(const BaseVector* vector,
                          const folly::Range<const IndexRange*>& ranges,
                          VectorStream* stream) {
   auto biasVector = dynamic_cast<const BiasVector<T>*>(vector);
+  VELOX_CHECK("biasVector", "Not a BiasVector, cannot serialize");
   if (!vector->mayHaveNulls()) {
     for (int32_t i = 0; i < ranges.size(); ++i) {
       stream->appendNonNull(ranges[i].size);
@@ -570,7 +573,7 @@ void serializeRowVector(const BaseVector* vector,
                         const folly::Range<const IndexRange*>& ranges,
                         VectorStream* stream) {
   auto rowVector = dynamic_cast<const RowVector*>(vector);
-
+  VELOX_CHECK(rowVector, "Not a RowVector, cannot serialize");
   if (isTimestampWithTimeZoneType(vector->type())) {
     serializeTimestampWithTimeZone(rowVector, ranges, stream);
     return;
@@ -599,6 +602,7 @@ void serializeArrayVector(const BaseVector* vector,
                           const folly::Range<const IndexRange*>& ranges,
                           VectorStream* stream) {
   auto arrayVector = dynamic_cast<const ArrayVector*>(vector);
+  VELOX_CHECK(arrayVector, "Not an ArrayVector, cannot serialize");
   auto rawSizes = arrayVector->rawSizes();
   auto rawOffsets = arrayVector->rawOffsets();
   std::vector<IndexRange> childRanges;
@@ -626,6 +630,7 @@ void serializeMapVector(const BaseVector* vector,
                         const folly::Range<const IndexRange*>& ranges,
                         VectorStream* stream) {
   auto mapVector = dynamic_cast<const MapVector*>(vector);
+  VELOX_CHECK(mapVector, "Not a MapVector, cannot serialize");
   auto rawSizes = mapVector->rawSizes();
   auto rawOffsets = mapVector->rawOffsets();
   std::vector<IndexRange> childRanges;
@@ -1059,10 +1064,10 @@ void read(ByteStream* source, std::shared_ptr<const Type> type, memory::MemoryPo
     }
   }
   if (type->isLongDecimal()) {
-    readDecimalValues(source, size, flatResult->nulls(), nullCount, values);
+    readDecimalValues(source, size, flatResult->nulls(), nullCount, std::move(values));
     return;
   }
-  readValues<T>(source, size, flatResult->nulls(), nullCount, values);
+  readValues<T>(source, size, flatResult->nulls(), nullCount, std::move(values));
 }
 
 BufferPtr findOrAllocateStringBuffer(int64_t size, const std::vector<BufferPtr>& buffers,
@@ -1157,7 +1162,7 @@ void readTimestampWithTimeZone(ByteStream* source,
 
   *result =
       std::make_shared<RowVector>(pool, TIMESTAMP_WITH_TIME_ZONE(), timestamps->nulls(),
-                                  size, std::vector<VectorPtr>{timestamps, timezones});
+                                  size, std::vector<VectorPtr>{timestamps, std::move(timezones)});
 }
 
 void readRowVector(ByteStream* source, std::shared_ptr<const Type> type,
@@ -1308,7 +1313,7 @@ void readColumns(ByteStream* source, memory::MemoryPool* pool,
     if (encoding == kRLE) {
       readConstantVector(source, types[i], pool, &(*result)[i], useLosslessTimestamp);
     } else {
-      checkTypeEncoding(encoding, types[i]);
+      checkTypeEncoding(std::move(encoding), types[i]);
       auto it = readers.find(types[i]->kind());
       VELOX_CHECK(it != readers.end(), "Column reader for type {} is missing",
                   types[i]->kindName());
