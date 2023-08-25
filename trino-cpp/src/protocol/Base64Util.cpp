@@ -222,7 +222,7 @@ velox::VectorPtr readVariableWidthBlock(
       nulls,
       positionCount,
       buffer,
-      std::vector<velox::BufferPtr>{stringBuffer});
+      std::vector<velox::BufferPtr>{std::move(stringBuffer)});
 }
 
 template <velox::TypeKind Kind>
@@ -321,7 +321,7 @@ auto readArrayOrMapFinalPart(
     velox::BufferPtr offsets;
     velox::BufferPtr sizes;
   };
-  return result{nulls, positionCount, offsets, sizes};
+  return result{std::move(nulls), positionCount, std::move(offsets), std::move(sizes)};
 }
 
 velox::VectorPtr readBlockInt(
@@ -396,9 +396,9 @@ velox::VectorPtr readBlockInt(
     return std::make_shared<velox::RowVector>(
         pool,
         velox::TIMESTAMP_WITH_TIME_ZONE(),
-        nulls,
+        std::move(nulls),
         positionCount,
-        std::vector<velox::VectorPtr>{timestamps, timezones});
+        std::vector<velox::VectorPtr>{std::move(timestamps), std::move(timezones)});
   };
 
   return VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(
