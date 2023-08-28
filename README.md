@@ -56,7 +56,7 @@ $ apt-get install jq
 ### Build Gluten CPP
 
 ```
-cd ${REPO}/Gluten-Trino-Cpp
+cd ${REPO}/cpp
 export TRINO_HOME=/path/to/Gluten-Trino/repo 
 make depends # this will install all dependency 
 make release
@@ -66,7 +66,7 @@ Once build completed, you can get `src/libgluten_trino.so` under build dir.
 ### Build Gluten Java
 
 ```
-cd ${REPO}/Gluten-Trino-Java
+cd ${REPO}/java
 mvn clean package -DskipTests=True -Dair.check.skip-duplicate-finder=True
 ```
 
