@@ -217,7 +217,8 @@ io::trino::protocol::TaskStats getTaskStats(
                       op.finishTiming.cpuNanos;
 
       auto totalScheduledTime = Duration(wallNanos, protocol::TimeUnit::NANOSECONDS);
-      auto totalBlockedTime = Duration(op.blockedWallNanos, protocol::TimeUnit::NANOSECONDS);
+      auto totalBlockedTime =
+          Duration(op.blockedWallNanos, protocol::TimeUnit::NANOSECONDS);
       auto totalCpuTime = Duration(cpuNanos, protocol::TimeUnit::NANOSECONDS);
 
       pipelineStats.totalScheduledTime += totalScheduledTime;
@@ -237,7 +238,16 @@ io::trino::protocol::TaskStats getTaskStats(
       stats.totalCpuTime += totalCpuTime;
       stats.totalBlockedTime += totalBlockedTime;
     }  // pipeline's operators loop
-  }    // task's pipelines loop
+
+  }  // task's pipelines loop
+
+  auto&& outPipeline = stats.pipelines.front();
+  auto&& outOp = outPipeline.operatorSummaries.back();
+  if (outOp.stageId > 0) {
+    size_t opNum = outPipeline.operatorSummaries.size();
+    VELOX_CHECK_GT(opNum, 1);
+    outOp.planNodeId = outPipeline.operatorSummaries[opNum - 2].planNodeId;
+  }
 
   return stats;
 }
