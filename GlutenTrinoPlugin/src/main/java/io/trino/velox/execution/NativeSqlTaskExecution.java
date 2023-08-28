@@ -31,6 +31,7 @@ import io.trino.spi.TrinoException;
 import io.trino.sql.planner.SystemPartitioningHandle;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.velox.protocol.GlutenPlanFragment;
+import org.joda.time.DateTime;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -130,12 +131,13 @@ public class NativeSqlTaskExecution
 
     private TaskStats generateTaskStats(TaskStats javaStats, TaskStats nativeStats)
     {
+        DateTime lastEndTime = isNativeTaskDone() ? nativeStats.getLastEndTime() : null;
         return new TaskStats(
                 javaStats.getCreateTime(),
-                nativeStats.getFirstStartTime().isEqual(0) ? null : nativeStats.getFirstStartTime(),
-                nativeStats.getLastStartTime().isEqual(0) ? null : nativeStats.getLastStartTime(),
+                nativeStats.getFirstStartTime().isEqual(0) ? lastEndTime : nativeStats.getFirstStartTime(),
+                nativeStats.getLastStartTime().isEqual(0) ? lastEndTime : nativeStats.getLastStartTime(),
                 javaStats.getTerminatingStartTime(),
-                isNativeTaskDone() ? nativeStats.getLastEndTime() : null,
+                lastEndTime,
                 javaStats.getEndTime(),
                 javaStats.getElapsedTime(),
                 javaStats.getQueuedTime(),
