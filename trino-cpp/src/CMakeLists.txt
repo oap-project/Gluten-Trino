@@ -27,11 +27,11 @@ set(Protobuf_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/_deps/protobuf-src/src/)
 set(Xsimd_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/_deps/xsimd-src/include/)
 include_directories(${JNI_INCLUDE_DIRS})
 
-option(TRINO_BRIDGE_ENABLE_SANITIZER
+option(GLUTEN_TRINO_ENABLE_SANITIZER
        "Enable AddressSanitizer for Trino Bridge." OFF)
-option(TRINO_BRIDGE_BUILDING_TESTS "Building Tests for Trino Bridge." OFF)
+option(GLUTEN_TRINO_BUILDING_TESTS "Building Tests for Trino Bridge." OFF)
 
-if(TRINO_BRIDGE_ENABLE_SANITIZER)
+if(GLUTEN_TRINO_ENABLE_SANITIZER)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 else()
   # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
@@ -53,10 +53,10 @@ if(ENABLE_TRINO_EXCHANGE)
   set(SOURCES ${SOURCES} ${TRINO_EXCHANGE_SOURCES})
 endif()
 
-add_library(trino_bridge SHARED ${SOURCES})
+add_library(gluten_trino SHARED ${SOURCES})
 
 target_include_directories(
-  trino_bridge
+  gluten_trino
   PUBLIC ${CMAKE_SYSTEM_INCLUDE_PATH}
          ${JNI_INCLUDE_DIRS}
          ${CMAKE_CURRENT_SOURCE_DIR}
@@ -100,20 +100,20 @@ endif()
 
 add_subdirectory(serialization)
 
-target_link_libraries(trino_bridge PUBLIC
-        trino_bridge_functions
-        trino_bridge_serialization
+target_link_libraries(gluten_trino PUBLIC
+        gluten_trino_functions
+        gluten_trino_serialization
         ${VELOX_LIBS}
         trino_protocol
         velox_vector_test_lib)
 
 if(ENABLE_TRINO_EXCHANGE)
-  target_link_libraries(trino_bridge PUBLIC ${PROXYGEN_LIBRARIES})
+  target_link_libraries(gluten_trino PUBLIC ${PROXYGEN_LIBRARIES})
 endif()
 
-target_link_libraries(trino_bridge PUBLIC ${FMT} Folly::folly ${RE2}
+target_link_libraries(gluten_trino PUBLIC ${FMT} Folly::folly ${RE2}
                                           presto_type_converter)
 
-if(TRINO_BRIDGE_BUILDING_TESTS)
+if(GLUTEN_TRINO_BUILDING_TESTS)
   add_subdirectory(test)
 endif()

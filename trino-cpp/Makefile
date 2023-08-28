@@ -8,7 +8,7 @@ clean:
 build:
 	$(MAKE) velox-patch
 	@mkdir -p build-$(BUILD_TYPE) && \
-	cmake -B build-$(BUILD_TYPE) -GNinja -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DTRINO_BRIDGE_ENABLE_SANITIZER=$(ENABLE_SANITIZER)
+	cmake -B build-$(BUILD_TYPE) -GNinja -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DGLUTEN_TRINO_ENABLE_SANITIZER=$(ENABLE_SANITIZER)
 	cmake --build build-$(BUILD_TYPE) -j $(JOBS) 
 
 debug:

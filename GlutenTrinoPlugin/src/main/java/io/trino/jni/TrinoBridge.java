@@ -109,6 +109,6 @@ public class TrinoBridge
     public native void cancelTask(long handlePtr, String taskId);
 
     static {
-        System.loadLibrary("trino_bridge");
+        System.loadLibrary("gluten_trino");
     }
 }

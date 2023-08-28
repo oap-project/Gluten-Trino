@@ -40,6 +40,6 @@ add_dependencies(trino_protocol internal_trino_protocol)
 target_link_libraries(trino_protocol ${RE2} ${FMT} Folly::folly velox_vector)
 target_include_directories(trino_protocol SYSTEM PRIVATE ${Xsimd_INCLUDE_DIRS})
 
-if (TRINO_BRIDGE_BUILDING_TESTS)
+if (GLUTEN_TRINO_BUILDING_TESTS)
   add_subdirectory(tests)
 endif ()

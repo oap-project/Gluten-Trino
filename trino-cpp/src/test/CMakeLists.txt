@@ -1,7 +1,7 @@
 # find_package(GTest REQUIRED)
 
 set(TEST_LIBS 
-    trino_bridge
+    gluten_trino
     gtest
     Folly::folly
 )

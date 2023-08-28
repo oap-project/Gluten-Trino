@@ -90,7 +90,7 @@ class NativeConfigs {
   int64_t asyncCacheSsdSize = 0;
   int64_t asyncCacheSsdCheckpointSize = 0;
   bool asyncCacheSsdDisableFileCow = false;
-  std::string asyncCacheSsdPath = "/tmp/trino_bridge/cache";
+  std::string asyncCacheSsdPath = "/tmp/gluten_trino/cache";
   bool enableMemoryLeakCheck = true;
   bool enableMemoryArbitration = false;
   std::string memoryArbitratorKind = "";

@@ -21,8 +21,8 @@ import javax.validation.constraints.NotNull;
 
 public class NativeTaskConfig
 {
-    // Native Log verbose level, 'trino_bridge=1,TrinoExchangeSource=2' means that will make
-    // the verbose log level in trino_bridge be 1, and the verbose log level in TrinoExchangeSource be 2.
+    // Native Log verbose level, 'gluten_trino=1,TrinoExchangeSource=2' means that will make
+    // the verbose log level in gluten_trino be 1, and the verbose log level in TrinoExchangeSource be 2.
     private String logVerboseModules = "";
 
     private DataSize maxQueryMemoryPerNode = DataSize.of(1, DataSize.Unit.GIGABYTE);
@@ -34,7 +34,7 @@ public class NativeTaskConfig
     private DataSize asyncCacheSsdSize = DataSize.ofBytes(0);
     private DataSize asyncCacheSsdCheckpointSize = DataSize.ofBytes(0);
     private boolean asyncCacheSsdDisableFileCow;
-    private String asyncCacheSsdPath = "/tmp/trino_bridge/cache";
+    private String asyncCacheSsdPath = "/tmp/gluten_trino/cache";
     private boolean enableMemoryLeakCheck = true;
     private boolean enableMemoryArbitration;
     private int reservedMemoryPoolCapacityPercentage = 10;

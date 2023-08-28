@@ -109,7 +109,7 @@ public final class ExpressionTranslator
     private static final Logger log = Logger.get(ExpressionTranslator.class);
     private static final String OPERATOR_PREFIX = "$operator$";
 
-    private static final List<String> TRINO_BRIDGE_ADDED_FUNCTION_NAMES = ImmutableList.of("sum");
+    private static final List<String> GLUTEN_TRINO_ADDED_FUNCTION_NAMES = ImmutableList.of("sum");
 
     private ExpressionTranslator()
     {
@@ -134,7 +134,7 @@ public final class ExpressionTranslator
 
     private static GlutenSignature.FunctionQualifiedName renameTrinoBridgeFunction(String originName)
     {
-        for (String trinoBridgeAddedFunctionName : TRINO_BRIDGE_ADDED_FUNCTION_NAMES) {
+        for (String trinoBridgeAddedFunctionName : GLUTEN_TRINO_ADDED_FUNCTION_NAMES) {
             if (originName.toLowerCase(ENGLISH).startsWith(trinoBridgeAddedFunctionName)) {
                 return new GlutenSignature.FunctionQualifiedName("trino", "bridge", trinoBridgeAddedFunctionName);
             }
