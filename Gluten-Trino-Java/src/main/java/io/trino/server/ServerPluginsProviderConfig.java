@@ -40,7 +40,7 @@ public class ServerPluginsProviderConfig
         return this;
     }
 
-    @Config("trino-cpp.plugin.dir")
+    @Config("gluten-trino.plugin.dir")
     public ServerPluginsProviderConfig setTrinoCppPluginsDir(File trinoCppPluginsDir)
     {
         this.trinoCppPluginsDir = trinoCppPluginsDir;
