@@ -254,9 +254,9 @@ std::unique_ptr<common::Filter> boolRangeToFilter(
     const VeloxExprConverter& exprConverter,
     const TypePtr& type) {
   bool lowExclusive = range.low.bound == protocol::Bound::ABOVE;
-  bool lowUnbounded = range.low.valueBlock == nullptr && lowExclusive;
+  bool lowUnbounded = range.low.valueBlock == nullptr || lowExclusive;
   bool highExclusive = range.high.bound == protocol::Bound::BELOW;
-  bool highUnbounded = range.high.valueBlock == nullptr && highExclusive;
+  bool highUnbounded = range.high.valueBlock == nullptr || highExclusive;
 
   if (!lowUnbounded && !highUnbounded) {
     bool lowValue = toBoolean(range.low.valueBlock, exprConverter, type);
@@ -331,12 +331,12 @@ std::unique_ptr<common::DoubleRange> doubleRangeToFilter(
     const VeloxExprConverter& exprConverter,
     const TypePtr& type) {
   bool lowExclusive = range.low.bound == protocol::Bound::ABOVE;
-  bool lowUnbounded = range.low.valueBlock == nullptr && lowExclusive;
+  bool lowUnbounded = range.low.valueBlock == nullptr || lowExclusive;
   auto low = lowUnbounded ? std::numeric_limits<double>::lowest()
                           : toDouble(range.low.valueBlock, exprConverter, type);
 
   bool highExclusive = range.high.bound == protocol::Bound::BELOW;
-  bool highUnbounded = range.high.valueBlock == nullptr && highExclusive;
+  bool highUnbounded = range.high.valueBlock == nullptr || highExclusive;
   auto high = highUnbounded
       ? std::numeric_limits<double>::max()
       : toDouble(range.high.valueBlock, exprConverter, type);
@@ -356,12 +356,12 @@ std::unique_ptr<common::FloatRange> floatRangeToFilter(
     const VeloxExprConverter& exprConverter,
     const TypePtr& type) {
   bool lowExclusive = range.low.bound == protocol::Bound::ABOVE;
-  bool lowUnbounded = range.low.valueBlock == nullptr && lowExclusive;
+  bool lowUnbounded = range.low.valueBlock == nullptr || lowExclusive;
   auto low = lowUnbounded ? std::numeric_limits<float>::lowest()
                           : toFloat(range.low.valueBlock, exprConverter, type);
 
   bool highExclusive = range.high.bound == protocol::Bound::BELOW;
-  bool highUnbounded = range.high.valueBlock == nullptr && highExclusive;
+  bool highUnbounded = range.high.valueBlock == nullptr || highExclusive;
   auto high = highUnbounded
       ? std::numeric_limits<float>::max()
       : toFloat(range.high.valueBlock, exprConverter, type);
@@ -381,12 +381,12 @@ std::unique_ptr<common::BytesRange> varcharRangeToFilter(
     const VeloxExprConverter& exprConverter,
     const TypePtr& type) {
   bool lowExclusive = range.low.bound == protocol::Bound::ABOVE;
-  bool lowUnbounded = range.low.valueBlock == nullptr && lowExclusive;
+  bool lowUnbounded = range.low.valueBlock == nullptr || lowExclusive;
   auto low =
       lowUnbounded ? "" : toString(range.low.valueBlock, exprConverter, type);
 
   bool highExclusive = range.high.bound == protocol::Bound::BELOW;
-  bool highUnbounded = range.high.valueBlock == nullptr && highExclusive;
+  bool highUnbounded = range.high.valueBlock == nullptr || highExclusive;
   auto high =
       highUnbounded ? "" : toString(range.high.valueBlock, exprConverter, type);
   return std::make_unique<common::BytesRange>(
@@ -2091,6 +2091,7 @@ core::PlanFragment VeloxQueryPlanConverterBase::toVeloxQueryPlan(
     if (channel == kConstantChannel) {
       constValues.emplace_back(velox::BaseVector::create(expr->type(), 1, pool_));
       auto constExpr = std::dynamic_pointer_cast<const core::ConstantTypedExpr>(expr);
+      VELOX_CHECK(expr, "Not a ConstantTypedExpr, cannot convert.");
       setCellFromVariant(constValues.back(), 0, constExpr->value());
     }
   }
