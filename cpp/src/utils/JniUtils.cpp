@@ -92,7 +92,7 @@ JNIEnv* JniUtils::getJNIEnv() {
     VLOG(google::ERROR) << "GLOBAL_JAVA_VM is null.";
   }
 
-  JNIEnv* env;
+  JNIEnv* env = reinterpret_cast<JNIEnv*>(std::malloc(sizeof(JNIEnv)));
   if (GLOBAL_JAVA_VM->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION) != JNI_OK) {
     if (GLOBAL_JAVA_VM->AttachCurrentThread(reinterpret_cast<void**>(&env), nullptr) !=
         JNI_OK) {

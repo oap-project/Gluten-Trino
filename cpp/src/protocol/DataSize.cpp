@@ -18,7 +18,7 @@ namespace io::trino::protocol {
 
 DataSize::DataSize(const std::string& string) {
   static const RE2 kPattern(R"(^\s*(\d+(?:\.\d+)?)\s*([a-zA-Z]+)\s*$)");
-  double value;
+  double value = 0;
   std::string unit;
   if (!RE2::FullMatch(string, kPattern, &value, &unit)) {
     throw DataSizeStringInvalid();

@@ -93,7 +93,7 @@ CapacityUnit valueOfCapacityUnit(const std::string& unitStr) {
 // units
 uint64_t toCapacity(const std::string& from, CapacityUnit to) {
   static const RE2 kPattern(R"(^\s*(\d+(?:\.\d+)?)\s*([a-zA-Z]+)\s*$)");
-  double value;
+  double value = 0;
   std::string unit;
   if (!RE2::FullMatch(from, kPattern, &value, &unit)) {
     VELOX_USER_FAIL("Invalid capacity string '{}'", from);
