@@ -181,6 +181,11 @@ io::trino::protocol::TaskStats getTaskStats(
         opOut.physicalInputDataSize = opOut.rawInputDataSize;
       }
 
+      if (op.operatorType == "Exchange") {
+        opOut.rawInputDataSize =
+            protocol::DataSize(op.rawInputBytes, protocol::DataUnit::BYTE);
+      }
+
       opOut.outputPositions = op.outputPositions;
       opOut.outputDataSize = protocol::DataSize(op.outputBytes, protocol::DataUnit::BYTE);
 
