@@ -182,6 +182,12 @@ io::trino::protocol::TaskStats getTaskStats(
       }
 
       if (op.operatorType == "Exchange") {
+        // For Exchange:
+        //  input / output size: deserialized vector size.
+        //  raw input size: serialized page size, network traffic.
+        // For PartitionedOutput:
+        //  input / output size: output vector size, before serialization.
+        //  No stats about serialized page size.
         opOut.rawInputDataSize =
             protocol::DataSize(op.rawInputBytes, protocol::DataUnit::BYTE);
       }
