@@ -100,6 +100,6 @@ class TrinoExchangeSource : public facebook::velox::exec::ExchangeSource {
   // successfully processed by the remote server.
   std::atomic_bool abortResultsSucceeded_{false};
 
-  folly::CPUThreadPoolExecutor* driverThreadPool_{nullptr};
+  folly::ThreadPoolExecutor* threadPool_{nullptr};
 };
 }  // namespace io::trino::bridge

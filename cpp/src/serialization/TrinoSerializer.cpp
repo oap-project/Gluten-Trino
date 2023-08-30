@@ -765,11 +765,12 @@ class TrinoVectorSerializer : public facebook::velox::VectorSerializer {
     writeInt32(out, streams_.size());
 
     if (rle) {
+      VLOG(google::ERROR) << "RLE is not supported.";
       // Write RLE encoding marker.
-      writeInt32(out, kRLE.size());
-      out->write(kRLE.data(), kRLE.size());
-      // Write number of RLE values.
-      writeInt32(out, numRows);
+      // writeInt32(out, kRLE.size());
+      // out->write(kRLE.data(), kRLE.size());
+      // // Write number of RLE values.
+      // writeInt32(out, numRows);
     }
 
     for (auto& stream : streams_) {
@@ -1160,9 +1161,9 @@ void readTimestampWithTimeZone(ByteStream* source,
     }
   }
 
-  *result =
-      std::make_shared<RowVector>(pool, TIMESTAMP_WITH_TIME_ZONE(), timestamps->nulls(),
-                                  size, std::vector<VectorPtr>{timestamps, std::move(timezones)});
+  *result = std::make_shared<RowVector>(
+      pool, TIMESTAMP_WITH_TIME_ZONE(), timestamps->nulls(), size,
+      std::vector<VectorPtr>{timestamps, std::move(timezones)});
 }
 
 void readRowVector(ByteStream* source, std::shared_ptr<const Type> type,

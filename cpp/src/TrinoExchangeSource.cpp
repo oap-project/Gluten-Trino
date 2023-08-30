@@ -19,17 +19,21 @@
 #include <sstream>
 
 #include "protocol/trino_protocol.h"
+#include "utils/Counters.h"
 #include "velox/common/base/Exceptions.h"
 #include "velox/common/base/StatsReporter.h"
 #include "velox/common/testutil/TestValue.h"
 #include "velox/exec/Operator.h"
 
-#include "utils/Counters.h"
-
 using namespace facebook::velox;
 
 namespace io::trino::bridge {
 namespace {
+
+#define TRINO_RESULT_RESPONSE_HEADER_LEN 16
+#define TRINO_RESULT_RESPONSE_HEADER_MAGIC 0xfea4f001
+#define TRINO_SERIALIZED_PAGE_HEADER_SIZE 13
+#define TRINO_SERIALIZED_PAGE_COMPRESSED_SIZE_OFFSET 9
 
 std::string extractTaskId(const std::string& path) {
   static const RE2 kPattern("/v1/task/([^/]*)/.*");
@@ -48,6 +52,92 @@ void onFinalFailure(const std::string& errorMessage,
                     std::shared_ptr<exec::ExchangeQueue> queue) {
   queue->setError(errorMessage);
 }
+
+std::unique_ptr<folly::IOBuf> separateIOBufChain(folly::IOBuf* buf, size_t bytes) {
+  auto newIOBuf = buf->cloneOne();
+  if (bytes <= buf->length()) {
+    newIOBuf->trimEnd(buf->length() - bytes);
+    return newIOBuf;
+  }
+
+  bytes -= buf->length();
+  auto prev = buf;
+  buf = buf->next();
+  while (bytes) {
+    if (buf == prev) {
+      return nullptr;
+    }
+    auto newTail = buf->cloneOne();
+    if (bytes <= newTail->length()) {
+      newTail->trimEnd(newTail->length() - bytes);
+    }
+    bytes -= newTail->length();
+    newIOBuf->appendToChain(std::move(newTail));
+
+    prev = buf;
+    buf = buf->next();
+  }
+
+  return newIOBuf;
+}
+
+folly::IOBuf* advanceIOBuf(folly::IOBuf* buf, size_t bytes) {
+  if (bytes < buf->length()) {
+    buf->trimStart(bytes);
+    return buf;
+  }
+
+  auto prev = buf;
+  bytes -= buf->length();
+  buf = buf->next();
+  while (bytes) {
+    if (buf == prev) {
+      return nullptr;
+    }
+
+    if (bytes < buf->length()) {
+      buf->trimStart(bytes);
+      return buf;
+    }
+
+    bytes -= buf->length();
+    prev = buf;
+    buf = buf->next();
+  }
+
+  return buf;
+}
+
+void readIOBuf(int8_t* target, folly::IOBuf* buf, size_t bytes) {
+  if (buf->length() >= bytes) {
+    const uint8_t* data = buf->data();
+    std::memcpy(target, data, bytes);
+    return;
+  }
+
+  std::memcpy(target, buf->data(), buf->length());
+  target += buf->length();
+  bytes -= buf->length();
+  auto prev = buf;
+  buf = buf->next();
+  while (bytes) {
+    if (buf != prev) {
+      if (bytes < buf->length()) {
+        std::memcpy(target, buf->data(), bytes);
+        return;
+      }
+
+      std::memcpy(target, buf->data(), buf->length());
+
+      target += buf->length();
+      bytes -= buf->length();
+      prev = buf;
+      buf = buf->next();
+    } else {
+      VLOG(google::ERROR) << "No enough IObuf size to read";
+    }
+  }
+}
 }  // namespace
 
 TrinoExchangeSource::TrinoExchangeSource(const folly::Uri& baseUri, int destination,
@@ -61,7 +151,7 @@ TrinoExchangeSource::TrinoExchangeSource(const folly::Uri& baseUri, int destinat
       port_(baseUri.port()),
       clientCertAndKeyPath_(clientCertAndKeyPath),
       ciphers_(ciphers),
-      driverThreadPool_(getDriverCPUExecutor().get()) {
+      threadPool_(getExchangeIOCPUExecutor().get()) {
   folly::SocketAddress address(folly::IPAddress(host_).str(), port_, true);
   auto* eventBase = getExchangeIOCPUExecutor()->getEventBase();
   httpClient_ = std::make_unique<http::HttpClient>(
@@ -101,7 +191,7 @@ void TrinoExchangeSource::doRequest() {
       // .header(protocol::TRINO_INTERNAL_BEARER_HEADER, "32MB")
       .header(protocol::TRINO_MAX_SIZE_HTTP_HEADER, "32MB")
       .send(httpClient_.get(), pool_.get())
-      .via(driverThreadPool_)
+      .via(threadPool_)
       .thenValue([path, self](std::unique_ptr<http::HttpResponse> response) {
         facebook::velox::common::testutil::TestValue::adjust(
             "io::trino::bridge::TrinoExchangeSource::doRequest", self.get());
@@ -148,7 +238,8 @@ void TrinoExchangeSource::processDataResponse(
                                  .getSingleOrEmpty(protocol::TRINO_PAGE_NEXT_TOKEN_HEADER)
                                  .c_str());
 
-  std::unique_ptr<exec::SerializedPage> page;
+  std::vector<std::unique_ptr<exec::SerializedPage>> pages;
+  pages.reserve(ackSequence - sequence_ + (complete ? 1 : 0));
   std::unique_ptr<folly::IOBuf> singleChain;
   const bool empty = response->empty();
   int64_t totalBytes{0};
@@ -161,61 +252,99 @@ void TrinoExchangeSource::processDataResponse(
     for (auto& buf : iobufs) {
       totalBytes += buf->capacity();
       if (!singleChain) {
-        buf->trimStart(16);
         singleChain = std::move(buf);
       } else {
         singleChain->prev()->appendChain(std::move(buf));
       }
     }
-    TrinoExchangeSource::updateMemoryUsage(totalBytes);
+    // TODO: Update memory
+    // TrinoExchangeSource::updateMemoryUsage(totalBytes);
 
-    page = std::make_unique<exec::SerializedPage>(
-        std::move(singleChain), [pool = pool_](folly::IOBuf& iobuf) {
-          int64_t freedBytes{0};
-          // Free the backed memory from MemoryAllocator on page dtor
-          folly::IOBuf* start = &iobuf;
-          auto curr = start;
-          do {
-            freedBytes += curr->capacity();
-            // FIXME: Jiguang
-            // pool->free(curr->writableData(), curr->capacity());
-            curr = curr->next();
-          } while (curr != start);
-          TrinoExchangeSource::updateMemoryUsage(-freedBytes);
-        });
+    VELOX_CHECK_GE(singleChain->length(), TRINO_RESULT_RESPONSE_HEADER_LEN);
+
+    const int32_t magic = *reinterpret_cast<const int32_t*>(singleChain->data());
+    const int64_t checkSum = *reinterpret_cast<const int64_t*>(singleChain->data() + 4);
+    const int32_t pageCount = *reinterpret_cast<const int32_t*>(singleChain->data() + 12);
+
+    VELOX_CHECK_EQ(magic, TRINO_RESULT_RESPONSE_HEADER_MAGIC);
+    VELOX_CHECK_EQ(sequence_ + pageCount, ackSequence);
+    singleChain->trimStart(TRINO_RESULT_RESPONSE_HEADER_LEN);
+
+    int32_t remaingPage = pageCount;
+    int8_t pageHeader[TRINO_SERIALIZED_PAGE_HEADER_SIZE + 4];
+    auto curr = singleChain.get();
+    while (remaingPage) {
+      if (!curr) {
+        VLOG(google::ERROR) << "Recived page body in TrinoExchangeSource is corrupted.";
+      }
+
+      readIOBuf(pageHeader, curr, TRINO_SERIALIZED_PAGE_HEADER_SIZE + 4);
+
+      VLOG(1) << fmt::format(
+          "Received Page count: {}, remaining: {}, row_num: {}, uncompressed_size: {}, "
+          "compressed_size: {}, column_num: "
+          "{}, underlay_ptr: {}",
+          pageCount, remaingPage, *reinterpret_cast<int32_t*>(pageHeader),
+          *reinterpret_cast<int32_t*>(pageHeader + 5),
+          *reinterpret_cast<int32_t*>(pageHeader + 9),
+          *reinterpret_cast<int32_t*>(pageHeader + 13), (void*)curr->data());
+
+      int32_t compressedSize = *reinterpret_cast<int32_t*>(
+          pageHeader + TRINO_SERIALIZED_PAGE_COMPRESSED_SIZE_OFFSET);
+
+      pages.emplace_back(std::make_unique<exec::SerializedPage>(
+          separateIOBufChain(curr, compressedSize + TRINO_SERIALIZED_PAGE_HEADER_SIZE),
+          [pool = pool_](folly::IOBuf& iobuf) {
+            // int64_t freedBytes{0};
+            // // Free the backed memory from MemoryAllocator on page dtor
+            // folly::IOBuf* start = &iobuf;
+            // auto curr = start;
+            // do {
+            //   freedBytes += curr->capacity();
+            //   // FIXME: Jiguang
+            //   // pool->free(curr->writableData(), curr->capacity());
+            //   curr = curr->next();
+            // } while (curr != start);
+            // TrinoExchangeSource::updateMemoryUsage(-freedBytes);
+          }));
+      curr = advanceIOBuf(curr, compressedSize + TRINO_SERIALIZED_PAGE_HEADER_SIZE);
+
+      --remaingPage;
+    }
   } else {
     VLOG(1) << "Received empty response for " << basePath_ << "/" << sequence_;
   }
 
-  REPORT_ADD_HISTOGRAM_VALUE(kCounterPrestoExchangeSerializedPageSize,
-                             page ? page->size() : 0);
+  if (complete) {
+    pages.emplace_back(nullptr);
+  }
 
-  {
-    std::vector<ContinuePromise> promises;
+  std::vector<ContinuePromise> promises;
+  for (auto&& page : pages) {
+    REPORT_ADD_HISTOGRAM_VALUE(kCounterPrestoExchangeSerializedPageSize,
+                               page ? page->size() : 0);
     {
       std::lock_guard<std::mutex> l(queue_->mutex());
       if (page) {
         VLOG(1) << "Enqueuing page for " << basePath_ << "/" << sequence_ << ": "
                 << page->size() << " bytes";
-        ++numPages_;
         queue_->enqueueLocked(std::move(page), promises);
-      }
-      if (complete) {
+        ++numPages_;
+      } else {
         VLOG(1) << "Enqueuing empty page for " << basePath_ << "/" << sequence_;
         atEnd_ = true;
         queue_->enqueueLocked(nullptr, promises);
       }
-
-      sequence_ = ackSequence;
-
-      // Reset requestPending_ if the response is complete or have pages.
-      if (complete || !empty) {
-        requestPending_ = false;
-      }
     }
-    for (auto& promise : promises) {
-      promise.setValue();
-    }
+  }
+
+  sequence_ = ackSequence;
+  if (complete || !empty) {
+    requestPending_ = false;
+  }
+
+  for (auto& promise : promises) {
+    promise.setValue();
   }
 
   if (complete) {
@@ -257,7 +386,7 @@ void TrinoExchangeSource::acknowledgeResults(int64_t ackSequence) {
       .method(proxygen::HTTPMethod::GET)
       .url(ackPath)
       .send(httpClient_.get(), pool_.get())
-      .via(driverThreadPool_)
+      .via(threadPool_)
       .thenValue([self](std::unique_ptr<http::HttpResponse> response) {
         auto* headers = response->headers();
         uint64_t statusCode = headers->getStatusCode();
@@ -281,7 +410,7 @@ void TrinoExchangeSource::abortResults() {
       .method(proxygen::HTTPMethod::DELETE)
       .url(basePath_)
       .send(httpClient_.get(), pool_.get())
-      .via(driverThreadPool_)
+      .via(threadPool_)
       .thenValue([queue, self](std::unique_ptr<http::HttpResponse> response) {
         auto statusCode = response->headers()->getStatusCode();
         if (statusCode != http::kHttpOk && statusCode != http::kHttpNoContent) {
