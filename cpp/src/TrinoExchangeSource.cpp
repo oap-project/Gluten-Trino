@@ -275,7 +275,7 @@ void TrinoExchangeSource::processDataResponse(
     auto curr = singleChain.get();
     while (remaingPage) {
       if (!curr) {
-        VLOG(google::ERROR) << "Recived page body in TrinoExchangeSource is corrupted.";
+        VLOG(google::ERROR) << "Received page body in TrinoExchangeSource is corrupted.";
       }
 
       readIOBuf(pageHeader, curr, TRINO_SERIALIZED_PAGE_HEADER_SIZE + 4);
