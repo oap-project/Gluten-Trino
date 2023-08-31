@@ -69,12 +69,10 @@ void HttpResponse::append(std::unique_ptr<folly::IOBuf>&& iobuf) {
   VELOX_CHECK(!hasError());
 
   bodyChainBytes_ += iobuf->length();
-  bodyChain_.emplace_back(std::move(iobuf));
+  bodyChain_.append(std::move(iobuf));
 }
 
-void HttpResponse::freeBuffers() {
-  bodyChain_.clear();
-}
+void HttpResponse::freeBuffers() { bodyChain_.reset(); }
 
 FOLLY_ALWAYS_INLINE size_t HttpResponse::nextAllocationSize(uint64_t dataLength) const {
   const size_t minAllocSize = velox::bits::nextPowerOfTwo(
@@ -88,11 +86,14 @@ FOLLY_ALWAYS_INLINE size_t HttpResponse::nextAllocationSize(uint64_t dataLength)
 
 std::string HttpResponse::dumpBodyChain() const {
   std::string responseBody;
-  if (!bodyChain_.empty()) {
+  if (!empty()) {
     std::ostringstream oss;
-    for (auto& buf : bodyChain_) {
+    auto buf = bodyChain_.front();
+    auto end = buf;
+    do {
       oss << std::string((const char*)buf->data(), buf->length());
-    }
+      buf = buf->next();
+    } while (buf != end);
     responseBody = oss.str();
   }
   return responseBody;

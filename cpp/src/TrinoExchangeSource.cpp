@@ -53,62 +53,7 @@ void onFinalFailure(const std::string& errorMessage,
   queue->setError(errorMessage);
 }
 
-std::unique_ptr<folly::IOBuf> separateIOBufChain(folly::IOBuf* buf, size_t bytes) {
-  auto newIOBuf = buf->cloneOne();
-  if (bytes <= buf->length()) {
-    newIOBuf->trimEnd(buf->length() - bytes);
-    return newIOBuf;
-  }
-
-  bytes -= buf->length();
-  auto prev = buf;
-  buf = buf->next();
-  while (bytes) {
-    if (buf == prev) {
-      return nullptr;
-    }
-    auto newTail = buf->cloneOne();
-    if (bytes <= newTail->length()) {
-      newTail->trimEnd(newTail->length() - bytes);
-    }
-    bytes -= newTail->length();
-    newIOBuf->appendToChain(std::move(newTail));
-
-    prev = buf;
-    buf = buf->next();
-  }
-
-  return newIOBuf;
-}
-
-folly::IOBuf* advanceIOBuf(folly::IOBuf* buf, size_t bytes) {
-  if (bytes < buf->length()) {
-    buf->trimStart(bytes);
-    return buf;
-  }
-
-  auto prev = buf;
-  bytes -= buf->length();
-  buf = buf->next();
-  while (bytes) {
-    if (buf == prev) {
-      return nullptr;
-    }
-
-    if (bytes < buf->length()) {
-      buf->trimStart(bytes);
-      return buf;
-    }
-
-    bytes -= buf->length();
-    prev = buf;
-    buf = buf->next();
-  }
-
-  return buf;
-}
-
-void readIOBuf(int8_t* target, folly::IOBuf* buf, size_t bytes) {
+void readIOBuf(int8_t* target, const folly::IOBuf* buf, size_t bytes) {
   if (buf->length() >= bytes) {
     const uint8_t* data = buf->data();
     std::memcpy(target, data, bytes);
@@ -240,60 +185,42 @@ void TrinoExchangeSource::processDataResponse(
 
   std::vector<std::unique_ptr<exec::SerializedPage>> pages;
   pages.reserve(ackSequence - sequence_ + (complete ? 1 : 0));
-  std::unique_ptr<folly::IOBuf> singleChain;
   const bool empty = response->empty();
   int64_t totalBytes{0};
   if (!empty) {
     auto iobufs = response->consumeBody();
-    // trino have a 16 bytes header, including 4 bytes magic, 8 bytes checksum, 4 bytes
-    // page size
-    // Refer to io.trino.operator.HttpPageBufferClient.PageResponseHandler#handle
-    // We need skip only once.
-    for (auto& buf : iobufs) {
-      totalBytes += buf->capacity();
-      if (!singleChain) {
-        singleChain = std::move(buf);
-      } else {
-        singleChain->prev()->appendChain(std::move(buf));
-      }
-    }
     // TODO: Update memory
     // TrinoExchangeSource::updateMemoryUsage(totalBytes);
+    auto firstBuf = iobufs.front();
+    VELOX_CHECK_GE(firstBuf->length(), TRINO_RESULT_RESPONSE_HEADER_LEN);
 
-    VELOX_CHECK_GE(singleChain->length(), TRINO_RESULT_RESPONSE_HEADER_LEN);
-
-    const int32_t magic = *reinterpret_cast<const int32_t*>(singleChain->data());
-    const int64_t checkSum = *reinterpret_cast<const int64_t*>(singleChain->data() + 4);
-    const int32_t pageCount = *reinterpret_cast<const int32_t*>(singleChain->data() + 12);
+    const int32_t magic = *reinterpret_cast<const int32_t*>(firstBuf->data());
+    const int64_t checkSum = *reinterpret_cast<const int64_t*>(firstBuf->data() + 4);
+    const int32_t pageCount = *reinterpret_cast<const int32_t*>(firstBuf->data() + 12);
 
     VELOX_CHECK_EQ(magic, TRINO_RESULT_RESPONSE_HEADER_MAGIC);
     VELOX_CHECK_EQ(sequence_ + pageCount, ackSequence);
-    singleChain->trimStart(TRINO_RESULT_RESPONSE_HEADER_LEN);
+    iobufs.trimStart(TRINO_RESULT_RESPONSE_HEADER_LEN);
 
     int32_t remaingPage = pageCount;
     int8_t pageHeader[TRINO_SERIALIZED_PAGE_HEADER_SIZE + 4];
-    auto curr = singleChain.get();
     while (remaingPage) {
-      if (!curr) {
-        VLOG(google::ERROR) << "Received page body in TrinoExchangeSource is corrupted.";
-      }
+      readIOBuf(pageHeader, iobufs.front(), TRINO_SERIALIZED_PAGE_HEADER_SIZE + 4);
 
-      readIOBuf(pageHeader, curr, TRINO_SERIALIZED_PAGE_HEADER_SIZE + 4);
-
-      VLOG(1) << fmt::format(
+      VLOG(google::INFO) << fmt::format(
           "Received Page count: {}, remaining: {}, row_num: {}, uncompressed_size: {}, "
           "compressed_size: {}, column_num: "
           "{}, underlay_ptr: {}",
           pageCount, remaingPage, *reinterpret_cast<int32_t*>(pageHeader),
           *reinterpret_cast<int32_t*>(pageHeader + 5),
           *reinterpret_cast<int32_t*>(pageHeader + 9),
-          *reinterpret_cast<int32_t*>(pageHeader + 13), (void*)curr->data());
+          *reinterpret_cast<int32_t*>(pageHeader + 13), (void*)iobufs.front()->data());
 
       int32_t compressedSize = *reinterpret_cast<int32_t*>(
           pageHeader + TRINO_SERIALIZED_PAGE_COMPRESSED_SIZE_OFFSET);
 
       pages.emplace_back(std::make_unique<exec::SerializedPage>(
-          separateIOBufChain(curr, compressedSize + TRINO_SERIALIZED_PAGE_HEADER_SIZE),
+          iobufs.split(compressedSize + TRINO_SERIALIZED_PAGE_HEADER_SIZE),
           [pool = pool_](folly::IOBuf& iobuf) {
             // int64_t freedBytes{0};
             // // Free the backed memory from MemoryAllocator on page dtor
@@ -307,7 +234,6 @@ void TrinoExchangeSource::processDataResponse(
             // } while (curr != start);
             // TrinoExchangeSource::updateMemoryUsage(-freedBytes);
           }));
-      curr = advanceIOBuf(curr, compressedSize + TRINO_SERIALIZED_PAGE_HEADER_SIZE);
 
       --remaingPage;
     }

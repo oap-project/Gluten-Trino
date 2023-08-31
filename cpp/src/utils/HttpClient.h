@@ -13,6 +13,7 @@
  */
 #pragma once
 #include <folly/futures/Future.h>
+#include <folly/io/IOBufQueue.h>
 #include <proxygen/lib/http/HTTPConnector.h>
 #include <proxygen/lib/http/connpool/SessionPool.h>
 #include <proxygen/lib/http/session/HTTPUpstreamSession.h>
@@ -56,7 +57,7 @@ class HttpResponse {
   /// Consumes the response body. The caller is responsible for freeing the
   /// backed memory of this IOBuf from MappedMemory. Otherwise it could lead to
   /// memory leak.
-  std::vector<std::unique_ptr<folly::IOBuf>> consumeBody() {
+  folly::IOBufQueue consumeBody() {
     VELOX_CHECK(!hasError());
     return std::move(bodyChain_);
   }
@@ -82,7 +83,7 @@ class HttpResponse {
   const uint64_t maxResponseAllocBytes_;
 
   std::string error_{};
-  std::vector<std::unique_ptr<folly::IOBuf>> bodyChain_;
+  folly::IOBufQueue bodyChain_;
   size_t bodyChainBytes_{0};
 };
 
