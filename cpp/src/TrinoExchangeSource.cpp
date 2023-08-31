@@ -320,11 +320,11 @@ void TrinoExchangeSource::processDataResponse(
   }
 
   std::vector<ContinuePromise> promises;
-  for (auto&& page : pages) {
-    REPORT_ADD_HISTOGRAM_VALUE(kCounterPrestoExchangeSerializedPageSize,
-                               page ? page->size() : 0);
-    {
-      std::lock_guard<std::mutex> l(queue_->mutex());
+  {
+    std::lock_guard<std::mutex> l(queue_->mutex());
+    for (auto&& page : pages) {
+      // REPORT_ADD_HISTOGRAM_VALUE(kCounterPrestoExchangeSerializedPageSize,
+      //                            page ? page->size() : 0);
       if (page) {
         VLOG(1) << "Enqueuing page for " << basePath_ << "/" << sequence_ << ": "
                 << page->size() << " bytes";
