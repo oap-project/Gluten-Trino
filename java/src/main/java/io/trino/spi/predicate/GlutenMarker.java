@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 package io.trino.spi.predicate;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.spi.TrinoException;
@@ -70,7 +71,7 @@ public final class GlutenMarker
         if (!type.isOrderable()) {
             throw new IllegalArgumentException("type must be orderable");
         }
-        if (!valueBlock.isPresent() && bound == Bound.EXACTLY) {
+        if (valueBlock.isEmpty() && bound == Bound.EXACTLY) {
             throw new IllegalArgumentException("Can not be equal to unbounded");
         }
         if (valueBlock.isPresent() && valueBlock.get().getPositionCount() != 1) {
@@ -137,7 +138,7 @@ public final class GlutenMarker
 
     public Object getValue()
     {
-        if (!valueBlock.isPresent()) {
+        if (valueBlock.isEmpty()) {
             throw new IllegalStateException("No value to get");
         }
         return Utils.blockToNativeValue(type, valueBlock.get());
@@ -151,12 +152,12 @@ public final class GlutenMarker
 
     public boolean isUpperUnbounded()
     {
-        return !valueBlock.isPresent() && bound == Bound.BELOW;
+        return valueBlock.isEmpty() && bound == Bound.BELOW;
     }
 
     public boolean isLowerUnbounded()
     {
-        return !valueBlock.isPresent() && bound == Bound.ABOVE;
+        return valueBlock.isEmpty() && bound == Bound.ABOVE;
     }
 
     private void checkTypeCompatibility(GlutenMarker marker)
@@ -168,7 +169,7 @@ public final class GlutenMarker
 
     public GlutenMarker greaterAdjacent()
     {
-        if (!valueBlock.isPresent()) {
+        if (valueBlock.isEmpty()) {
             throw new IllegalStateException("No marker adjacent to unbounded");
         }
         switch (bound) {
@@ -185,7 +186,7 @@ public final class GlutenMarker
 
     public GlutenMarker lesserAdjacent()
     {
-        if (!valueBlock.isPresent()) {
+        if (valueBlock.isEmpty()) {
             throw new IllegalStateException("No marker adjacent to unbounded");
         }
         switch (bound) {
@@ -218,6 +219,9 @@ public final class GlutenMarker
         }
         // INVARIANT: value and o.value are present
 
+        if (valueBlock.isEmpty() || o.valueBlock.isEmpty()) {
+            return 0;
+        }
         int compare = compare(valueBlock.get(), o.valueBlock.get());
         if (compare == 0) {
             if (bound == o.bound) {
@@ -238,6 +242,9 @@ public final class GlutenMarker
     private int compare(Block left, Block right)
     {
         try {
+            if (left.isNull(0) || right.isNull(0)) {
+                return 0;
+            }
             return (int) (long) comparisonOperator.invokeExact(left, 0, right, 0);
         }
         catch (RuntimeException | Error e) {

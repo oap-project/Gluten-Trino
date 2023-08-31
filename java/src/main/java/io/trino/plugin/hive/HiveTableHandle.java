@@ -28,6 +28,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.protocol.GlutenDomain;
+import io.trino.spi.protocol.GlutenSortedRangeSet;
 import io.trino.spi.protocol.GlutenSubfield;
 import io.trino.spi.protocol.GlutenTupleDomain;
 
@@ -522,6 +523,12 @@ public class HiveTableHandle
                 .collect(Collectors.toMap(k -> new GlutenSubfield(k.getKey().getName(), new ArrayList<>()),
                         v -> GlutenDomain.create(v.getValue().getValues().getProtocol(), v.getValue().isNullAllowed())));
         GlutenTupleDomain<GlutenSubfield> domainPredicate = GlutenTupleDomain.withColumnDomains(domains);
+        if (domainPredicate.getColumnDomains().isPresent()
+                && domainPredicate.getColumnDomains().get().get(0).getDomain().getValues() instanceof GlutenSortedRangeSet glutenSortedRangeSet
+                && glutenSortedRangeSet.getOrderedRanges().get(0).getLow().getValue() == glutenSortedRangeSet.getOrderedRanges().get(0).getHigh().getValue()
+                && (null == glutenSortedRangeSet.getOrderedRanges().get(0).getLow().getValue() || null == glutenSortedRangeSet.getOrderedRanges().get(0).getHigh().getValue())) {
+            return new GlutenHiveTableHandle(schemaName, tableName, GlutenTupleDomain.withColumnDomains(ImmutableMap.of()), analyzePartitionValues);
+        }
         return new GlutenHiveTableHandle(schemaName, tableName, domainPredicate, analyzePartitionValues);
     }
 }

@@ -1330,37 +1330,36 @@ public final class SortedRangeSet
     @Override
     public GlutenSortedRangeSet getProtocol()
     {
-        List<GlutenRange> mockRangeList = new ArrayList<>();
+        List<GlutenRange> glutenRangeList = new ArrayList<>();
         if (this.sortedRanges instanceof RunLengthEncodedBlock) {
             GlutenMarker low = new GlutenMarker(this.type, Optional.of(((RunLengthEncodedBlock) this.sortedRanges).getValue()), GlutenMarker.Bound.EXACTLY);
             GlutenMarker high = new GlutenMarker(this.type, Optional.of(((RunLengthEncodedBlock) this.sortedRanges).getValue()), GlutenMarker.Bound.EXACTLY);
-            mockRangeList.add(new GlutenRange(low, high));
+            glutenRangeList.add(new GlutenRange(low, high));
         }
         else {
             for (int rangeIndex = 0; rangeIndex < inclusive.length / 2; rangeIndex++) {
-                GlutenMarker lowMockMarker;
-                GlutenMarker highMockMarker;
+                GlutenMarker lowGlutenMarker;
+                GlutenMarker highGlutenMarker;
                 Range range = this.getRange(rangeIndex);
                 Optional<Object> lowValue = range.getLowValue();
                 Optional<Object> highValue = range.getHighValue();
                 if (lowValue.isEmpty()) {
-                    lowMockMarker = GlutenMarker.lowerUnbounded(this.type);
+                    lowGlutenMarker = GlutenMarker.lowerUnbounded(this.type);
                 }
                 else {
-                    lowMockMarker = range.isLowInclusive() ? GlutenMarker.exactly(this.type, lowValue.get())
+                    lowGlutenMarker = range.isLowInclusive() ? GlutenMarker.exactly(this.type, lowValue.get())
                             : GlutenMarker.above(this.type, lowValue.get());
                 }
                 if (highValue.isEmpty()) {
-                    highMockMarker = GlutenMarker.upperUnbounded(this.type);
+                    highGlutenMarker = GlutenMarker.upperUnbounded(this.type);
                 }
                 else {
-                    highMockMarker = range.isHighInclusive() ? GlutenMarker.exactly(this.type, highValue.get())
+                    highGlutenMarker = range.isHighInclusive() ? GlutenMarker.exactly(this.type, highValue.get())
                             : GlutenMarker.below(this.type, highValue.get());
                 }
-                mockRangeList.add(new GlutenRange(lowMockMarker, highMockMarker));
+                glutenRangeList.add(new GlutenRange(lowGlutenMarker, highGlutenMarker));
             }
         }
-        GlutenSortedRangeSet mockSortedRangeSet = GlutenSortedRangeSet.copyOf(this.type, mockRangeList);
-        return mockSortedRangeSet;
+        return GlutenSortedRangeSet.copyOf(this.type, glutenRangeList);
     }
 }
