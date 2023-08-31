@@ -30,11 +30,6 @@ using namespace facebook::velox;
 namespace io::trino::bridge {
 namespace {
 
-#define TRINO_RESULT_RESPONSE_HEADER_LEN 16
-#define TRINO_RESULT_RESPONSE_HEADER_MAGIC 0xfea4f001
-#define TRINO_SERIALIZED_PAGE_HEADER_SIZE 13
-#define TRINO_SERIALIZED_PAGE_COMPRESSED_SIZE_OFFSET 9
-
 std::string extractTaskId(const std::string& path) {
   static const RE2 kPattern("/v1/task/([^/]*)/.*");
   std::string taskId;
@@ -207,33 +202,25 @@ void TrinoExchangeSource::processDataResponse(
     while (remaingPage) {
       readIOBuf(pageHeader, iobufs.front(), TRINO_SERIALIZED_PAGE_HEADER_SIZE + 4);
 
-      VLOG(google::INFO) << fmt::format(
+      VLOG(1) << fmt::format(
           "Received Page count: {}, remaining: {}, row_num: {}, uncompressed_size: {}, "
           "compressed_size: {}, column_num: "
           "{}, underlay_ptr: {}",
-          pageCount, remaingPage, *reinterpret_cast<int32_t*>(pageHeader),
-          *reinterpret_cast<int32_t*>(pageHeader + 5),
-          *reinterpret_cast<int32_t*>(pageHeader + 9),
-          *reinterpret_cast<int32_t*>(pageHeader + 13), (void*)iobufs.front()->data());
+          pageCount, remaingPage,
+          *reinterpret_cast<int32_t*>(pageHeader + TRINO_SERIALIZED_PAGE_ROW_NUM_OFFSET),
+          *reinterpret_cast<int32_t*>(pageHeader +
+                                      TRINO_SERIALIZED_PAGE_UNCOMPRESSED_SIZE_OFFSET),
+          *reinterpret_cast<int32_t*>(pageHeader +
+                                      TRINO_SERIALIZED_PAGE_COMPRESSED_SIZE_OFFSET),
+          *reinterpret_cast<int32_t*>(pageHeader + TRINO_SERIALIZED_PAGE_COL_NUM_OFFSET),
+          (void*)iobufs.front()->data());
 
       int32_t compressedSize = *reinterpret_cast<int32_t*>(
           pageHeader + TRINO_SERIALIZED_PAGE_COMPRESSED_SIZE_OFFSET);
 
       pages.emplace_back(std::make_unique<exec::SerializedPage>(
-          iobufs.split(compressedSize + TRINO_SERIALIZED_PAGE_HEADER_SIZE),
-          [pool = pool_](folly::IOBuf& iobuf) {
-            // int64_t freedBytes{0};
-            // // Free the backed memory from MemoryAllocator on page dtor
-            // folly::IOBuf* start = &iobuf;
-            // auto curr = start;
-            // do {
-            //   freedBytes += curr->capacity();
-            //   // FIXME: Jiguang
-            //   // pool->free(curr->writableData(), curr->capacity());
-            //   curr = curr->next();
-            // } while (curr != start);
-            // TrinoExchangeSource::updateMemoryUsage(-freedBytes);
-          }));
+          iobufs.split(compressedSize + TRINO_SERIALIZED_PAGE_HEADER_SIZE), nullptr
+          /* [pool = pool_](folly::IOBuf& iobuf) { TODO: memory update}*/));
 
       --remaingPage;
     }

@@ -22,4 +22,16 @@ const uint16_t kHttpInternalServerError = 500;
 
 const char kMimeTypeApplicationJson[] = "application/json";
 const char kMimeTypeApplicationThrift[] = "application/x-thrift+binary";
-} // namespace facebook::presto::http
+
+#define TRINO_RESULT_RESPONSE_HEADER_LEN 16
+#define TRINO_RESULT_RESPONSE_HEADER_MAGIC 0xfea4f001
+#define TRINO_SERIALIZED_PAGE_HEADER_SIZE 13
+#define TRINO_SERIALIZED_PAGE_ROW_NUM_OFFSET 0
+#define TRINO_SERIALIZED_PAGE_CODEC_OFFSET (TRINO_SERIALIZED_PAGE_ROW_NUM_OFFSET + 4)
+#define TRINO_SERIALIZED_PAGE_UNCOMPRESSED_SIZE_OFFSET \
+  (TRINO_SERIALIZED_PAGE_CODEC_OFFSET + 1)
+#define TRINO_SERIALIZED_PAGE_COMPRESSED_SIZE_OFFSET \
+  (TRINO_SERIALIZED_PAGE_UNCOMPRESSED_SIZE_OFFSET + 4)
+#define TRINO_SERIALIZED_PAGE_COL_NUM_OFFSET \
+  (TRINO_SERIALIZED_PAGE_COMPRESSED_SIZE_OFFSET + 4)
+}  // namespace io::trino::bridge::http
