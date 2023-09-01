@@ -1329,12 +1329,12 @@ void TrinoVectorSerde::deserialize(facebook::velox::ByteStream* source,
                                    facebook::velox::RowTypePtr type,
                                    facebook::velox::RowVectorPtr* result,
                                    const Options* options) {
+  void* pagePtr = source->writePosition();
   bool useLosslessTimestamp = false;
   // options != nullptr
   //     ? static_cast<const PrestoOptions*>(options)->useLosslessTimestamp
   //     : false;
   auto numRows = source->read<int32_t>();
-  VLOG(1) << "numRows is " << numRows;
   if (!(*result) || !result->unique() || (*result)->type() != type) {
     *result =
         std::dynamic_pointer_cast<RowVector>(BaseVector::create(type, numRows, pool));
@@ -1343,22 +1343,24 @@ void TrinoVectorSerde::deserialize(facebook::velox::ByteStream* source,
   }
 
   auto pageCodecMarker = source->read<int8_t>();
-  VLOG(1) << "pageCodecMarker is " << pageCodecMarker;
   if (numRows == 0) {
     auto nullRowNumber = source->read<int32_t>();
     VLOG(1) << "Read a blank value if null row number " << nullRowNumber;
   }
   auto uncompressedSize = source->read<int32_t>();
-  VLOG(1) << "uncompressedSize is " << uncompressedSize;
   // skip size in bytes (compressed size)
   auto compressedSize = source->read<int32_t>();
-  VLOG(1) << "compressedSize is " << compressedSize;
   // source->skip(4);
 
   // skip number of columns
   auto numColumns = source->read<int32_t>();
-  VLOG(1) << "numColumns is " << numColumns;
   // source->skip(4);
+
+  VLOG(1) << fmt::format(
+      "Page row_num: {}, codec: {}, uncompressed_size: {}, compressed_size: {}, "
+      "column_num: {}, "
+      "underlay_ptr: {}",
+      numRows, pageCodecMarker, uncompressedSize, compressedSize, numColumns, pagePtr);
 
   auto children = &(*result)->children();
   auto childTypes = type->as<TypeKind::ROW>().children();

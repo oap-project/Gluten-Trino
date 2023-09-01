@@ -16,7 +16,7 @@
 #include <fmt/core.h>
 #include <folly/SocketAddress.h>
 #include <re2/re2.h>
-#include <sstream>
+#include <cstdint>
 
 #include "protocol/trino_protocol.h"
 #include "utils/Counters.h"
@@ -48,34 +48,40 @@ void onFinalFailure(const std::string& errorMessage,
   queue->setError(errorMessage);
 }
 
-void readIOBuf(int8_t* target, const folly::IOBuf* buf, size_t bytes) {
-  if (buf->length() >= bytes) {
+void readCompressedPageSize(int32_t* target, const folly::IOBuf* buf) {
+  size_t startOffset = TRINO_SERIALIZED_PAGE_COMPRESSED_SIZE_OFFSET;
+  size_t bytes = 4;
+  if (LIKELY(buf->length() >= bytes + startOffset)) {
+    // All the bytes on the left buf.
     const uint8_t* data = buf->data();
-    std::memcpy(target, data, bytes);
+    *target = *reinterpret_cast<const int32_t*>(data + startOffset);
     return;
   }
 
-  std::memcpy(target, buf->data(), buf->length());
-  target += buf->length();
-  bytes -= buf->length();
-  auto prev = buf;
-  buf = buf->next();
-  while (bytes) {
-    if (buf != prev) {
-      if (bytes < buf->length()) {
-        std::memcpy(target, buf->data(), bytes);
-        return;
-      }
+  auto next = buf->next();
+  VELOX_CHECK_NE((void*)next, (void*)buf);
 
-      std::memcpy(target, buf->data(), buf->length());
+  if (buf->length() <= startOffset) {
+    // All the bytes on the right buf.
+    startOffset -= buf->length();
+    VELOX_CHECK_LE(startOffset + bytes, next->length());
+    *target = *reinterpret_cast<const int32_t*>(next->data() + startOffset);
+    return;
+  }
 
-      target += buf->length();
-      bytes -= buf->length();
-      prev = buf;
-      buf = buf->next();
-    } else {
-      VLOG(google::ERROR) << "No enough IObuf size to read";
-    }
+  size_t bytesOnLeft = bytes - (buf->length() - startOffset);
+  size_t bytesOnRight = bytes - bytesOnRight;
+  VELOX_CHECK_LE(bytesOnRight, next->length());
+  uint8_t* targetI8 = reinterpret_cast<uint8_t*>(target);
+
+#pragma GCC novector unroll 0
+  for (int i = 0; i < bytesOnLeft; ++i, ++targetI8) {
+    *targetI8 = *(buf->data() + startOffset + i);
+  }
+
+#pragma GCC novector unroll 0
+  for (int i = 0; i < bytesOnRight; ++i, ++targetI8) {
+    *targetI8 = *(next->data() + i);
   }
 }
 }  // namespace
@@ -198,26 +204,9 @@ void TrinoExchangeSource::processDataResponse(
     iobufs.trimStart(TRINO_RESULT_RESPONSE_HEADER_LEN);
 
     int32_t remaingPage = pageCount;
-    int8_t pageHeader[TRINO_SERIALIZED_PAGE_HEADER_SIZE + 4];
+    int32_t compressedSize;
     while (remaingPage) {
-      readIOBuf(pageHeader, iobufs.front(), TRINO_SERIALIZED_PAGE_HEADER_SIZE + 4);
-
-      VLOG(1) << fmt::format(
-          "Received Page count: {}, remaining: {}, row_num: {}, uncompressed_size: {}, "
-          "compressed_size: {}, column_num: "
-          "{}, underlay_ptr: {}",
-          pageCount, remaingPage,
-          *reinterpret_cast<int32_t*>(pageHeader + TRINO_SERIALIZED_PAGE_ROW_NUM_OFFSET),
-          *reinterpret_cast<int32_t*>(pageHeader +
-                                      TRINO_SERIALIZED_PAGE_UNCOMPRESSED_SIZE_OFFSET),
-          *reinterpret_cast<int32_t*>(pageHeader +
-                                      TRINO_SERIALIZED_PAGE_COMPRESSED_SIZE_OFFSET),
-          *reinterpret_cast<int32_t*>(pageHeader + TRINO_SERIALIZED_PAGE_COL_NUM_OFFSET),
-          (void*)iobufs.front()->data());
-
-      int32_t compressedSize = *reinterpret_cast<int32_t*>(
-          pageHeader + TRINO_SERIALIZED_PAGE_COMPRESSED_SIZE_OFFSET);
-
+      readCompressedPageSize(&compressedSize, iobufs.front());
       pages.emplace_back(std::make_unique<exec::SerializedPage>(
           iobufs.split(compressedSize + TRINO_SERIALIZED_PAGE_HEADER_SIZE), nullptr
           /* [pool = pool_](folly::IOBuf& iobuf) { TODO: memory update}*/));
