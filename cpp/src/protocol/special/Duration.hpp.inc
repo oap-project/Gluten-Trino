@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-
 namespace io::trino::protocol {
 
 std::ostream& operator<<(std::ostream& os, const Duration& d);
@@ -20,4 +19,4 @@ std::ostream& operator<<(std::ostream& os, const Duration& d);
 void to_json(json& j, const Duration& p);
 void from_json(const json& j, Duration& p);
 
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

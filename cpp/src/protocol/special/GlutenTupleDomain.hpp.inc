@@ -16,8 +16,7 @@ namespace io::trino::protocol {
 
 template <typename T>
 struct pointerDerefCompare {
-  bool operator()(const std::shared_ptr<T>& a, const std::shared_ptr<T>& b)
-      const {
+  bool operator()(const std::shared_ptr<T>& a, const std::shared_ptr<T>& b) const {
     return *a < *b;
   }
 };
@@ -29,49 +28,40 @@ struct TupleDomain {
 
 template <typename T>
 struct TupleDomain<std::shared_ptr<T>> {
-  std::shared_ptr<std::map<std::shared_ptr<T>, Domain, pointerDerefCompare<T>>>
-      domains;
+  std::shared_ptr<std::map<std::shared_ptr<T>, Domain, pointerDerefCompare<T>>> domains;
 };
 
 template <class T>
 struct ColumnDomain {
   T column;
-  GlutenDomain domain; // dependency
+  GlutenDomain domain;  // dependency
 };
 
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol
 
 namespace nlohmann {
 
 template <typename T>
 struct adl_serializer<io::trino::protocol::ColumnDomain<T>> {
-  static void to_json(
-      json& j,
-      const io::trino::protocol::ColumnDomain<T>& p) {
-    io::trino::protocol::to_json_key(
-        j, "column", p.column, "ColumnDomain", "T", "column");
-    io::trino::protocol::to_json_key(
-        j, "domain", p.domain, "ColumnDomain", "Domain", "domain");
+  static void to_json(json& j, const io::trino::protocol::ColumnDomain<T>& p) {
+    io::trino::protocol::to_json_key(j, "column", p.column, "ColumnDomain", "T",
+                                     "column");
+    io::trino::protocol::to_json_key(j, "domain", p.domain, "ColumnDomain", "Domain",
+                                     "domain");
   }
 
-  static void from_json(
-      const json& j,
-      io::trino::protocol::ColumnDomain<T>& p) {
-    io::trino::protocol::from_json_key(
-        j, "column", p.column, "ColumnDomain", "T", "column");
-    io::trino::protocol::from_json_key(
-        j, "domain", p.domain, "ColumnDomain", "Domain", "domain");
+  static void from_json(const json& j, io::trino::protocol::ColumnDomain<T>& p) {
+    io::trino::protocol::from_json_key(j, "column", p.column, "ColumnDomain", "T",
+                                       "column");
+    io::trino::protocol::from_json_key(j, "domain", p.domain, "ColumnDomain", "Domain",
+                                       "domain");
   }
 };
 
 template <typename T>
 struct adl_serializer<io::trino::protocol::TupleDomain<T>> {
-  static void to_json(
-      json& j,
-      const io::trino::protocol::TupleDomain<T>& tup) {
-    io::trino::protocol::List<
-        io::trino::protocol::ColumnDomain<T>>
-        list;
+  static void to_json(json& j, const io::trino::protocol::TupleDomain<T>& tup) {
+    io::trino::protocol::List<io::trino::protocol::ColumnDomain<T>> list;
     if (tup.domains != nullptr) {
       for (auto& el : *tup.domains) {
         io::trino::protocol::ColumnDomain<T> domain;
@@ -84,18 +74,13 @@ struct adl_serializer<io::trino::protocol::TupleDomain<T>> {
     j["columnDomains"] = list;
   }
 
-  static void from_json(
-      const json& j,
-      io::trino::protocol::TupleDomain<T>& tup) {
+  static void from_json(const json& j, io::trino::protocol::TupleDomain<T>& tup) {
     if (j.count("columnDomains") != 0U) {
-      std::shared_ptr<io::trino::protocol::
-                          Map<T, io::trino::protocol::Domain>>
-          map = std::make_shared<
-              std::map<T, io::trino::protocol::Domain>>();
+      std::shared_ptr<io::trino::protocol::Map<T, io::trino::protocol::Domain>> map =
+          std::make_shared<std::map<T, io::trino::protocol::Domain>>();
 
-      io::trino::protocol::List<
-          io::trino::protocol::ColumnDomain<T>>
-          list = j.at("columnDomains");
+      io::trino::protocol::List<io::trino::protocol::ColumnDomain<T>> list =
+          j.at("columnDomains");
       for (const io::trino::protocol::ColumnDomain<T>& value : list) {
         map->insert(std::make_pair(T(value.column), value.domain));
       }
@@ -105,14 +90,10 @@ struct adl_serializer<io::trino::protocol::TupleDomain<T>> {
 };
 
 template <typename T>
-struct adl_serializer<
-    io::trino::protocol::TupleDomain<std::shared_ptr<T>>> {
-  static void to_json(
-      json& j,
-      const io::trino::protocol::TupleDomain<std::shared_ptr<T>>& tup) {
-    io::trino::protocol::List<
-        io::trino::protocol::ColumnDomain<std::shared_ptr<T>>>
-        list;
+struct adl_serializer<io::trino::protocol::TupleDomain<std::shared_ptr<T>>> {
+  static void to_json(json& j,
+                      const io::trino::protocol::TupleDomain<std::shared_ptr<T>>& tup) {
+    io::trino::protocol::List<io::trino::protocol::ColumnDomain<std::shared_ptr<T>>> list;
     if (tup.domains != nullptr) {
       for (auto& el : *tup.domains) {
         io::trino::protocol::ColumnDomain<std::shared_ptr<T>> domain;
@@ -125,26 +106,21 @@ struct adl_serializer<
     j["columnDomains"] = list;
   }
 
-  static void from_json(
-      const json& j,
-      io::trino::protocol::TupleDomain<std::shared_ptr<T>>& tup) {
+  static void from_json(const json& j,
+                        io::trino::protocol::TupleDomain<std::shared_ptr<T>>& tup) {
     if (j.count("columnDomains") != 0U) {
-      auto map = std::make_shared<std::map<
-          std::shared_ptr<T>,
-          io::trino::protocol::Domain,
-          io::trino::protocol::pointerDerefCompare<T>>>();
+      auto map =
+          std::make_shared<std::map<std::shared_ptr<T>, io::trino::protocol::Domain,
+                                    io::trino::protocol::pointerDerefCompare<T>>>();
 
-      io::trino::protocol::List<
-          io::trino::protocol::ColumnDomain<std::shared_ptr<T>>>
+      io::trino::protocol::List<io::trino::protocol::ColumnDomain<std::shared_ptr<T>>>
           list = j.at("columnDomains");
-      for (const io::trino::protocol::ColumnDomain<std::shared_ptr<T>>&
-               value : list) {
-        map->insert(
-            std::make_pair(std::shared_ptr<T>(value.column), value.domain));
+      for (const io::trino::protocol::ColumnDomain<std::shared_ptr<T>>& value : list) {
+        map->insert(std::make_pair(std::shared_ptr<T>(value.column), value.domain));
       }
       tup.domains = map;
     }
   }
 };
 
-} // namespace nlohmann
+}  // namespace nlohmann

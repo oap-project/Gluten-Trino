@@ -72,9 +72,7 @@ void HttpResponse::append(std::unique_ptr<folly::IOBuf>&& iobuf) {
   bodyChain_.emplace_back(std::move(iobuf));
 }
 
-void HttpResponse::freeBuffers() {
-  bodyChain_.clear();
-}
+void HttpResponse::freeBuffers() { bodyChain_.clear(); }
 
 FOLLY_ALWAYS_INLINE size_t HttpResponse::nextAllocationSize(uint64_t dataLength) const {
   const size_t minAllocSize = velox::bits::nextPowerOfTwo(

@@ -46,7 +46,7 @@ class TypeSignatureLexer : public antlr4::Lexer {
   virtual const std::vector<std::string>& getModeNames() const override;
 
   virtual const std::vector<std::string>& getTokenNames()
-      const override; // deprecated, use vocabulary instead
+      const override;  // deprecated, use vocabulary instead
   virtual antlr4::dfa::Vocabulary& getVocabulary() const override;
 
   virtual const std::vector<uint16_t> getSerializedATN() const override;
@@ -78,4 +78,4 @@ class TypeSignatureLexer : public antlr4::Lexer {
   static Initializer _init;
 };
 
-} // namespace io::trino::type
+}  // namespace io::trino::type

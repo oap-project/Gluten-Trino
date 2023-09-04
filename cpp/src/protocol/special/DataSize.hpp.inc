@@ -18,4 +18,4 @@ std::ostream& operator<<(std::ostream& os, const DataSize& d);
 void to_json(nlohmann::json& j, const DataSize& p);
 void from_json(const nlohmann::json& j, DataSize& p);
 
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

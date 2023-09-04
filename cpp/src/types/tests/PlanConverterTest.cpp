@@ -11,10 +11,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <gtest/gtest.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
-#include <gtest/gtest.h>
 
 #include "presto_cpp/main/common/tests/test_json.h"
 #include "presto_cpp/main/operators/LocalPersistentShuffle.h"
@@ -38,13 +38,13 @@ std::string getDataPath(const std::string& fileName) {
 
   if (boost::algorithm::ends_with(currentPath, "fbcode")) {
     return currentPath +
-        "/github/presto-trunk/presto-native-execution/presto_cpp/main/types/tests/data/" +
-        fileName;
+           "/github/presto-trunk/presto-native-execution/presto_cpp/main/types/tests/"
+           "data/" +
+           fileName;
   }
 
   if (boost::algorithm::ends_with(currentPath, "fbsource")) {
-    return currentPath + "/third-party/presto_cpp/main/types/tests/data/" +
-        fileName;
+    return currentPath + "/third-party/presto_cpp/main/types/tests/data/" + fileName;
   }
 
   // CLion runs the tests from cmake-build-release/ or cmake-build-debug/
@@ -66,14 +66,12 @@ std::shared_ptr<const core::PlanNode> assertToVeloxQueryPlan(
 
   VeloxInteractiveQueryPlanConverter converter(pool.get());
   return converter
-      .toVeloxQueryPlan(
-          prestoPlan, nullptr, "20201107_130540_00011_wrpkw.1.2.3")
+      .toVeloxQueryPlan(prestoPlan, nullptr, "20201107_130540_00011_wrpkw.1.2.3")
       .planNode;
 }
 
 std::shared_ptr<const core::PlanNode> assertToBatchVeloxQueryPlan(
-    const std::string& fileName,
-    const std::string& shuffleName,
+    const std::string& fileName, const std::string& shuffleName,
     std::shared_ptr<std::string>&& serializedShuffleWriteInfo) {
   const std::string fragment = slurp(getDataPath(fileName));
 
@@ -82,11 +80,10 @@ std::shared_ptr<const core::PlanNode> assertToBatchVeloxQueryPlan(
   VeloxBatchQueryPlanConverter converter(
       shuffleName, std::move(serializedShuffleWriteInfo), pool.get());
   return converter
-      .toVeloxQueryPlan(
-          prestoPlan, nullptr, "20201107_130540_00011_wrpkw.1.2.3")
+      .toVeloxQueryPlan(prestoPlan, nullptr, "20201107_130540_00011_wrpkw.1.2.3")
       .planNode;
 }
-} // namespace
+}  // namespace
 
 class PlanConverterTest : public ::testing::Test {};
 
@@ -111,14 +108,10 @@ TEST_F(PlanConverterTest, scanAgg) {
 }
 
 // Final Agg stage plan for select regionkey, sum(1) from nation group by 1
-TEST_F(PlanConverterTest, finalAgg) {
-  assertToVeloxQueryPlan("FinalAgg.json");
-}
+TEST_F(PlanConverterTest, finalAgg) { assertToVeloxQueryPlan("FinalAgg.json"); }
 
 // Last stage (output) plan for select regionkey, sum(1) from nation group by 1
-TEST_F(PlanConverterTest, output) {
-  assertToVeloxQueryPlan("Output.json");
-}
+TEST_F(PlanConverterTest, output) { assertToVeloxQueryPlan("Output.json"); }
 
 // Last stage plan for SELECT * FROM nation ORDER BY nationkey OFFSET 7 LIMIT 5.
 TEST_F(PlanConverterTest, offsetLimit) {
@@ -147,22 +140,19 @@ TEST_F(PlanConverterTest, batchPlanConversion) {
   auto root = assertToBatchVeloxQueryPlan(
       "ScanAggBatch.json",
       std::string(operators::LocalPersistentShuffleFactory::kShuffleName),
-      std::make_shared<std::string>(fmt::format(
-          "{{\n"
-          "  \"rootPath\": \"{}\",\n"
-          "  \"numPartitions\": {}\n"
-          "}}",
-          exec::test::TempDirectoryPath::create()->path,
-          10)));
+      std::make_shared<std::string>(
+          fmt::format("{{\n"
+                      "  \"rootPath\": \"{}\",\n"
+                      "  \"numPartitions\": {}\n"
+                      "}}",
+                      exec::test::TempDirectoryPath::create()->path, 10)));
 
-  auto shuffleWrite =
-      std::dynamic_pointer_cast<const operators::ShuffleWriteNode>(root);
+  auto shuffleWrite = std::dynamic_pointer_cast<const operators::ShuffleWriteNode>(root);
   ASSERT_NE(shuffleWrite, nullptr);
   ASSERT_EQ(shuffleWrite->sources().size(), 1);
 
-  auto localPartition =
-      std::dynamic_pointer_cast<const core::LocalPartitionNode>(
-          shuffleWrite->sources().back());
+  auto localPartition = std::dynamic_pointer_cast<const core::LocalPartitionNode>(
+      shuffleWrite->sources().back());
   ASSERT_NE(localPartition, nullptr);
   ASSERT_EQ(localPartition->sources().size(), 1);
 
@@ -174,14 +164,12 @@ TEST_F(PlanConverterTest, batchPlanConversion) {
 
   auto curNode = assertToBatchVeloxQueryPlan(
       "FinalAgg.json",
-      std::string(operators::LocalPersistentShuffleFactory::kShuffleName),
-      nullptr);
+      std::string(operators::LocalPersistentShuffleFactory::kShuffleName), nullptr);
 
   std::shared_ptr<const operators::ShuffleReadNode> shuffleReadNode;
   while (!curNode->sources().empty()) {
     curNode = curNode->sources().back();
   }
-  shuffleReadNode =
-      std::dynamic_pointer_cast<const operators::ShuffleReadNode>(curNode);
+  shuffleReadNode = std::dynamic_pointer_cast<const operators::ShuffleReadNode>(curNode);
   ASSERT_NE(shuffleReadNode, nullptr);
 }

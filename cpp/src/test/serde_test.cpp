@@ -26,7 +26,8 @@ TEST(serde_test, OneRow) {
 
 TEST(serde_test, test2) {
   std::vector<std::string> names{"int", "long"};
-  std::vector<TypePtr> types{std::make_shared<IntegerType>(),std::make_shared<BigintType>()};
+  std::vector<TypePtr> types{std::make_shared<IntegerType>(),
+                             std::make_shared<BigintType>()};
   std::shared_ptr<const RowType> rowType =
       std::make_shared<const RowType>(std::move(names), std::move(types));
   auto page = TestUtils::createPage2();

@@ -47,7 +47,7 @@ set(TRINO_EXCHANGE_SOURCES TrinoExchangeSource.cpp utils/HttpClient.cpp
                            utils/Configs.cpp)
 
 set(SOURCES TrinoBridge.cpp utils.cpp NativeConfigs.cpp
-        ${TRINO_CPP_UTILS_SOURCES})
+            ${TRINO_CPP_UTILS_SOURCES})
 
 if(ENABLE_TRINO_EXCHANGE)
   set(SOURCES ${SOURCES} ${TRINO_EXCHANGE_SOURCES})
@@ -100,12 +100,9 @@ endif()
 
 add_subdirectory(serialization)
 
-target_link_libraries(gluten_trino PUBLIC
-        gluten_trino_functions
-        gluten_trino_serialization
-        ${VELOX_LIBS}
-        trino_protocol
-        velox_vector_test_lib)
+target_link_libraries(
+  gluten_trino PUBLIC gluten_trino_functions gluten_trino_serialization
+                      ${VELOX_LIBS} trino_protocol velox_vector_test_lib)
 
 if(ENABLE_TRINO_EXCHANGE)
   target_link_libraries(gluten_trino PUBLIC ${PROXYGEN_LIBRARIES})

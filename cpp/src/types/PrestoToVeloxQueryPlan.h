@@ -15,8 +15,8 @@
 #include <stdexcept>
 #include <vector>
 // #include "presto_cpp/main/operators/ShuffleInterface.h"
-#include "src/protocol/trino_protocol.h"
 #include "TrinoTaskId.h"
+#include "src/protocol/trino_protocol.h"
 #include "velox/core/Expressions.h"
 #include "velox/core/PlanFragment.h"
 #include "velox/core/PlanNode.h"
@@ -28,7 +28,7 @@
 #include "src/types/PrestoToVeloxExpr.h"
 
 namespace io::trino {
-using namespace facebook; // TODO: Remove it, for temporary use.
+using namespace facebook;  // TODO: Remove it, for temporary use.
 
 class VeloxQueryPlanConverterBase {
  public:
@@ -93,12 +93,12 @@ class VeloxQueryPlanConverterBase {
       const std::shared_ptr<const protocol::GroupIdNode>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
       const protocol::TaskId& taskId);
-/*
-  velox::core::PlanNodePtr toVeloxQueryPlan(
-      const std::shared_ptr<const protocol::DistinctLimitNode>& node,
-      const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
-      const protocol::TaskId& taskId);
-*/
+  /*
+    velox::core::PlanNodePtr toVeloxQueryPlan(
+        const std::shared_ptr<const protocol::DistinctLimitNode>& node,
+        const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
+        const protocol::TaskId& taskId);
+  */
   velox::core::PlanNodePtr toVeloxQueryPlan(
       const std::shared_ptr<const protocol::JoinNode>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
@@ -109,12 +109,12 @@ class VeloxQueryPlanConverterBase {
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
       const protocol::TaskId& taskId);
 
-/*
-  velox::core::PlanNodePtr toVeloxQueryPlan(
-      const std::shared_ptr<const protocol::MergeJoinNode>& node,
-      const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
-      const protocol::TaskId& taskId);
-  */
+  /*
+    velox::core::PlanNodePtr toVeloxQueryPlan(
+        const std::shared_ptr<const protocol::MergeJoinNode>& node,
+        const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
+        const protocol::TaskId& taskId);
+    */
   std::shared_ptr<const velox::core::TopNNode> toVeloxQueryPlan(
       const std::shared_ptr<const protocol::TopNNode>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
@@ -129,17 +129,17 @@ class VeloxQueryPlanConverterBase {
       const std::shared_ptr<const protocol::SortNode>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
       const protocol::TaskId& taskId);
-/*
-  std::shared_ptr<const velox::core::TableWriteNode> toVeloxQueryPlan(
-      const std::shared_ptr<const protocol::TableWriterNode>& node,
-      const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
-      const protocol::TaskId& taskId);
+  /*
+    std::shared_ptr<const velox::core::TableWriteNode> toVeloxQueryPlan(
+        const std::shared_ptr<const protocol::TableWriterNode>& node,
+        const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
+        const protocol::TaskId& taskId);
 
-  std::shared_ptr<const velox::core::UnnestNode> toVeloxQueryPlan(
-      const std::shared_ptr<const protocol::UnnestNode>& node,
-      const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
-      const protocol::TaskId& taskId);
-  */
+    std::shared_ptr<const velox::core::UnnestNode> toVeloxQueryPlan(
+        const std::shared_ptr<const protocol::UnnestNode>& node,
+        const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
+        const protocol::TaskId& taskId);
+    */
   std::shared_ptr<const velox::core::EnforceSingleRowNode> toVeloxQueryPlan(
       const std::shared_ptr<const protocol::EnforceSingleRowNode>& node,
       const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
@@ -175,17 +175,15 @@ class VeloxQueryPlanConverterBase {
       const protocol::TaskId& taskId);
   */
 
-  velox::core::WindowNode::Function toVeloxWindowFunction(
-      const protocol::Function& func);
+  velox::core::WindowNode::Function toVeloxWindowFunction(const protocol::Function& func);
 
   velox::memory::MemoryPool* pool_;
   VeloxExprConverter exprConverter_;
 
   void toAggregations(
       const std::vector<protocol::VariableReferenceExpression>& outputVariables,
-      const std::map<
-          protocol::VariableReferenceExpression,
-          protocol::Aggregation>& aggregationMap,
+      const std::map<protocol::VariableReferenceExpression, protocol::Aggregation>&
+          aggregationMap,
       std::vector<velox::core::AggregationNode::Aggregate>& aggregates,
       std::vector<std::string>& aggregateNames);
 };
@@ -198,9 +196,8 @@ class VeloxInteractiveQueryPlanConverter : public VeloxQueryPlanConverterBase {
       : VeloxQueryPlanConverterBase(pool) {}
 
   // tableWriteInfo only used by TableWrite
-  velox::core::PlanFragment toVeloxQueryPlan(
-      const protocol::PlanFragment& fragment,
-      const protocol::TaskId& taskId) {
+  velox::core::PlanFragment toVeloxQueryPlan(const protocol::PlanFragment& fragment,
+                                             const protocol::TaskId& taskId) {
     return toVeloxQueryPlan(fragment, nullptr, taskId);
   }
 
@@ -215,10 +212,9 @@ class VeloxBatchQueryPlanConverter : public VeloxQueryPlanConverterBase {
  public:
   using VeloxQueryPlanConverterBase::toVeloxQueryPlan;
 
-  VeloxBatchQueryPlanConverter(
-      const std::string& shuffleName,
-      std::shared_ptr<std::string>&& serializedShuffleWriteInfo,
-      velox::memory::MemoryPool* pool)
+  VeloxBatchQueryPlanConverter(const std::string& shuffleName,
+                               std::shared_ptr<std::string>&& serializedShuffleWriteInfo,
+                               velox::memory::MemoryPool* pool)
       : VeloxQueryPlanConverterBase(pool),
         shuffleName_(shuffleName),
         serializedShuffleWriteInfo_(std::move(serializedShuffleWriteInfo)) {}
@@ -240,4 +236,4 @@ class VeloxBatchQueryPlanConverter : public VeloxQueryPlanConverterBase {
 };
 
 void registerPrestoPlanNodeSerDe();
-} // namespace io::trino
+}  // namespace io::trino

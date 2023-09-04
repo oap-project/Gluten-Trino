@@ -34,9 +34,7 @@ class TrinoBuffer {
   char* getAddress() { return address_; }
   size_t getLength() { return length_; }
 
-  void release() {
-    memoryManager_->release(address_);
-  }
+  void release() { memoryManager_->release(address_); }
 
  private:
   std::shared_ptr<MemoryManager> memoryManager_;

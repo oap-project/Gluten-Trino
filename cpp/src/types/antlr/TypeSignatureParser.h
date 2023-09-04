@@ -55,12 +55,10 @@ class TypeSignatureParser : public antlr4::Parser {
   ~TypeSignatureParser();
 
   virtual std::string getGrammarFileName() const override;
-  virtual const antlr4::atn::ATN& getATN() const override {
-    return _atn;
-  };
+  virtual const antlr4::atn::ATN& getATN() const override { return _atn; };
   virtual const std::vector<std::string>& getTokenNames() const override {
     return _tokenNames;
-  }; // deprecated: use vocabulary instead.
+  };  // deprecated: use vocabulary instead.
   virtual const std::vector<std::string>& getRuleNames() const override;
   virtual antlr4::dfa::Vocabulary& getVocabulary() const override;
 
@@ -84,8 +82,7 @@ class TypeSignatureParser : public antlr4::Parser {
     Type_specContext* type_spec();
     antlr4::tree::TerminalNode* EOF();
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   StartContext* start();
@@ -97,8 +94,7 @@ class TypeSignatureParser : public antlr4::Parser {
     Named_typeContext* named_type();
     TypeContext* type();
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   Type_specContext* type_spec();
@@ -110,8 +106,7 @@ class TypeSignatureParser : public antlr4::Parser {
     IdentifierContext* identifier();
     TypeContext* type();
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   Named_typeContext* named_type();
@@ -127,8 +122,7 @@ class TypeSignatureParser : public antlr4::Parser {
     Map_typeContext* map_type();
     Row_typeContext* row_type();
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   TypeContext* type();
@@ -140,40 +134,33 @@ class TypeSignatureParser : public antlr4::Parser {
     antlr4::tree::TerminalNode* WORD();
     antlr4::tree::TerminalNode* TYPE_WITH_SPACES();
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   Simple_typeContext* simple_type();
 
   class Variable_typeContext : public antlr4::ParserRuleContext {
    public:
-    Variable_typeContext(
-        antlr4::ParserRuleContext* parent,
-        size_t invokingState);
+    Variable_typeContext(antlr4::ParserRuleContext* parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode* WORD();
     std::vector<antlr4::tree::TerminalNode*> NUMBER();
     antlr4::tree::TerminalNode* NUMBER(size_t i);
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   Variable_typeContext* variable_type();
 
   class Decimal_typeContext : public antlr4::ParserRuleContext {
    public:
-    Decimal_typeContext(
-        antlr4::ParserRuleContext* parent,
-        size_t invokingState);
+    Decimal_typeContext(antlr4::ParserRuleContext* parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode* WORD();
     std::vector<antlr4::tree::TerminalNode*> NUMBER();
     antlr4::tree::TerminalNode* NUMBER(size_t i);
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   Decimal_typeContext* decimal_type();
@@ -185,8 +172,7 @@ class TypeSignatureParser : public antlr4::Parser {
     std::vector<Type_specContext*> type_spec();
     Type_specContext* type_spec(size_t i);
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   Type_listContext* type_list();
@@ -198,8 +184,7 @@ class TypeSignatureParser : public antlr4::Parser {
     antlr4::tree::TerminalNode* WORD();
     Type_listContext* type_list();
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   Row_typeContext* row_type();
@@ -212,8 +197,7 @@ class TypeSignatureParser : public antlr4::Parser {
     std::vector<TypeContext*> type();
     TypeContext* type(size_t i);
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   Map_typeContext* map_type();
@@ -225,8 +209,7 @@ class TypeSignatureParser : public antlr4::Parser {
     antlr4::tree::TerminalNode* WORD();
     TypeContext* type();
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   Array_typeContext* array_type();
@@ -238,22 +221,15 @@ class TypeSignatureParser : public antlr4::Parser {
     antlr4::tree::TerminalNode* QUOTED_ID();
     antlr4::tree::TerminalNode* WORD();
 
-    virtual antlrcpp::Any accept(
-        antlr4::tree::ParseTreeVisitor* visitor) override;
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor* visitor) override;
   };
 
   IdentifierContext* identifier();
 
-  virtual bool sempred(
-      antlr4::RuleContext* _localctx,
-      size_t ruleIndex,
-      size_t predicateIndex) override;
-  bool variable_typeSempred(
-      Variable_typeContext* _localctx,
-      size_t predicateIndex);
-  bool decimal_typeSempred(
-      Decimal_typeContext* _localctx,
-      size_t predicateIndex);
+  virtual bool sempred(antlr4::RuleContext* _localctx, size_t ruleIndex,
+                       size_t predicateIndex) override;
+  bool variable_typeSempred(Variable_typeContext* _localctx, size_t predicateIndex);
+  bool decimal_typeSempred(Decimal_typeContext* _localctx, size_t predicateIndex);
   bool row_typeSempred(Row_typeContext* _localctx, size_t predicateIndex);
   bool map_typeSempred(Map_typeContext* _localctx, size_t predicateIndex);
   bool array_typeSempred(Array_typeContext* _localctx, size_t predicateIndex);
@@ -275,8 +251,7 @@ class TypeSignatureParser : public antlr4::Parser {
 #define isRowToken() (UpCase(Token()) == "ROW")
 #define isMapToken() (UpCase(Token()) == "MAP")
 #define isArrayToken() (UpCase(Token()) == "ARRAY")
-#define isVarToken() \
-  (UpCase(Token()) == "VARCHAR" || UpCase(Token()) == "VARBINARY")
+#define isVarToken() (UpCase(Token()) == "VARCHAR" || UpCase(Token()) == "VARBINARY")
 #define isDecimalToken() (UpCase(Token()) == "DECIMAL")
 
   struct Initializer {
@@ -285,4 +260,4 @@ class TypeSignatureParser : public antlr4::Parser {
   static Initializer _init;
 };
 
-} // namespace io::trino::type
+}  // namespace io::trino::type

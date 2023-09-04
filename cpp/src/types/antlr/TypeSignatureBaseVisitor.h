@@ -31,8 +31,7 @@ namespace io::trino::type {
  */
 class TypeSignatureBaseVisitor : public TypeSignatureVisitor {
  public:
-  virtual antlrcpp::Any visitStart(
-      TypeSignatureParser::StartContext* ctx) override {
+  virtual antlrcpp::Any visitStart(TypeSignatureParser::StartContext* ctx) override {
     return visitChildren(ctx);
   }
 
@@ -46,8 +45,7 @@ class TypeSignatureBaseVisitor : public TypeSignatureVisitor {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitType(
-      TypeSignatureParser::TypeContext* ctx) override {
+  virtual antlrcpp::Any visitType(TypeSignatureParser::TypeContext* ctx) override {
     return visitChildren(ctx);
   }
 
@@ -92,4 +90,4 @@ class TypeSignatureBaseVisitor : public TypeSignatureVisitor {
   }
 };
 
-} // namespace io::trino::type
+}  // namespace io::trino::type

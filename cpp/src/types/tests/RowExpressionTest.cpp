@@ -30,15 +30,13 @@ class RowExpressionTest : public ::testing::Test {
     converter_ = std::make_unique<VeloxExprConverter>(pool_.get());
   }
 
-  void testConstantExpression(
-      const std::string& str,
-      const std::string& type,
-      const std::string& value) {
+  void testConstantExpression(const std::string& str, const std::string& type,
+                              const std::string& value) {
     json j = json::parse(str);
     std::shared_ptr<protocol::RowExpression> p = j;
 
-    auto cexpr = std::static_pointer_cast<const ConstantTypedExpr>(
-        converter_->toVeloxExpr(p));
+    auto cexpr =
+        std::static_pointer_cast<const ConstantTypedExpr>(converter_->toVeloxExpr(p));
 
     ASSERT_EQ(cexpr->type()->toString(), type);
     ASSERT_EQ(cexpr->value().toJson(), value);
@@ -303,8 +301,7 @@ TEST_F(RowExpressionTest, varbinary2) {
             "type": "varbinary"
         }
     )##";
-  testConstantExpression(
-      str, "VARBINARY", '"' + encoding::Base64::encode("value") + '"');
+  testConstantExpression(str, "VARBINARY", '"' + encoding::Base64::encode("value") + '"');
 }
 
 TEST_F(RowExpressionTest, varbinary3) {
@@ -317,10 +314,8 @@ TEST_F(RowExpressionTest, varbinary3) {
             "type": "varbinary"
         }
     )##";
-  testConstantExpression(
-      str,
-      "VARBINARY",
-      '"' + encoding::Base64::encode("SPECIAL_#@,$|%/^~?{}+-") + '"');
+  testConstantExpression(str, "VARBINARY",
+                         '"' + encoding::Base64::encode("SPECIAL_#@,$|%/^~?{}+-") + '"');
 }
 
 TEST_F(RowExpressionTest, varbinary4) {
@@ -349,11 +344,10 @@ TEST_F(RowExpressionTest, varbinary5) {
         }
     )##";
   testConstantExpression(
-      str,
-      "VARBINARY",
+      str, "VARBINARY",
       '"' +
-          encoding::Base64::encode(
-              "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789") +
+          encoding::Base64::encode("01234567890123456789012345678901234567890123456789012"
+                                   "34567890123456789012345678901234567890123456789") +
           '"');
 }
 
@@ -452,16 +446,16 @@ TEST_F(RowExpressionTest, call) {
   )##",
   };
 
-  static const std::array<std::string, 2> callExprNames{
-      "presto.default.eq", "json.x4.eq"};
+  static const std::array<std::string, 2> callExprNames{"presto.default.eq",
+                                                        "json.x4.eq"};
 
   for (size_t i = 0; i < 2; ++i) {
     std::shared_ptr<protocol::RowExpression> p = json::parse(jsonStrings[i]);
 
     InputTypedExpr rowExpr(BIGINT());
 
-    auto callexpr = std::static_pointer_cast<const CallTypedExpr>(
-        converter_->toVeloxExpr(p));
+    auto callexpr =
+        std::static_pointer_cast<const CallTypedExpr>(converter_->toVeloxExpr(p));
 
     // Check some values ...
     ASSERT_EQ(callexpr->name(), callExprNames[i]);
@@ -471,8 +465,7 @@ TEST_F(RowExpressionTest, call) {
     ASSERT_EQ(iexpr.size(), 2);
 
     {
-      auto cexpr =
-          std::static_pointer_cast<const FieldAccessTypedExpr>(iexpr[0]);
+      auto cexpr = std::static_pointer_cast<const FieldAccessTypedExpr>(iexpr[0]);
       ASSERT_EQ(cexpr->type()->toString(), "VARCHAR");
       ASSERT_EQ(cexpr->name(), "name");
     }
@@ -570,40 +563,38 @@ TEST_F(RowExpressionTest, special) {
   ASSERT_EQ(callexpr->name(), "and");
 
   {
-    auto arg0expr =
-        std::static_pointer_cast<const CallTypedExpr>(callexpr->inputs()[0]);
+    auto arg0expr = std::static_pointer_cast<const CallTypedExpr>(callexpr->inputs()[0]);
 
     ASSERT_EQ(arg0expr->type()->toString(), "BOOLEAN");
     ASSERT_EQ(arg0expr->name(), "presto.default.eq");
     {
-      auto cexpr = std::static_pointer_cast<const FieldAccessTypedExpr>(
-          arg0expr->inputs()[0]);
+      auto cexpr =
+          std::static_pointer_cast<const FieldAccessTypedExpr>(arg0expr->inputs()[0]);
       ASSERT_EQ(cexpr->type()->toString(), "BIGINT");
       ASSERT_EQ(cexpr->name(), "custkey");
     }
     {
-      auto cexpr = std::static_pointer_cast<const ConstantTypedExpr>(
-          arg0expr->inputs()[1]);
+      auto cexpr =
+          std::static_pointer_cast<const ConstantTypedExpr>(arg0expr->inputs()[1]);
       ASSERT_EQ(cexpr->type()->toString(), "BIGINT");
       ASSERT_EQ(cexpr->value().toJson(), "10");
     }
   }
 
   {
-    auto arg1expr =
-        std::static_pointer_cast<const CallTypedExpr>(callexpr->inputs()[1]);
+    auto arg1expr = std::static_pointer_cast<const CallTypedExpr>(callexpr->inputs()[1]);
 
     ASSERT_EQ(arg1expr->type()->toString(), "BOOLEAN");
     ASSERT_EQ(arg1expr->name(), "presto.default.eq");
     {
-      auto cexpr = std::static_pointer_cast<const FieldAccessTypedExpr>(
-          arg1expr->inputs()[0]);
+      auto cexpr =
+          std::static_pointer_cast<const FieldAccessTypedExpr>(arg1expr->inputs()[0]);
       ASSERT_EQ(cexpr->type()->toString(), "VARCHAR");
       ASSERT_EQ(cexpr->name(), "name");
     }
     {
-      auto cexpr = std::static_pointer_cast<const ConstantTypedExpr>(
-          arg1expr->inputs()[1]);
+      auto cexpr =
+          std::static_pointer_cast<const ConstantTypedExpr>(arg1expr->inputs()[1]);
       ASSERT_EQ(cexpr->type()->toString(), "VARCHAR");
       ASSERT_EQ(cexpr->value().toJson(), "\"foo\"");
     }
@@ -829,8 +820,7 @@ TEST_F(RowExpressionTest, likeWithEscape) {
   ASSERT_NE(callExpr, nullptr);
 
   auto callExprToString = callExpr->toString();
-  ASSERT_EQ(
-      callExpr->toString(), "presto.default.like(\"type\",\"%BRASS\",\"#\")");
+  ASSERT_EQ(callExpr->toString(), "presto.default.like(\"type\",\"%BRASS\",\"#\")");
 }
 
 TEST_F(RowExpressionTest, dereference) {
@@ -921,8 +911,7 @@ TEST_F(RowExpressionTest, dereference) {
 
   auto expr = converter_->toVeloxExpr(p);
 
-  auto fieldAccess =
-      std::dynamic_pointer_cast<const FieldAccessTypedExpr>(expr);
+  auto fieldAccess = std::dynamic_pointer_cast<const FieldAccessTypedExpr>(expr);
   ASSERT_NE(fieldAccess, nullptr);
 
   ASSERT_EQ(fieldAccess->name(), "partkey");

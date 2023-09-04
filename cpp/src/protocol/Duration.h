@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 #pragma once
-#include <re2/re2.h>
 #include <assert.h>
+#include <re2/re2.h>
 
 namespace io::trino::protocol {
 

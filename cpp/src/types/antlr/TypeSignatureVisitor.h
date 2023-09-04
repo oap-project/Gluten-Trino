@@ -33,8 +33,7 @@ class TypeSignatureVisitor : public antlr4::tree::AbstractParseTreeVisitor {
   /**
    * Visit parse trees produced by TypeSignatureParser.
    */
-  virtual antlrcpp::Any visitStart(
-      TypeSignatureParser::StartContext* context) = 0;
+  virtual antlrcpp::Any visitStart(TypeSignatureParser::StartContext* context) = 0;
 
   virtual antlrcpp::Any visitType_spec(
       TypeSignatureParser::Type_specContext* context) = 0;
@@ -42,8 +41,7 @@ class TypeSignatureVisitor : public antlr4::tree::AbstractParseTreeVisitor {
   virtual antlrcpp::Any visitNamed_type(
       TypeSignatureParser::Named_typeContext* context) = 0;
 
-  virtual antlrcpp::Any visitType(
-      TypeSignatureParser::TypeContext* context) = 0;
+  virtual antlrcpp::Any visitType(TypeSignatureParser::TypeContext* context) = 0;
 
   virtual antlrcpp::Any visitSimple_type(
       TypeSignatureParser::Simple_typeContext* context) = 0;
@@ -57,11 +55,9 @@ class TypeSignatureVisitor : public antlr4::tree::AbstractParseTreeVisitor {
   virtual antlrcpp::Any visitType_list(
       TypeSignatureParser::Type_listContext* context) = 0;
 
-  virtual antlrcpp::Any visitRow_type(
-      TypeSignatureParser::Row_typeContext* context) = 0;
+  virtual antlrcpp::Any visitRow_type(TypeSignatureParser::Row_typeContext* context) = 0;
 
-  virtual antlrcpp::Any visitMap_type(
-      TypeSignatureParser::Map_typeContext* context) = 0;
+  virtual antlrcpp::Any visitMap_type(TypeSignatureParser::Map_typeContext* context) = 0;
 
   virtual antlrcpp::Any visitArray_type(
       TypeSignatureParser::Array_typeContext* context) = 0;
@@ -70,4 +66,4 @@ class TypeSignatureVisitor : public antlr4::tree::AbstractParseTreeVisitor {
       TypeSignatureParser::IdentifierContext* context) = 0;
 };
 
-} // namespace io::trino::type
+}  // namespace io::trino::type

@@ -19,7 +19,7 @@
 #include "velox/core/Expressions.h"
 
 namespace io::trino {
-using namespace facebook; // TODO: Remove it, for temporary use.
+using namespace facebook;  // TODO: Remove it, for temporary use.
 
 class VeloxExprConverter {
  public:
@@ -43,16 +43,14 @@ class VeloxExprConverter {
   std::shared_ptr<const velox::core::FieldAccessTypedExpr> toVeloxExpr(
       const protocol::VariableReferenceExpression& pexpr) const;
 
-  velox::core::TypedExprPtr toVeloxExpr(
-      const protocol::CallExpression& pexpr) const;
+  velox::core::TypedExprPtr toVeloxExpr(const protocol::CallExpression& pexpr) const;
 
   velox::core::TypedExprPtr toVeloxExpr(
       std::shared_ptr<protocol::RowExpression> pexpr) const;
 
   // Deserializes Presto Block of a scalar type into a variant.
-  velox::variant getConstantValue(
-      const velox::TypePtr& type,
-      const protocol::Block& block) const;
+  velox::variant getConstantValue(const velox::TypePtr& type,
+                                  const protocol::Block& block) const;
 
  private:
   std::vector<velox::core::TypedExprPtr> toVeloxExpr(
@@ -67,4 +65,4 @@ class VeloxExprConverter {
   velox::memory::MemoryPool* pool_;
 };
 
-} // namespace io::trino
+}  // namespace io::trino

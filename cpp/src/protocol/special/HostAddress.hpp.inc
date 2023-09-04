@@ -16,4 +16,4 @@ namespace io::trino::protocol {
 
 using HostAddress = std::string;
 
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

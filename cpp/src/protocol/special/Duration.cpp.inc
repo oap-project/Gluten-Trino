@@ -14,16 +14,12 @@
 
 namespace io::trino::protocol {
 
-void to_json(json& j, const Duration& p) {
-  j = p.toString();
-}
+void to_json(json& j, const Duration& p) { j = p.toString(); }
 
-void from_json(const json& j, Duration& p) {
-  p = Duration(std::string(j));
-}
+void from_json(const json& j, Duration& p) { p = Duration(std::string(j)); }
 
 std::ostream& operator<<(std::ostream& os, const Duration& d) {
   return os << d.toString();
 }
 
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

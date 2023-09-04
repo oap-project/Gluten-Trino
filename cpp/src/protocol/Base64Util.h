@@ -21,8 +21,6 @@ using namespace facebook;
 // presto-common/src/main/java/com/facebook/presto/common/block/BlockEncodingManager.java
 // into vector.
 // TODO Refactor to avoid duplicating logic in PrestoSerializer.
-velox::VectorPtr readBlock(
-    const velox::TypePtr& type,
-    const std::string& base64Encoded,
-    velox::memory::MemoryPool* pool);
-} // namespace io::trino::protocol
+velox::VectorPtr readBlock(const velox::TypePtr& type, const std::string& base64Encoded,
+                           velox::memory::MemoryPool* pool);
+}  // namespace io::trino::protocol

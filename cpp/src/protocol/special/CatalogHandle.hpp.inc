@@ -7,4 +7,4 @@ struct CatalogHandle {
 void to_json(nlohmann::json& j, const CatalogHandle& p);
 void from_json(const nlohmann::json& j, CatalogHandle& p);
 
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

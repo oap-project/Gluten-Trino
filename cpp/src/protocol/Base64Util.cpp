@@ -72,8 +72,8 @@ velox::int128_t ByteStream::read<velox::int128_t>() {
   return velox::HugeInt::build(high, low);
 }
 
-velox::BufferPtr
-readNulls(int32_t count, ByteStream& stream, velox::memory::MemoryPool* pool) {
+velox::BufferPtr readNulls(int32_t count, ByteStream& stream,
+                           velox::memory::MemoryPool* pool) {
   bool mayHaveNulls = stream.read<bool>();
   if (!mayHaveNulls) {
     return nullptr;
@@ -90,17 +90,14 @@ readNulls(int32_t count, ByteStream& stream, velox::memory::MemoryPool* pool) {
 }
 
 template <typename T, typename U>
-velox::VectorPtr readScalarBlock(
-    const velox::TypePtr& type,
-    ByteStream& stream,
-    velox::memory::MemoryPool* pool) {
+velox::VectorPtr readScalarBlock(const velox::TypePtr& type, ByteStream& stream,
+                                 velox::memory::MemoryPool* pool) {
   auto positionCount = stream.read<int32_t>();
 
   velox::BufferPtr nulls = readNulls(positionCount, stream, pool);
   const uint64_t* rawNulls = nulls == nullptr ? nullptr : nulls->as<uint64_t>();
 
-  velox::BufferPtr buffer =
-      velox::AlignedBuffer::allocate<T>(positionCount, pool);
+  velox::BufferPtr buffer = velox::AlignedBuffer::allocate<T>(positionCount, pool);
   auto rawBuffer = buffer->asMutable<T>();
   for (auto i = 0; i < positionCount; i++) {
     if (!rawNulls || !velox::bits::isBitNull(rawNulls, i)) {
@@ -127,59 +124,41 @@ velox::VectorPtr readScalarBlock(
     case velox::TypeKind::VARCHAR:
     case velox::TypeKind::HUGEINT:
       return std::make_shared<velox::FlatVector<U>>(
-          pool,
-          type,
-          nulls,
-          positionCount,
-          buffer,
-          std::vector<velox::BufferPtr>{});
+          pool, type, nulls, positionCount, buffer, std::vector<velox::BufferPtr>{});
     case velox::TypeKind::TIMESTAMP: {
       velox::BufferPtr timestamps =
           velox::AlignedBuffer::allocate<velox::Timestamp>(positionCount, pool);
       auto* rawTimestamps = timestamps->asMutable<velox::Timestamp>();
       for (auto i = 0; i < positionCount; i++) {
-        rawTimestamps[i] = velox::Timestamp(
-            rawBuffer[i] / 1000, (rawBuffer[i] % 1000) * 1000000);
+        rawTimestamps[i] =
+            velox::Timestamp(rawBuffer[i] / 1000, (rawBuffer[i] % 1000) * 1000000);
       }
       return std::make_shared<velox::FlatVector<velox::Timestamp>>(
-          pool,
-          type,
-          nulls,
-          positionCount,
-          timestamps,
-          std::vector<velox::BufferPtr>{});
+          pool, type, nulls, positionCount, timestamps, std::vector<velox::BufferPtr>{});
     }
     case velox::TypeKind::BOOLEAN: {
-      velox::BufferPtr bits =
-          velox::AlignedBuffer::allocate<bool>(positionCount, pool);
+      velox::BufferPtr bits = velox::AlignedBuffer::allocate<bool>(positionCount, pool);
       auto* rawBits = bits->asMutable<uint64_t>();
       for (auto i = 0; i < positionCount; i++) {
         velox::bits::setBit(rawBits, i, rawBuffer[i] != 0);
       }
       return std::make_shared<velox::FlatVector<bool>>(
-          pool,
-          type,
-          nulls,
-          positionCount,
-          bits,
-          std::vector<velox::BufferPtr>{});
+          pool, type, nulls, positionCount, bits, std::vector<velox::BufferPtr>{});
     }
     default:
       VELOX_FAIL("Unexpected Block type: {}" + type->toString());
   }
 }
 
-velox::VectorPtr readVariableWidthBlock(
-    const velox::TypePtr& type,
-    ByteStream& stream,
-    velox::memory::MemoryPool* pool) {
-  int32_t positionCount = stream.read<int32_t>(); // Number of varchar items.
-  int32_t nonNullCount = stream.read<int32_t>(); // Number of not null items.
+velox::VectorPtr readVariableWidthBlock(const velox::TypePtr& type, ByteStream& stream,
+                                        velox::memory::MemoryPool* pool) {
+  int32_t positionCount = stream.read<int32_t>();  // Number of varchar items.
+  int32_t nonNullCount = stream.read<int32_t>();   // Number of not null items.
 
-  velox::BufferPtr lens =
-      velox::AlignedBuffer::allocate<int32_t>(nonNullCount, pool); // Lens of each nonnull item.
+  velox::BufferPtr lens = velox::AlignedBuffer::allocate<int32_t>(
+      nonNullCount, pool);  // Lens of each nonnull item.
   auto rawLens = lens->asMutable<int32_t>();
-  
+
   for (auto i = 0; i < nonNullCount; i++) {
     rawLens[i] = stream.read<int32_t>();
   }
@@ -188,8 +167,7 @@ velox::VectorPtr readVariableWidthBlock(
 
   auto totalSize = stream.read<int32_t>();
 
-  velox::BufferPtr stringBuffer =
-      velox::AlignedBuffer::allocate<char>(totalSize, pool);
+  velox::BufferPtr stringBuffer = velox::AlignedBuffer::allocate<char>(totalSize, pool);
   auto rawString = stringBuffer->asMutable<char>();
   stream.readBytes(totalSize, rawString);
 
@@ -203,34 +181,25 @@ velox::VectorPtr readVariableWidthBlock(
       if (velox::bits::isBitNull(nulls->as<uint64_t>(), i)) {
         rawBuffer[i] = velox::StringView(rawString + offset, rawLens[i]);
         offset += rawLens[i];
-      }
-      else {
+      } else {
         rawBuffer[i] = velox::StringView();
       }
     }
-  }
-  else {
+  } else {
     for (auto i = 0; i < positionCount; ++i) {
-        rawBuffer[i] = velox::StringView(rawString + offset, rawLens[i]);
-        offset += rawLens[i];
+      rawBuffer[i] = velox::StringView(rawString + offset, rawLens[i]);
+      offset += rawLens[i];
     }
   }
 
   return std::make_shared<velox::FlatVector<velox::StringView>>(
-      pool,
-      type,
-      nulls,
-      positionCount,
-      buffer,
+      pool, type, nulls, positionCount, buffer,
       std::vector<velox::BufferPtr>{std::move(stringBuffer)});
 }
 
 template <velox::TypeKind Kind>
-velox::VectorPtr readScalarBlock(
-    const std::string& encoding,
-    const velox::TypePtr& type,
-    ByteStream& stream,
-    velox::memory::MemoryPool* pool) {
+velox::VectorPtr readScalarBlock(const std::string& encoding, const velox::TypePtr& type,
+                                 ByteStream& stream, velox::memory::MemoryPool* pool) {
   using T = typename velox::TypeTraits<Kind>::NativeType;
 
   if (encoding == kLongArray) {
@@ -259,10 +228,8 @@ velox::VectorPtr readScalarBlock(
   VELOX_UNREACHABLE();
 }
 
-velox::VectorPtr readRleBlock(
-    const velox::TypePtr& type,
-    ByteStream& stream,
-    velox::memory::MemoryPool* pool) {
+velox::VectorPtr readRleBlock(const velox::TypePtr& type, ByteStream& stream,
+                              velox::memory::MemoryPool* pool) {
   // read number of rows - must be just one
   auto positionCount = stream.read<int32_t>();
 
@@ -271,11 +238,9 @@ velox::VectorPtr readRleBlock(
   auto encoding = stream.readString(encodingLength);
 
   auto innerCount = stream.read<int32_t>();
-  VELOX_CHECK_EQ(
-      innerCount,
-      1,
-      "Unexpected RLE block. Expected single inner position. Got {}",
-      innerCount);
+  VELOX_CHECK_EQ(innerCount, 1,
+                 "Unexpected RLE block. Expected single inner position. Got {}",
+                 innerCount);
 
   auto nulls = readNulls(1, stream, pool);
   if (!nulls || !velox::bits::isBitNull(nulls->as<uint64_t>(), 0)) {
@@ -285,18 +250,13 @@ velox::VectorPtr readRleBlock(
   return velox::BaseVector::createNullConstant(type, positionCount, pool);
 }
 
-void unpackTimestampWithTimeZone(
-    int64_t packed,
-    int64_t& timestamp,
-    int16_t& timezone) {
+void unpackTimestampWithTimeZone(int64_t packed, int64_t& timestamp, int16_t& timezone) {
   timestamp = packed >> 12;
   timezone = packed & 0xfff;
 }
 
 // Common code to read number of rows, nulls and offsets for ARRAY and MAP.
-auto readArrayOrMapFinalPart(
-    ByteStream& stream,
-    velox::memory::MemoryPool* pool) {
+auto readArrayOrMapFinalPart(ByteStream& stream, velox::memory::MemoryPool* pool) {
   auto positionCount = stream.read<int32_t>();
 
   velox::BufferPtr offsets =
@@ -308,8 +268,7 @@ auto readArrayOrMapFinalPart(
 
   velox::BufferPtr nulls = readNulls(positionCount, stream, pool);
 
-  velox::BufferPtr sizes =
-      velox::AlignedBuffer::allocate<int32_t>(positionCount, pool);
+  velox::BufferPtr sizes = velox::AlignedBuffer::allocate<int32_t>(positionCount, pool);
   auto rawSizes = sizes->asMutable<int32_t>();
   for (auto i = 0; i < positionCount; i++) {
     rawSizes[i] = rawOffsets[i + 1] - rawOffsets[i];
@@ -324,10 +283,8 @@ auto readArrayOrMapFinalPart(
   return result{std::move(nulls), positionCount, std::move(offsets), std::move(sizes)};
 }
 
-velox::VectorPtr readBlockInt(
-    const velox::TypePtr& type,
-    ByteStream& stream,
-    velox::memory::MemoryPool* pool) {
+velox::VectorPtr readBlockInt(const velox::TypePtr& type, ByteStream& stream,
+                              velox::memory::MemoryPool* pool) {
   // read the encoding
   auto encodingLength = stream.read<int32_t>();
   std::string encoding = stream.readString(encodingLength);
@@ -335,11 +292,10 @@ velox::VectorPtr readBlockInt(
   if (encoding == kArray) {
     auto elements = readBlockInt(type->asArray().elementType(), stream, pool);
 
-    auto [nulls, positionCount, offsets, sizes] =
-        readArrayOrMapFinalPart(stream, pool);
+    auto [nulls, positionCount, offsets, sizes] = readArrayOrMapFinalPart(stream, pool);
     const auto arrayType = ARRAY(elements->type());
-    return std::make_shared<velox::ArrayVector>(
-        pool, arrayType, nulls, positionCount, offsets, sizes, elements);
+    return std::make_shared<velox::ArrayVector>(pool, arrayType, nulls, positionCount,
+                                                offsets, sizes, elements);
   }
 
   if (encoding == kMap) {
@@ -352,11 +308,10 @@ velox::VectorPtr readBlockInt(
       stream.read<int32_t>();
     }
 
-    auto [nulls, positionCount, offsets, sizes] =
-        readArrayOrMapFinalPart(stream, pool);
+    auto [nulls, positionCount, offsets, sizes] = readArrayOrMapFinalPart(stream, pool);
     const auto mapType = MAP(keys->type(), values->type());
-    return std::make_shared<velox::MapVector>(
-        pool, mapType, nulls, positionCount, offsets, sizes, keys, values);
+    return std::make_shared<velox::MapVector>(pool, mapType, nulls, positionCount,
+                                              offsets, sizes, keys, values);
   }
 
   if (encoding == kRle) {
@@ -364,57 +319,45 @@ velox::VectorPtr readBlockInt(
   }
 
   if (type->kind() == velox::TypeKind::HUGEINT) {
-    return readScalarBlock<velox::TypeKind::HUGEINT>(
-        encoding, type, stream, pool);
+    return readScalarBlock<velox::TypeKind::HUGEINT>(encoding, type, stream, pool);
   }
 
-  if (type->kind() == velox::TypeKind::ROW &&
-      isTimestampWithTimeZoneType(type)) {
+  if (type->kind() == velox::TypeKind::ROW && isTimestampWithTimeZoneType(type)) {
     auto positionCount = stream.read<int32_t>();
 
-    auto timestamps =
-        velox::BaseVector::create(velox::BIGINT(), positionCount, pool);
-    auto rawTimestamps =
-        timestamps->asFlatVector<int64_t>()->mutableRawValues();
+    auto timestamps = velox::BaseVector::create(velox::BIGINT(), positionCount, pool);
+    auto rawTimestamps = timestamps->asFlatVector<int64_t>()->mutableRawValues();
 
-    auto timezones =
-        velox::BaseVector::create(velox::SMALLINT(), positionCount, pool);
+    auto timezones = velox::BaseVector::create(velox::SMALLINT(), positionCount, pool);
     auto rawTimezones = timezones->asFlatVector<int16_t>()->mutableRawValues();
 
     velox::BufferPtr nulls = readNulls(positionCount, stream, pool);
-    const uint64_t* rawNulls =
-        nulls == nullptr ? nullptr : nulls->as<uint64_t>();
+    const uint64_t* rawNulls = nulls == nullptr ? nullptr : nulls->as<uint64_t>();
 
     for (auto i = 0; i < positionCount; i++) {
       if (!rawNulls || !velox::bits::isBitNull(rawNulls, i)) {
         int64_t unpacked = stream.read<int64_t>();
-        unpackTimestampWithTimeZone(
-            unpacked, rawTimestamps[i], rawTimezones[i]);
+        unpackTimestampWithTimeZone(unpacked, rawTimestamps[i], rawTimezones[i]);
       }
     }
 
     return std::make_shared<velox::RowVector>(
-        pool,
-        velox::TIMESTAMP_WITH_TIME_ZONE(),
-        std::move(nulls),
-        positionCount,
+        pool, velox::TIMESTAMP_WITH_TIME_ZONE(), std::move(nulls), positionCount,
         std::vector<velox::VectorPtr>{std::move(timestamps), std::move(timezones)});
   };
 
-  return VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(
-      readScalarBlock, type->kind(), encoding, type, stream, pool);
+  return VELOX_DYNAMIC_SCALAR_TYPE_DISPATCH(readScalarBlock, type->kind(), encoding, type,
+                                            stream, pool);
 }
 
-} // namespace
+}  // namespace
 
-velox::VectorPtr readBlock(
-    const velox::TypePtr& type,
-    const std::string& base64Encoded,
-    velox::memory::MemoryPool* pool) {
+velox::VectorPtr readBlock(const velox::TypePtr& type, const std::string& base64Encoded,
+                           velox::memory::MemoryPool* pool) {
   const std::string data = velox::encoding::Base64::decode(base64Encoded);
 
   ByteStream stream(data.data());
   return readBlockInt(type, stream, pool);
 }
 
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

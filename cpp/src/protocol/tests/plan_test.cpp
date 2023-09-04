@@ -23,7 +23,6 @@ TEST_F(ProtocolTest, plan) {
   io::trino::VeloxInteractiveQueryPlanConverter convertor(pool.get());
   auto veloxPlan = convertor.toVeloxQueryPlan(*mockPlanFragment, "Test");
   std::cout << veloxPlan.planNode->toString(true, true);
-
 }
 
 int main(int argc, char** argv) {
