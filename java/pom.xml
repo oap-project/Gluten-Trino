@@ -754,12 +754,6 @@
             </dependency>
 
             <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>2.2.220</version>
-            </dependency>
-
-            <dependency>
                 <groupId>com.linkedin.calcite</groupId>
                 <artifactId>calcite-core</artifactId>
                 <version>1.21.0.152</version>
@@ -1193,11 +1187,6 @@
                 </exclusions>
             </dependency>
 
-            <dependency>
-                <groupId>org.apache.ivy</groupId>
-                <artifactId>ivy</artifactId>
-                <version>2.5.1</version>
-            </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
