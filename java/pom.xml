@@ -952,11 +952,6 @@
 
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty</artifactId>
-                <version>3.9.8.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
                 <version>4.1.72.Final</version>
             </dependency>
