@@ -61,10 +61,16 @@ jobs:
         run: |
           rm -rf * .[!.]*
       - uses: actions/checkout@v3
-      - name: cpp code style check
+      - name: cpp code style check for Pull Request
+        if: ${{github.event.pull_request.base.sha}}
         run: |
           git fetch --recurse-submodules=no origin main ${{github.event.pull_request.base.sha}}
           export BASE_COMMIT=${{github.event.pull_request.base.sha}}
+          scripts/check.py format branch
+      - name: cpp code style check for Commit
+        if: !${{github.event.pull_request.base.sha}}
+        run: |
+          export BASE_COMMIT=`git rev-parse HEAD~1`
           scripts/check.py format branch
 
   tpch-func-test:
