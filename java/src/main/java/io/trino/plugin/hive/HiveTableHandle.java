@@ -26,7 +26,6 @@ import io.trino.plugin.hive.util.HiveUtil;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.SchemaTableName;
-import io.trino.spi.predicate.GlutenMarker;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.protocol.GlutenDomain;
 import io.trino.spi.protocol.GlutenSortedRangeSet;
@@ -524,13 +523,13 @@ public class HiveTableHandle
                 .collect(Collectors.toMap(k -> new GlutenSubfield(k.getKey().getName(), new ArrayList<>()),
                         v -> GlutenDomain.create(v.getValue().getValues().getProtocol(), v.getValue().isNullAllowed())));
         GlutenTupleDomain<GlutenSubfield> domainPredicate = GlutenTupleDomain.withColumnDomains(domains);
+        // for isNull predicate
         Optional<List<GlutenTupleDomain.ColumnDomain<GlutenSubfield>>> columnDomains = domainPredicate.getColumnDomains();
-        if (columnDomains.isPresent() && !columnDomains.get().isEmpty() && columnDomains.get().get(0).getDomain().getValues() instanceof GlutenSortedRangeSet glutenSortedRangeSet) {
-            GlutenMarker low = glutenSortedRangeSet.getOrderedRanges().get(0).getLow();
-            GlutenMarker high = glutenSortedRangeSet.getOrderedRanges().get(0).getHigh();
-            if (null == low.getValue() || null == high.getValue()) {
-                return new GlutenHiveTableHandle(schemaName, tableName, GlutenTupleDomain.withColumnDomains(ImmutableMap.of()), analyzePartitionValues);
-            }
+        if (columnDomains.isPresent() && !columnDomains.get().isEmpty()
+                && columnDomains.get().get(0).getDomain().getValues() instanceof GlutenSortedRangeSet glutenSortedRangeSet
+                && glutenSortedRangeSet.getOrderedRanges().get(0).getLow().getValue() == glutenSortedRangeSet.getOrderedRanges().get(0).getHigh().getValue()
+                && (null == glutenSortedRangeSet.getOrderedRanges().get(0).getLow().getValue() || null == glutenSortedRangeSet.getOrderedRanges().get(0).getHigh().getValue())) {
+            return new GlutenHiveTableHandle(schemaName, tableName, GlutenTupleDomain.withColumnDomains(ImmutableMap.of()), analyzePartitionValues);
         }
         return new GlutenHiveTableHandle(schemaName, tableName, domainPredicate, analyzePartitionValues);
     }
