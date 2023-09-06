@@ -139,7 +139,7 @@ public final class GlutenMarker
     public Object getValue()
     {
         if (valueBlock.isEmpty()) {
-            throw new IllegalStateException("No value to get");
+            return null;
         }
         return Utils.blockToNativeValue(type, valueBlock.get());
     }
