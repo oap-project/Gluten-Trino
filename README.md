@@ -85,6 +85,6 @@ gluten-trino.plugin.dir=/path/to/Gluten-Trino-{Trino-version}.jar
 
 ## Contact
 Gluten-Trino was initiated by Intel and Alibaba in 2023. If you are interested in Gluten project, please contact below email address for further discussion.
-cheng.a.xu@intel.com; kunshang.ji@intel.com
+cheng.a.xu@intel.com; kunshang.ji@intel.com; jiang1.li@intel.com
 
 
