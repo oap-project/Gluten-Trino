@@ -532,7 +532,8 @@ JNIEXPORT jlong JNICALL Java_io_trino_jni_TrinoBridge_createTask(JNIEnv* env, jo
         from_json(json, glutenPlanFragment);
         if (!glutenPlanFragment) {
           JniUtils::throwJavaRuntimeException(
-              env, "Failed to parse Json string into Gluten plan fragment" + to_string(json));
+              env,
+              "Failed to parse Json string into Gluten plan fragment" + to_string(json));
           return -1;
         }
 
