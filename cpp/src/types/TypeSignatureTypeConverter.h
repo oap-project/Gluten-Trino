@@ -24,14 +24,12 @@ using namespace type;
 using namespace facebook;
 
 class TypeSignatureTypeConverter : TypeSignatureBaseVisitor {
-  virtual antlrcpp::Any visitStart(
-      TypeSignatureParser::StartContext* ctx) override;
+  virtual antlrcpp::Any visitStart(TypeSignatureParser::StartContext* ctx) override;
   virtual antlrcpp::Any visitNamed_type(
       TypeSignatureParser::Named_typeContext* ctx) override;
   virtual antlrcpp::Any visitType_spec(
       TypeSignatureParser::Type_specContext* ctx) override;
-  virtual antlrcpp::Any visitType(
-      TypeSignatureParser::TypeContext* ctx) override;
+  virtual antlrcpp::Any visitType(TypeSignatureParser::TypeContext* ctx) override;
   virtual antlrcpp::Any visitSimple_type(
       TypeSignatureParser::Simple_typeContext* ctx) override;
   virtual antlrcpp::Any visitDecimal_type(
@@ -40,10 +38,8 @@ class TypeSignatureTypeConverter : TypeSignatureBaseVisitor {
       TypeSignatureParser::Variable_typeContext* ctx) override;
   virtual antlrcpp::Any visitType_list(
       TypeSignatureParser::Type_listContext* ctx) override;
-  virtual antlrcpp::Any visitRow_type(
-      TypeSignatureParser::Row_typeContext* ctx) override;
-  virtual antlrcpp::Any visitMap_type(
-      TypeSignatureParser::Map_typeContext* ctx) override;
+  virtual antlrcpp::Any visitRow_type(TypeSignatureParser::Row_typeContext* ctx) override;
+  virtual antlrcpp::Any visitMap_type(TypeSignatureParser::Map_typeContext* ctx) override;
   virtual antlrcpp::Any visitArray_type(
       TypeSignatureParser::Array_typeContext* ctx) override;
   virtual antlrcpp::Any visitIdentifier(
@@ -60,10 +56,8 @@ struct NamedType {
 
 velox::TypePtr typeFromString(const std::string& typeName);
 velox::TypePtr rowFromNamedTypes(const std::vector<NamedType>& named);
-velox::TypePtr mapFromKeyValueType(
-    velox::TypePtr keyType,
-    velox::TypePtr valueType);
+velox::TypePtr mapFromKeyValueType(velox::TypePtr keyType, velox::TypePtr valueType);
 velox::TypePtr arrayFromType(velox::TypePtr valueType);
 
-} // namespace io
-} // namespace trino
+}  // namespace trino
+}  // namespace io

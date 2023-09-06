@@ -35,12 +35,12 @@ std::string getDataPath(const std::string& fileName) {
   std::string currentPath = fs::current_path().c_str();
   if (boost::algorithm::ends_with(currentPath, "fbcode")) {
     return currentPath +
-        "/github/presto-trunk/presto-native-execution/presto_cpp/main/types/tests/data/" +
-        fileName;
+           "/github/presto-trunk/presto-native-execution/presto_cpp/main/types/tests/"
+           "data/" +
+           fileName;
   }
   if (boost::algorithm::ends_with(currentPath, "fbsource")) {
-    return currentPath + "/third-party/presto_cpp/main/types/tests/data/" +
-        fileName;
+    return currentPath + "/third-party/presto_cpp/main/types/tests/data/" + fileName;
   }
 
   // CLion runs the tests from cmake-build-release/ or cmake-build-debug/
@@ -52,7 +52,7 @@ std::string getDataPath(const std::string& fileName) {
 
   return currentPath + "/data/" + fileName;
 }
-} // namespace
+}  // namespace
 
 class TestValues : public ::testing::Test {};
 
@@ -67,10 +67,8 @@ TEST_F(TestValues, valuesRowVector) {
   auto pool = memory::addDefaultLeafMemoryPool();
   VeloxInteractiveQueryPlanConverter converter(pool.get());
   auto values = std::dynamic_pointer_cast<const core::ValuesNode>(
-      converter.toVeloxQueryPlan(
-          std::dynamic_pointer_cast<protocol::PlanNode>(p),
-          nullptr,
-          "20201107_130540_00011_wrpkw.1.2.3"));
+      converter.toVeloxQueryPlan(std::dynamic_pointer_cast<protocol::PlanNode>(p),
+                                 nullptr, "20201107_130540_00011_wrpkw.1.2.3"));
 
   ASSERT_NE(values, nullptr);
   ASSERT_EQ(values->values().size(), 1);
@@ -106,8 +104,7 @@ TEST_F(TestValues, valuesPlan) {
   auto pool = memory::addDefaultLeafMemoryPool();
   VeloxInteractiveQueryPlanConverter converter(pool.get());
   auto values = converter.toVeloxQueryPlan(
-      std::dynamic_pointer_cast<protocol::OutputNode>(p->root)->source,
-      nullptr,
+      std::dynamic_pointer_cast<protocol::OutputNode>(p->root)->source, nullptr,
       "20201107_130540_00011_wrpkw.1.2.3");
 
   ASSERT_EQ(values->name(), "Filter");

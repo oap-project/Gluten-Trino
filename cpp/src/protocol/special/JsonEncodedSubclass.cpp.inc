@@ -16,8 +16,6 @@
 
 namespace io::trino::protocol {
 
-std::string JsonEncodedSubclass::getSubclassKey(nlohmann::json j) {
-  return j["@type"];
-}
+std::string JsonEncodedSubclass::getSubclassKey(nlohmann::json j) { return j["@type"]; }
 
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

@@ -28,12 +28,7 @@ Duration::Duration(const std::string& duration) {
 
 std::string Duration::toString() const {
   char buffer[32];
-  snprintf(
-      buffer,
-      sizeof(buffer),
-      "%.2f%s",
-      value_,
-      timeUnitToString(timeUnit_).c_str());
+  snprintf(buffer, sizeof(buffer), "%.2f%s", value_, timeUnitToString(timeUnit_).c_str());
   return std::string(buffer);
 }
 
@@ -104,4 +99,4 @@ std::string Duration::timeUnitToString(TimeUnit timeUnit) const {
   }
 }
 
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

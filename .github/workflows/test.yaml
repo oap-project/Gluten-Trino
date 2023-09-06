@@ -7,17 +7,24 @@ on:
   pull_request:
 
 jobs:
-  maven-checks:
+  java-maven-build:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
       - run: echo "checkout code!!"
-      - name: Maven Checks
+      - name: Build Java package
         run: |
           cd java 
           mvn clean package -DskipTests=true -Dair.check.skip-duplicate-finder=True
+          cp target/Gluten-Trino-*.jar ../artifact/
+      - uses: actions/upload-artifact@v3
+        with: 
+          name: java-artifact
+          path: artifact/Gluten-Trino-*.jar
+          retention-days: 3  
 
   build-cpp:
+    needs: java-maven-build
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
@@ -27,3 +34,56 @@ jobs:
           export TRINO_HOME=/trino_base
           git submodule update --init --recursive --force
           make release
+          cp build-Release/src/libgluten_trino.so ../artifact/
+          cd ..
+      - name: download jars
+        uses: actions/download-artifact@v3
+        with:
+          name: java-artifact
+      - shell: bash
+        run: |
+          cp Gluten-Trino-*.jar artifact/
+
+      - name: upload jars and so
+        uses: actions/upload-artifact@v3
+        with: 
+          name: cpp-artifact
+          path: |
+            artifact/Gluten-Trino-*.jar
+            artifact/libgluten_trino.so
+          retention-days: 3 
+
+  cpp-code-style-check:
+    runs-on: self-hosted
+    steps:
+      - name: Clean up CI directory
+        working-directory: ${{github.workspace}}
+        run: |
+          rm -rf * .[!.]*
+      - uses: actions/checkout@v3
+      - name: cpp code style check
+        run: |
+          git fetch --recurse-submodules=no origin main ${{github.event.pull_request.base.sha}}
+          export BASE_COMMIT=${{github.event.pull_request.base.sha}}
+          scripts/check.py format branch
+
+  tpch-func-test:
+    needs: [java-maven-build, build-cpp]
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: cpp-artifact
+          path: artifact/
+      - name: test tpch 
+        run: |
+          ls -al artifact/
+          export TRINO_HOME=/trino_base
+          ./scripts/run_tpch.sh
+          passed_queries=`grep -nr "run query successful" logs*|sort|wc -l`
+          echo "passed query num: ${passed_queries}"
+          if [ "$passed_queries" = "22" ]; then
+            exit 0
+          fi
+          exit 1

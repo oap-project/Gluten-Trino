@@ -14,4 +14,4 @@ void from_json(const json& j, GlutenTpchTransactionHandle& p) {
   j[0].get_to(p._type);
   j[1].get_to(p.instance);
 }
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

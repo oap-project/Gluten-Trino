@@ -156,19 +156,15 @@ int64_t toInt64(const std::shared_ptr<protocol::Block>& block,
   return VariantConverter::convert<velox::TypeKind::BIGINT>(value).value<int64_t>();
 }
 
-int128_t toInt128(
-    const std::shared_ptr<protocol::Block>& block,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+int128_t toInt128(const std::shared_ptr<protocol::Block>& block,
+                  const VeloxExprConverter& exprConverter, const TypePtr& type) {
   auto value = exprConverter.getConstantValue(type, *block);
   return value.value<velox::TypeKind::HUGEINT>();
 }
 
 std::unique_ptr<common::BigintRange> bigintRangeToFilter(
-    const protocol::Range& range,
-    bool nullAllowed,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+    const protocol::Range& range, bool nullAllowed,
+    const VeloxExprConverter& exprConverter, const TypePtr& type) {
   bool lowUnbounded = range.low.valueBlock == nullptr;
   auto low = lowUnbounded ? std::numeric_limits<int64_t>::min()
                           : toInt64(range.low.valueBlock, exprConverter, type);
@@ -177,9 +173,8 @@ std::unique_ptr<common::BigintRange> bigintRangeToFilter(
   }
 
   bool highUnbounded = range.high.valueBlock == nullptr;
-  auto high = highUnbounded
-      ? std::numeric_limits<int64_t>::max()
-      : toInt64(range.high.valueBlock, exprConverter, type);
+  auto high = highUnbounded ? std::numeric_limits<int64_t>::max()
+                            : toInt64(range.high.valueBlock, exprConverter, type);
   if (!highUnbounded && range.high.bound == protocol::Bound::BELOW) {
     high--;
   }
@@ -187,10 +182,8 @@ std::unique_ptr<common::BigintRange> bigintRangeToFilter(
 }
 
 std::unique_ptr<common::HugeintRange> hugeintRangeToFilter(
-    const protocol::Range& range,
-    bool nullAllowed,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+    const protocol::Range& range, bool nullAllowed,
+    const VeloxExprConverter& exprConverter, const TypePtr& type) {
   bool lowUnbounded = range.low.valueBlock == nullptr;
   auto low = lowUnbounded ? std::numeric_limits<int128_t>::min()
                           : toInt128(range.low.valueBlock, exprConverter, type);
@@ -199,60 +192,48 @@ std::unique_ptr<common::HugeintRange> hugeintRangeToFilter(
   }
 
   bool highUnbounded = range.high.valueBlock == nullptr;
-  auto high = highUnbounded
-      ? std::numeric_limits<int128_t>::max()
-      : toInt128(range.high.valueBlock, exprConverter, type);
+  auto high = highUnbounded ? std::numeric_limits<int128_t>::max()
+                            : toInt128(range.high.valueBlock, exprConverter, type);
   if (!highUnbounded && range.high.bound == protocol::Bound::BELOW) {
     high--;
   }
   return std::make_unique<common::HugeintRange>(low, high, nullAllowed);
 }
 
-int64_t dateToInt64(
-    const std::shared_ptr<protocol::Block>& block,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+int64_t dateToInt64(const std::shared_ptr<protocol::Block>& block,
+                    const VeloxExprConverter& exprConverter, const TypePtr& type) {
   auto value = exprConverter.getConstantValue(type, *block);
   return value.value<int32_t>();
 }
 
-double toDouble(
-    const std::shared_ptr<protocol::Block>& block,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+double toDouble(const std::shared_ptr<protocol::Block>& block,
+                const VeloxExprConverter& exprConverter, const TypePtr& type) {
   auto variant = exprConverter.getConstantValue(type, *block);
   return variant.value<double>();
 }
 
-float toFloat(
-    const std::shared_ptr<protocol::Block>& block,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+float toFloat(const std::shared_ptr<protocol::Block>& block,
+              const VeloxExprConverter& exprConverter, const TypePtr& type) {
   auto variant = exprConverter.getConstantValue(type, *block);
   return variant.value<float>();
 }
 
-std::string toString(
-    const std::shared_ptr<protocol::Block>& block,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+std::string toString(const std::shared_ptr<protocol::Block>& block,
+                     const VeloxExprConverter& exprConverter, const TypePtr& type) {
   auto value = exprConverter.getConstantValue(type, *block);
   return value.value<std::string>();
 }
 
-bool toBoolean(
-    const std::shared_ptr<protocol::Block>& block,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+bool toBoolean(const std::shared_ptr<protocol::Block>& block,
+               const VeloxExprConverter& exprConverter, const TypePtr& type) {
   auto variant = exprConverter.getConstantValue(type, *block);
   return variant.value<bool>();
 }
 
-std::unique_ptr<common::Filter> boolRangeToFilter(
-    const protocol::Range& range,
-    bool nullAllowed,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+std::unique_ptr<common::Filter> boolRangeToFilter(const protocol::Range& range,
+                                                  bool nullAllowed,
+                                                  const VeloxExprConverter& exprConverter,
+                                                  const TypePtr& type) {
   bool lowExclusive = range.low.bound == protocol::Bound::ABOVE;
   bool lowUnbounded = range.low.valueBlock == nullptr && lowExclusive;
   bool highExclusive = range.high.bound == protocol::Bound::BELOW;
@@ -261,26 +242,21 @@ std::unique_ptr<common::Filter> boolRangeToFilter(
   if (!lowUnbounded && !highUnbounded) {
     bool lowValue = toBoolean(range.low.valueBlock, exprConverter, type);
     bool highValue = toBoolean(range.high.valueBlock, exprConverter, type);
-    VELOX_CHECK_EQ(
-        lowValue,
-        highValue,
-        "Boolean range should not be [FALSE, TRUE] after coordinator "
-        "optimization.");
+    VELOX_CHECK_EQ(lowValue, highValue,
+                   "Boolean range should not be [FALSE, TRUE] after coordinator "
+                   "optimization.");
     return std::make_unique<common::BoolValue>(lowValue, nullAllowed);
   }
   // Presto coordinator has made optimizations to the bool range already. For
   // example, [FALSE, TRUE) will be optimized and shown here as (-infinity,
   // TRUE). Plus (-infinity, +infinity) case has been guarded in toFilter()
   // method, here it can only be one side bounded scenarios.
-  VELOX_CHECK_NE(
-      lowUnbounded,
-      highUnbounded,
-      "Passed in boolean range can only have one side bounded range scenario");
+  VELOX_CHECK_NE(lowUnbounded, highUnbounded,
+                 "Passed in boolean range can only have one side bounded range scenario");
   if (!lowUnbounded) {
-    VELOX_CHECK(
-        highUnbounded,
-        "Boolean range should not be double side bounded after coordinator "
-        "optimization.");
+    VELOX_CHECK(highUnbounded,
+                "Boolean range should not be double side bounded after coordinator "
+                "optimization.");
     bool lowValue = toBoolean(range.low.valueBlock, exprConverter, type);
 
     // (TRUE, +infinity) case, should resolve to filter all
@@ -293,17 +269,15 @@ std::unique_ptr<common::Filter> boolRangeToFilter(
 
     // Both cases (FALSE, +infinity) or [TRUE, +infinity) should evaluate to
     // true. Case [FALSE, +infinity) should not be expected
-    VELOX_CHECK(
-        !(!lowExclusive && !lowValue),
-        "Case [FALSE, +infinity) should "
-        "not be expected");
+    VELOX_CHECK(!(!lowExclusive && !lowValue),
+                "Case [FALSE, +infinity) should "
+                "not be expected");
     return std::make_unique<common::BoolValue>(true, nullAllowed);
   }
   if (!highUnbounded) {
-    VELOX_CHECK(
-        lowUnbounded,
-        "Boolean range should not be double side bounded after coordinator "
-        "optimization.");
+    VELOX_CHECK(lowUnbounded,
+                "Boolean range should not be double side bounded after coordinator "
+                "optimization.");
     bool highValue = toBoolean(range.high.valueBlock, exprConverter, type);
 
     // (-infinity, FALSE) case, should resolve to filter all
@@ -316,24 +290,21 @@ std::unique_ptr<common::Filter> boolRangeToFilter(
 
     // Both cases (-infinity, TRUE) or (-infinity, FALSE] should evaluate to
     // false. Case (-infinity, TRUE] should not be expected
-    VELOX_CHECK(
-        !(!highExclusive && highValue),
-        "Case (-infinity, TRUE] should "
-        "not be expected");
+    VELOX_CHECK(!(!highExclusive && highValue),
+                "Case (-infinity, TRUE] should "
+                "not be expected");
     return std::make_unique<common::BoolValue>(false, nullAllowed);
   }
   VELOX_UNREACHABLE();
 }
 
 std::unique_ptr<common::DoubleRange> doubleRangeToFilter(
-    const protocol::Range& range,
-    bool nullAllowed,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+    const protocol::Range& range, bool nullAllowed,
+    const VeloxExprConverter& exprConverter, const TypePtr& type) {
   bool lowExclusive = range.low.bound == protocol::Bound::ABOVE;
   bool lowUnbounded = range.low.valueBlock == nullptr && lowExclusive;
   if (range.low.valueBlock == nullptr && !lowExclusive) {
-      VELOX_FAIL("Unexpected!");
+    VELOX_FAIL("Unexpected!");
   }
   auto low = lowUnbounded ? std::numeric_limits<double>::lowest()
                           : toDouble(range.low.valueBlock, exprConverter, type);
@@ -341,30 +312,21 @@ std::unique_ptr<common::DoubleRange> doubleRangeToFilter(
   bool highExclusive = range.high.bound == protocol::Bound::BELOW;
   bool highUnbounded = range.high.valueBlock == nullptr && highExclusive;
   if (range.high.valueBlock == nullptr && !highExclusive) {
-      VELOX_FAIL("Unexpected!");
-  }  
-  auto high = highUnbounded
-      ? std::numeric_limits<double>::max()
-      : toDouble(range.high.valueBlock, exprConverter, type);
-  return std::make_unique<common::DoubleRange>(
-      low,
-      lowUnbounded,
-      lowExclusive,
-      high,
-      highUnbounded,
-      highExclusive,
-      nullAllowed);
+    VELOX_FAIL("Unexpected!");
+  }
+  auto high = highUnbounded ? std::numeric_limits<double>::max()
+                            : toDouble(range.high.valueBlock, exprConverter, type);
+  return std::make_unique<common::DoubleRange>(low, lowUnbounded, lowExclusive, high,
+                                               highUnbounded, highExclusive, nullAllowed);
 }
 
 std::unique_ptr<common::FloatRange> floatRangeToFilter(
-    const protocol::Range& range,
-    bool nullAllowed,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+    const protocol::Range& range, bool nullAllowed,
+    const VeloxExprConverter& exprConverter, const TypePtr& type) {
   bool lowExclusive = range.low.bound == protocol::Bound::ABOVE;
   bool lowUnbounded = range.low.valueBlock == nullptr && lowExclusive;
   if (range.low.valueBlock == nullptr && !lowExclusive) {
-      VELOX_FAIL("Unexpected!");
+    VELOX_FAIL("Unexpected!");
   }
   auto low = lowUnbounded ? std::numeric_limits<float>::lowest()
                           : toFloat(range.low.valueBlock, exprConverter, type);
@@ -372,68 +334,47 @@ std::unique_ptr<common::FloatRange> floatRangeToFilter(
   bool highExclusive = range.high.bound == protocol::Bound::BELOW;
   bool highUnbounded = range.high.valueBlock == nullptr && highExclusive;
   if (range.high.valueBlock == nullptr && !highExclusive) {
-      VELOX_FAIL("Unexpected!");
-  }  
-  auto high = highUnbounded
-      ? std::numeric_limits<float>::max()
-      : toFloat(range.high.valueBlock, exprConverter, type);
-  return std::make_unique<common::FloatRange>(
-      low,
-      lowUnbounded,
-      lowExclusive,
-      high,
-      highUnbounded,
-      highExclusive,
-      nullAllowed);
+    VELOX_FAIL("Unexpected!");
+  }
+  auto high = highUnbounded ? std::numeric_limits<float>::max()
+                            : toFloat(range.high.valueBlock, exprConverter, type);
+  return std::make_unique<common::FloatRange>(low, lowUnbounded, lowExclusive, high,
+                                              highUnbounded, highExclusive, nullAllowed);
 }
 
 std::unique_ptr<common::BytesRange> varcharRangeToFilter(
-    const protocol::Range& range,
-    bool nullAllowed,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+    const protocol::Range& range, bool nullAllowed,
+    const VeloxExprConverter& exprConverter, const TypePtr& type) {
   bool lowExclusive = range.low.bound == protocol::Bound::ABOVE;
   bool lowUnbounded = range.low.valueBlock == nullptr && lowExclusive;
   if (range.low.valueBlock == nullptr && !lowExclusive) {
-      VELOX_FAIL("Unexpected!");
+    VELOX_FAIL("Unexpected!");
   }
-  auto low =
-      lowUnbounded ? "" : toString(range.low.valueBlock, exprConverter, type);
+  auto low = lowUnbounded ? "" : toString(range.low.valueBlock, exprConverter, type);
 
   bool highExclusive = range.high.bound == protocol::Bound::BELOW;
   bool highUnbounded = range.high.valueBlock == nullptr && highExclusive;
   if (range.high.valueBlock == nullptr && !highExclusive) {
-      VELOX_FAIL("Unexpected!");
+    VELOX_FAIL("Unexpected!");
   }
-  auto high =
-      highUnbounded ? "" : toString(range.high.valueBlock, exprConverter, type);
-  return std::make_unique<common::BytesRange>(
-      low,
-      lowUnbounded,
-      lowExclusive,
-      high,
-      highUnbounded,
-      highExclusive,
-      nullAllowed);
+  auto high = highUnbounded ? "" : toString(range.high.valueBlock, exprConverter, type);
+  return std::make_unique<common::BytesRange>(low, lowUnbounded, lowExclusive, high,
+                                              highUnbounded, highExclusive, nullAllowed);
 }
 
 std::unique_ptr<common::BigintRange> dateRangeToFilter(
-    const protocol::Range& range,
-    bool nullAllowed,
-    const VeloxExprConverter& exprConverter,
-    const TypePtr& type) {
+    const protocol::Range& range, bool nullAllowed,
+    const VeloxExprConverter& exprConverter, const TypePtr& type) {
   bool lowUnbounded = range.low.valueBlock == nullptr;
-  auto low = lowUnbounded
-      ? std::numeric_limits<int32_t>::min()
-      : dateToInt64(range.low.valueBlock, exprConverter, type);
+  auto low = lowUnbounded ? std::numeric_limits<int32_t>::min()
+                          : dateToInt64(range.low.valueBlock, exprConverter, type);
   if (!lowUnbounded && range.low.bound == protocol::Bound::ABOVE) {
     low++;
   }
 
   bool highUnbounded = range.high.valueBlock == nullptr;
-  auto high = highUnbounded
-      ? std::numeric_limits<int32_t>::max()
-      : dateToInt64(range.high.valueBlock, exprConverter, type);
+  auto high = highUnbounded ? std::numeric_limits<int32_t>::max()
+                            : dateToInt64(range.high.valueBlock, exprConverter, type);
   if (!highUnbounded && range.high.bound == protocol::Bound::BELOW) {
     high--;
   }
@@ -442,12 +383,10 @@ std::unique_ptr<common::BigintRange> dateRangeToFilter(
 }
 
 std::unique_ptr<common::Filter> combineIntegerRanges(
-    std::vector<std::unique_ptr<common::BigintRange>>& bigintFilters,
-    bool nullAllowed) {
-  bool allSingleValue = std::all_of(
-      bigintFilters.begin(), bigintFilters.end(), [](const auto& range) {
-        return range->isSingleValue();
-      });
+    std::vector<std::unique_ptr<common::BigintRange>>& bigintFilters, bool nullAllowed) {
+  bool allSingleValue =
+      std::all_of(bigintFilters.begin(), bigintFilters.end(),
+                  [](const auto& range) { return range->isSingleValue(); });
 
   if (allSingleValue) {
     std::vector<int64_t> values;
@@ -463,14 +402,12 @@ std::unique_ptr<common::Filter> combineIntegerRanges(
       bigintFilters[1]->upper() == std::numeric_limits<int64_t>::max()) {
     assert(bigintFilters[0]->upper() + 1 <= bigintFilters[1]->lower() - 1);
     return std::make_unique<common::NegatedBigintRange>(
-        bigintFilters[0]->upper() + 1,
-        bigintFilters[1]->lower() - 1,
-        nullAllowed);
+        bigintFilters[0]->upper() + 1, bigintFilters[1]->lower() - 1, nullAllowed);
   }
 
   bool allNegatedValues = true;
   bool foundMaximum = false;
-  assert(bigintFilters.size() > 1); // true by size checks on ranges
+  assert(bigintFilters.size() > 1);  // true by size checks on ranges
   std::vector<int64_t> rejectedValues;
 
   // check if int64 min is a rejected value
@@ -479,8 +416,8 @@ std::unique_ptr<common::Filter> combineIntegerRanges(
   }
   if (bigintFilters[0]->lower() > std::numeric_limits<int64_t>::min() + 1) {
     // too many value at the lower end, bail out
-    return std::make_unique<common::BigintMultiRange>(
-        std::move(bigintFilters), nullAllowed);
+    return std::make_unique<common::BigintMultiRange>(std::move(bigintFilters),
+                                                      nullAllowed);
   }
   rejectedValues.push_back(bigintFilters[0]->upper() + 1);
   for (int i = 1; i < bigintFilters.size(); ++i) {
@@ -504,17 +441,15 @@ std::unique_ptr<common::Filter> combineIntegerRanges(
     return common::createNegatedBigintValues(rejectedValues, nullAllowed);
   }
 
-  return std::make_unique<common::BigintMultiRange>(
-      std::move(bigintFilters), nullAllowed);
+  return std::make_unique<common::BigintMultiRange>(std::move(bigintFilters),
+                                                    nullAllowed);
 }
 
 std::unique_ptr<common::Filter> combineBytesRanges(
-    std::vector<std::unique_ptr<common::BytesRange>>& bytesFilters,
-    bool nullAllowed) {
-  bool allSingleValue = std::all_of(
-      bytesFilters.begin(), bytesFilters.end(), [](const auto& range) {
-        return range->isSingleValue();
-      });
+    std::vector<std::unique_ptr<common::BytesRange>>& bytesFilters, bool nullAllowed) {
+  bool allSingleValue =
+      std::all_of(bytesFilters.begin(), bytesFilters.end(),
+                  [](const auto& range) { return range->isSingleValue(); });
 
   if (allSingleValue) {
     std::vector<std::string> values;
@@ -526,8 +461,8 @@ std::unique_ptr<common::Filter> combineBytesRanges(
   }
 
   int lowerUnbounded = 0, upperUnbounded = 0;
-  bool allExclusive = std::all_of(
-      bytesFilters.begin(), bytesFilters.end(), [](const auto& range) {
+  bool allExclusive =
+      std::all_of(bytesFilters.begin(), bytesFilters.end(), [](const auto& range) {
         return range->lowerExclusive() && range->upperExclusive();
       });
   if (allExclusive) {
@@ -558,8 +493,7 @@ std::unique_ptr<common::Filter> combineBytesRanges(
     }
 
     if (lowerUnbounded == 1 && upperUnbounded == 1 && unmatched.size() == 0) {
-      return std::make_unique<common::NegatedBytesValues>(
-          rejectedValues, nullAllowed);
+      return std::make_unique<common::NegatedBytesValues>(rejectedValues, nullAllowed);
     }
   }
 
@@ -567,13 +501,8 @@ std::unique_ptr<common::Filter> combineBytesRanges(
       bytesFilters[1]->isUpperUnbounded()) {
     // create a negated bytes range instead
     return std::make_unique<common::NegatedBytesRange>(
-        bytesFilters[0]->upper(),
-        false,
-        !bytesFilters[0]->upperExclusive(),
-        bytesFilters[1]->lower(),
-        false,
-        !bytesFilters[1]->lowerExclusive(),
-        nullAllowed);
+        bytesFilters[0]->upper(), false, !bytesFilters[0]->upperExclusive(),
+        bytesFilters[1]->lower(), false, !bytesFilters[1]->lowerExclusive(), nullAllowed);
   }
 
   std::vector<std::unique_ptr<common::Filter>> bytesGeneric;
@@ -582,15 +511,13 @@ std::unique_ptr<common::Filter> combineBytesRanges(
         dynamic_cast<common::Filter*>(bytesFilters[i].release())));
   }
 
-  return std::make_unique<common::MultiRange>(
-      std::move(bytesGeneric), nullAllowed, false);
+  return std::make_unique<common::MultiRange>(std::move(bytesGeneric), nullAllowed,
+                                              false);
 }
 
-std::unique_ptr<common::Filter> toFilter(
-    const TypePtr& type,
-    const protocol::Range& range,
-    bool nullAllowed,
-    const VeloxExprConverter& exprConverter) {
+std::unique_ptr<common::Filter> toFilter(const TypePtr& type,
+                                         const protocol::Range& range, bool nullAllowed,
+                                         const VeloxExprConverter& exprConverter) {
   if (type->isDate()) {
     return dateRangeToFilter(range, nullAllowed, exprConverter, type);
   }
@@ -615,9 +542,8 @@ std::unique_ptr<common::Filter> toFilter(
   }
 }
 
-std::unique_ptr<common::Filter> toFilter(
-    const protocol::Domain& domain,
-    const VeloxExprConverter& exprConverter) {
+std::unique_ptr<common::Filter> toFilter(const protocol::Domain& domain,
+                                         const VeloxExprConverter& exprConverter) {
   auto nullAllowed = domain.nullAllowed;
   if (auto sortedRangeSet =
           std::dynamic_pointer_cast<protocol::SortedRangeSet>(domain.values)) {
@@ -652,13 +578,12 @@ std::unique_ptr<common::Filter> toFilter(
         dateFilters.emplace_back(
             dateRangeToFilter(range, nullAllowed, exprConverter, type));
       }
-      return std::make_unique<common::BigintMultiRange>(
-          std::move(dateFilters), nullAllowed);
+      return std::make_unique<common::BigintMultiRange>(std::move(dateFilters),
+                                                        nullAllowed);
     }
 
     if (type->kind() == TypeKind::BIGINT || type->kind() == TypeKind::INTEGER ||
-        type->kind() == TypeKind::SMALLINT ||
-        type->kind() == TypeKind::TINYINT) {
+        type->kind() == TypeKind::SMALLINT || type->kind() == TypeKind::TINYINT) {
       std::vector<std::unique_ptr<common::BigintRange>> bigintFilters;
       bigintFilters.reserve(ranges.size());
       for (const auto& range : ranges) {
@@ -682,8 +607,7 @@ std::unique_ptr<common::Filter> toFilter(
       VELOX_CHECK_EQ(ranges.size(), 2, "Multi bool ranges size can only be 2.");
       std::unique_ptr<common::Filter> boolFilter;
       for (const auto& range : ranges) {
-        auto filter =
-            boolRangeToFilter(range, nullAllowed, exprConverter, type);
+        auto filter = boolRangeToFilter(range, nullAllowed, exprConverter, type);
         if (filter->kind() == common::FilterKind::kAlwaysFalse or
             filter->kind() == common::FilterKind::kIsNull) {
           continue;
@@ -702,12 +626,9 @@ std::unique_ptr<common::Filter> toFilter(
       filters.emplace_back(toFilter(type, range, nullAllowed, exprConverter));
     }
 
-    return std::make_unique<common::MultiRange>(
-        std::move(filters), nullAllowed, false);
-  } else if (
-      auto equatableValueSet =
-          std::dynamic_pointer_cast<protocol::EquatableValueSet>(
-              domain.values)) {
+    return std::make_unique<common::MultiRange>(std::move(filters), nullAllowed, false);
+  } else if (auto equatableValueSet =
+                 std::dynamic_pointer_cast<protocol::EquatableValueSet>(domain.values)) {
     if (equatableValueSet->entries.empty()) {
       if (nullAllowed) {
         return std::make_unique<common::IsNull>();
@@ -716,11 +637,10 @@ std::unique_ptr<common::Filter> toFilter(
       }
     }
     VELOX_UNSUPPORTED(
-        "EquatableValueSet (with non-empty entries) to Velox filter conversion is not supported yet.");
-  } else if (
-      auto allOrNoneValueSet =
-          std::dynamic_pointer_cast<protocol::AllOrNoneValueSet>(
-              domain.values)) {
+        "EquatableValueSet (with non-empty entries) to Velox filter conversion is not "
+        "supported yet.");
+  } else if (auto allOrNoneValueSet =
+                 std::dynamic_pointer_cast<protocol::AllOrNoneValueSet>(domain.values)) {
     VELOX_UNSUPPORTED(
         "AllOrNoneValueSet to Velox filter conversion is not supported yet.");
   }
@@ -920,8 +840,7 @@ column_index_t exprToChannel(const core::ITypedExpr* expr, const TypePtr& type) 
   return 0;  // not reached.
 }
 
-core::WindowNode::WindowType toVeloxWindowType(
-    protocol::WindowType windowType) {
+core::WindowNode::WindowType toVeloxWindowType(protocol::WindowType windowType) {
   switch (windowType) {
     case protocol::WindowType::RANGE:
       return core::WindowNode::WindowType::kRange;
@@ -1136,8 +1055,8 @@ core::PlanNodePtr VeloxQueryPlanConverterBase::toVeloxQueryPlan(
   // into ProjectNode over HashJoinNode. Project node adds an extra boolean
   // column with constant value of 'true' for semi join and 'false' for anti
   // join.
-  if (auto semiJoin = std::dynamic_pointer_cast<const protocol::SemiJoinNode>(
-          node->source)) {
+  if (auto semiJoin =
+          std::dynamic_pointer_cast<const protocol::SemiJoinNode>(node->source)) {
     std::optional<core::JoinType> joinType = std::nullopt;
     if (equal(node->predicate, semiJoin->semiJoinOutput)) {
       joinType = core::JoinType::kLeftSemiFilter;
@@ -1153,8 +1072,7 @@ core::PlanNodePtr VeloxQueryPlanConverterBase::toVeloxQueryPlan(
         exprConverter_.toVeloxExpr(semiJoin->filteringSourceJoinVariable)};
 
     auto left = toVeloxQueryPlan(semiJoin->source, tableWriteInfo, taskId);
-    auto right =
-        toVeloxQueryPlan(semiJoin->filteringSource, tableWriteInfo, taskId);
+    auto right = toVeloxQueryPlan(semiJoin->filteringSource, tableWriteInfo, taskId);
 
     const auto& leftNames = left->outputType()->names();
     const auto& leftTypes = left->outputType()->children();
@@ -1167,45 +1085,30 @@ core::PlanNodePtr VeloxQueryPlanConverterBase::toVeloxQueryPlan(
       types.push_back(BOOLEAN());
 
       return std::make_shared<core::FilterNode>(
-          node->id,
-          exprConverter_.toVeloxExpr(node->predicate),
+          node->id, exprConverter_.toVeloxExpr(node->predicate),
           std::make_shared<core::HashJoinNode>(
-              semiJoin->id,
-              core::JoinType::kLeftSemiProject,
-              false,
-              leftKeys,
-              rightKeys,
-              nullptr, // filter
-              left,
-              right,
-              ROW(std::move(names), std::move(types))));
+              semiJoin->id, core::JoinType::kLeftSemiProject, false, leftKeys, rightKeys,
+              nullptr,  // filter
+              left, right, ROW(std::move(names), std::move(types))));
     }
 
     std::vector<core::TypedExprPtr> projections;
     projections.reserve(leftNames.size() + 1);
     for (auto i = 0; i < leftNames.size(); i++) {
-      projections.emplace_back(std::make_shared<core::FieldAccessTypedExpr>(
-          leftTypes[i], leftNames[i]));
+      projections.emplace_back(
+          std::make_shared<core::FieldAccessTypedExpr>(leftTypes[i], leftNames[i]));
     }
-    const bool constantValue =
-        joinType.value() == core::JoinType::kLeftSemiFilter;
+    const bool constantValue = joinType.value() == core::JoinType::kLeftSemiFilter;
     projections.emplace_back(
         std::make_shared<core::ConstantTypedExpr>(BOOLEAN(), constantValue));
 
     return std::make_shared<core::ProjectNode>(
-        node->id,
-        std::move(names),
-        std::move(projections),
+        node->id, std::move(names), std::move(projections),
         std::make_shared<core::HashJoinNode>(
-            semiJoin->id,
-            joinType.value(),
-            joinType == core::JoinType::kAnti ? true : false,
-            leftKeys,
-            rightKeys,
-            nullptr, // filter
-            left,
-            right,
-            left->outputType()));
+            semiJoin->id, joinType.value(),
+            joinType == core::JoinType::kAnti ? true : false, leftKeys, rightKeys,
+            nullptr,  // filter
+            left, right, left->outputType()));
   }
 
   return std::make_shared<core::FilterNode>(
@@ -1470,8 +1373,7 @@ void VeloxQueryPlanConverterBase::toAggregations(
   }
 }
 
-std::shared_ptr<const core::GroupIdNode>
-VeloxQueryPlanConverterBase::toVeloxQueryPlan(
+std::shared_ptr<const core::GroupIdNode> VeloxQueryPlanConverterBase::toVeloxQueryPlan(
     const std::shared_ptr<const protocol::GroupIdNode>& node,
     const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
     const protocol::TaskId& taskId) {
@@ -1500,8 +1402,7 @@ VeloxQueryPlanConverterBase::toVeloxQueryPlan(
     groupingKeys.reserve(groupingSet.size());
     for (const auto& groupingKey : groupingSet) {
       groupingKeys.emplace_back(std::make_shared<core::FieldAccessTypedExpr>(
-          stringToType(groupingKey.type),
-          node->groupingColumns.at(groupingKey).name));
+          stringToType(groupingKey.type), node->groupingColumns.at(groupingKey).name));
     }
     groupingSets.emplace_back(std::move(groupingKeys));
   }
@@ -1514,11 +1415,8 @@ VeloxQueryPlanConverterBase::toVeloxQueryPlan(
   }
 
   return std::make_shared<core::GroupIdNode>(
-      node->id,
-      std::move(groupingSets),
-      std::move(groupingKeys),
-      toVeloxExprs(node->aggregationArguments),
-      node->groupIdVariable.name,
+      node->id, std::move(groupingSets), std::move(groupingKeys),
+      toVeloxExprs(node->aggregationArguments), node->groupIdVariable.name,
       toVeloxQueryPlan(node->source, tableWriteInfo, taskId));
 }
 /*
@@ -1605,8 +1503,7 @@ core::PlanNodePtr VeloxQueryPlanConverterBase::toVeloxQueryPlan(
   std::vector<core::FieldAccessTypedExprPtr> rightKeys;
 
   leftKeys.push_back(exprConverter_.toVeloxExpr(node->sourceJoinVariable));
-  rightKeys.push_back(
-      exprConverter_.toVeloxExpr(node->filteringSourceJoinVariable));
+  rightKeys.push_back(exprConverter_.toVeloxExpr(node->filteringSourceJoinVariable));
 
   auto left = toVeloxQueryPlan(node->source, tableWriteInfo, taskId);
   auto right = toVeloxQueryPlan(node->filteringSource, tableWriteInfo, taskId);
@@ -1617,15 +1514,11 @@ core::PlanNodePtr VeloxQueryPlanConverterBase::toVeloxQueryPlan(
   outputTypes.push_back(BOOLEAN());
 
   return std::make_shared<core::HashJoinNode>(
-      node->id,
-      core::JoinType::kLeftSemiProject,
-      true, // nullAware
-      leftKeys,
-      rightKeys,
-      nullptr, // filter
-      left,
-      right,
-      ROW(std::move(outputNames), std::move(outputTypes)));
+      node->id, core::JoinType::kLeftSemiProject,
+      true,  // nullAware
+      leftKeys, rightKeys,
+      nullptr,  // filter
+      left, right, ROW(std::move(outputNames), std::move(outputTypes)));
 }
 
 core::PlanNodePtr VeloxQueryPlanConverterBase::toVeloxQueryPlan(
@@ -1834,32 +1727,26 @@ VeloxQueryPlanConverterBase::toVeloxQueryPlan(
 core::WindowNode::Function VeloxQueryPlanConverterBase::toVeloxWindowFunction(
     const protocol::Function& func) {
   core::WindowNode::Function windowFunc;
-  windowFunc.functionCall =
-      std::dynamic_pointer_cast<const core::CallTypedExpr>(
-          exprConverter_.toVeloxExpr(func.functionCall));
+  windowFunc.functionCall = std::dynamic_pointer_cast<const core::CallTypedExpr>(
+      exprConverter_.toVeloxExpr(func.functionCall));
   windowFunc.ignoreNulls = func.ignoreNulls;
 
   windowFunc.frame.type = toVeloxWindowType(func.frame.type);
   windowFunc.frame.startType = toVeloxBoundType(func.frame.startType);
-  windowFunc.frame.startValue = func.frame.startValue
-      ? exprConverter_.toVeloxExpr(func.frame.startValue)
-      : nullptr;
+  windowFunc.frame.startValue =
+      func.frame.startValue ? exprConverter_.toVeloxExpr(func.frame.startValue) : nullptr;
 
   windowFunc.frame.endType = toVeloxBoundType(func.frame.endType);
-  windowFunc.frame.endValue = func.frame.endValue
-      ? exprConverter_.toVeloxExpr(func.frame.endValue)
-      : nullptr;
+  windowFunc.frame.endValue =
+      func.frame.endValue ? exprConverter_.toVeloxExpr(func.frame.endValue) : nullptr;
 
   return windowFunc;
 }
 
 namespace {
-std::pair<
-    std::vector<core::FieldAccessTypedExprPtr>,
-    std::vector<core::SortOrder>>
-toSortFieldsAndOrders(
-    const protocol::OrderingScheme* orderingScheme,
-    VeloxExprConverter& exprConverter) {
+std::pair<std::vector<core::FieldAccessTypedExprPtr>, std::vector<core::SortOrder>>
+toSortFieldsAndOrders(const protocol::OrderingScheme* orderingScheme,
+                      VeloxExprConverter& exprConverter) {
   std::vector<core::FieldAccessTypedExprPtr> sortFields;
   std::vector<core::SortOrder> sortOrders;
   if (orderingScheme != nullptr) {
@@ -1873,10 +1760,9 @@ toSortFieldsAndOrders(
   }
   return {sortFields, sortOrders};
 }
-} // namespace
+}  // namespace
 
-std::shared_ptr<const core::WindowNode>
-VeloxQueryPlanConverterBase::toVeloxQueryPlan(
+std::shared_ptr<const core::WindowNode> VeloxQueryPlanConverterBase::toVeloxQueryPlan(
     const std::shared_ptr<const protocol::WindowNode>& node,
     const std::shared_ptr<protocol::TableWriteInfo>& tableWriteInfo,
     const protocol::TaskId& taskId) {
@@ -1908,12 +1794,7 @@ VeloxQueryPlanConverterBase::toVeloxQueryPlan(
   }
 
   return std::make_shared<core::WindowNode>(
-      node->id,
-      partitionFields,
-      sortFields,
-      sortOrders,
-      windowNames,
-      windowFunctions,
+      node->id, partitionFields, sortFields, sortOrders, windowNames, windowFunctions,
       toVeloxQueryPlan(node->source, tableWriteInfo, taskId));
 }
 
@@ -1928,19 +1809,15 @@ VeloxQueryPlanConverterBase::toVeloxQueryPlan(
     partitionFields.emplace_back(exprConverter_.toVeloxExpr(entry));
   }
 
-  auto [sortFields, sortOrders] = toSortFieldsAndOrders(
-      node->specification.orderingScheme.get(), exprConverter_);
+  auto [sortFields, sortOrders] =
+      toSortFieldsAndOrders(node->specification.orderingScheme.get(), exprConverter_);
 
   std::optional<std::string> rowNumberColumnName;
   if (!node->partial) {
     rowNumberColumnName = node->rowNumberVariable.name;
   }
   return std::make_shared<core::TopNRowNumberNode>(
-      node->id,
-      partitionFields,
-      sortFields,
-      sortOrders,
-      rowNumberColumnName,
+      node->id, partitionFields, sortFields, sortOrders, rowNumberColumnName,
       node->maxRowCountPerPartition,
       toVeloxQueryPlan(node->source, tableWriteInfo, taskId));
 }
@@ -1968,8 +1845,7 @@ core::PlanNodePtr VeloxQueryPlanConverterBase::toVeloxQueryPlan(
           std::dynamic_pointer_cast<const protocol::AggregationNode>(node)) {
     return toVeloxQueryPlan(aggregation, tableWriteInfo, taskId);
   }
-  if (auto groupId =
-          std::dynamic_pointer_cast<const protocol::GroupIdNode>(node)) {
+  if (auto groupId = std::dynamic_pointer_cast<const protocol::GroupIdNode>(node)) {
     return toVeloxQueryPlan(groupId, tableWriteInfo, taskId);
   }
   /*if (auto distinctLimit =
@@ -2008,16 +1884,15 @@ core::PlanNodePtr VeloxQueryPlanConverterBase::toVeloxQueryPlan(
     return toVeloxQueryPlan(unnest, tableWriteInfo, taskId);
   }*/
   if (auto enforceSingleRow =
-          std::dynamic_pointer_cast<const protocol::EnforceSingleRowNode>(
-              node)) {
+          std::dynamic_pointer_cast<const protocol::EnforceSingleRowNode>(node)) {
     return toVeloxQueryPlan(enforceSingleRow, tableWriteInfo, taskId);
   }
-/*
-  if (auto tableWriter =
-          std::dynamic_pointer_cast<const protocol::TableWriterNode>(node)) {
-    return toVeloxQueryPlan(tableWriter, tableWriteInfo, taskId);
-  }
-   */
+  /*
+    if (auto tableWriter =
+            std::dynamic_pointer_cast<const protocol::TableWriterNode>(node)) {
+      return toVeloxQueryPlan(tableWriter, tableWriteInfo, taskId);
+    }
+     */
   if (auto assignUniqueId =
           std::dynamic_pointer_cast<const protocol::AssignUniqueId>(node)) {
     return toVeloxQueryPlan(assignUniqueId, tableWriteInfo, taskId);
@@ -2030,8 +1905,7 @@ core::PlanNodePtr VeloxQueryPlanConverterBase::toVeloxQueryPlan(
           std::dynamic_pointer_cast<const protocol::TopNRowNumberNode>(node)) {
     return toVeloxQueryPlan(topNRowNumber, tableWriteInfo, taskId);
   }
-  if (auto window =
-          std::dynamic_pointer_cast<const protocol::WindowNode>(node)) {
+  if (auto window = std::dynamic_pointer_cast<const protocol::WindowNode>(node)) {
     return toVeloxQueryPlan(window, tableWriteInfo, taskId);
   }
   VELOX_UNSUPPORTED("Unknown plan node type {}", node->_type);
@@ -2173,11 +2047,12 @@ core::PlanFragment VeloxQueryPlanConverterBase::toVeloxQueryPlan(
       default:
         VELOX_FAIL("Unsupported kind of SystemPartitioning");
     }
-  } else if (auto tpchPartitioningHandle = std::dynamic_pointer_cast<protocol::TpchPartitioningHandle>(partitioningHandle)) {
+  } else if (auto tpchPartitioningHandle =
+                 std::dynamic_pointer_cast<protocol::TpchPartitioningHandle>(
+                     partitioningHandle)) {
     const auto& bucketToPartition = *partitioningScheme.bucketToPartition;
     auto numPartitions =
-        *std::max_element(bucketToPartition.begin(), bucketToPartition.end()) +
-        1;
+        *std::max_element(bucketToPartition.begin(), bucketToPartition.end()) + 1;
 
     if (numPartitions == 1) {
       planFragment.planNode =
@@ -2207,11 +2082,11 @@ core::PlanFragment VeloxQueryPlanConverterBase::toVeloxQueryPlan(
       return planFragment;
     }
 
-/*      VELOX_USER_CHECK(
-          hivePartitioningHandle->bucketFunctionType ==
-              protocol::BucketFunctionType::HIVE_COMPATIBLE,
-          "Unsupported Hive bucket function type: {}",
-          toJsonString(hivePartitioningHandle->bucketFunctionType))*/
+    /*      VELOX_USER_CHECK(
+              hivePartitioningHandle->bucketFunctionType ==
+                  protocol::BucketFunctionType::HIVE_COMPATIBLE,
+              "Unsupported Hive bucket function type: {}",
+              toJsonString(hivePartitioningHandle->bucketFunctionType))*/
 
     planFragment.planNode = std::make_shared<core::PartitionedOutputNode>(
         "root", core::PartitionedOutputNode::Kind::kPartitioned, partitioningKeys,

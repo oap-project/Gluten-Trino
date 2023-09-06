@@ -16,4 +16,4 @@
 
 namespace io::trino {
 facebook::velox::TypePtr parseTypeSignature(const std::string& signature);
-} // namespace io::trino
+}  // namespace io::trino

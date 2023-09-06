@@ -18,7 +18,7 @@
 namespace io::trino {
 class TrinoTaskId {
  public:
-  explicit TrinoTaskId(const std::string& taskId): fullId_(taskId) {
+  explicit TrinoTaskId(const std::string& taskId) : fullId_(taskId) {
     int start = 0;
     auto pos = nextDot(taskId, start);
     queryId_ = taskId.substr(0, pos);
@@ -35,25 +35,15 @@ class TrinoTaskId {
     id_ = parseInt(taskId, start, taskId.length());
   }
 
-  const std::string & fullId() const {
-    return fullId_;
-  }
+  const std::string& fullId() const { return fullId_; }
 
-  const std::string& queryId() const {
-    return queryId_;
-  }
+  const std::string& queryId() const { return queryId_; }
 
-  int32_t stageId() const {
-    return stageId_;
-  }
+  int32_t stageId() const { return stageId_; }
 
-  int32_t stageExecutionId() const {
-    return stageExecutionId_;
-  }
+  int32_t stageExecutionId() const { return stageExecutionId_; }
 
-  int32_t id() const {
-    return id_;
-  }
+  int32_t id() const { return id_; }
 
  private:
   int nextDot(const std::string& taskId, int start) {
@@ -74,4 +64,4 @@ class TrinoTaskId {
   int32_t stageExecutionId_;
   int32_t id_;
 };
-} // namespace io::trino
+}  // namespace io::trino

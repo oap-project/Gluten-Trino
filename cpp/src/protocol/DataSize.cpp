@@ -30,12 +30,8 @@ DataSize::DataSize(const std::string& string) {
 
 std::string DataSize::toString() const {
   char buffer[32];
-  snprintf(
-      buffer,
-      sizeof(buffer),
-      "%f%s",
-      round(value_ * 100.0) / 100.0,
-      dataUnitToString(dataUnit_).c_str());
+  snprintf(buffer, sizeof(buffer), "%f%s", round(value_ * 100.0) / 100.0,
+           dataUnitToString(dataUnit_).c_str());
   return std::string(buffer);
 }
 
@@ -99,4 +95,4 @@ std::string DataSize::dataUnitToString(DataUnit dataUnit) const {
   }
 }
 
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

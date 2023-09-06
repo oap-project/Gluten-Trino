@@ -36,9 +36,8 @@ void from_json(const json& j, std::shared_ptr<ConnectorTransactionHandle>& p) {
       type = p->getSubclassKey(j);
     }
   } catch (json::parse_error& e) {
-    throw ParseError(
-        std::string(e.what()) +
-        " ConnectorTransactionHandle  ConnectorTransactionHandle");
+    throw ParseError(std::string(e.what()) +
+                     " ConnectorTransactionHandle  ConnectorTransactionHandle");
   }
 
   /*
@@ -64,4 +63,4 @@ void from_json(const json& j, std::shared_ptr<ConnectorTransactionHandle>& p) {
 
   throw TypeError(type + " no abstract type ConnectorTransactionHandle");
 }
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

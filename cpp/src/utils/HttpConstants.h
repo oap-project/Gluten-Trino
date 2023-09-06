@@ -22,4 +22,4 @@ const uint16_t kHttpInternalServerError = 500;
 
 const char kMimeTypeApplicationJson[] = "application/json";
 const char kMimeTypeApplicationThrift[] = "application/x-thrift+binary";
-} // namespace facebook::presto::http
+}  // namespace io::trino::bridge::http

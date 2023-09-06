@@ -2,7 +2,7 @@ namespace io::trino::protocol {
 
 struct GlutenVariableReferenceExpression : GlutenRowExpression {
   String name;
-  Type type; // dependency
+  Type type;  // dependency
 
   GlutenVariableReferenceExpression() noexcept;
   explicit GlutenVariableReferenceExpression(const String& str) {
@@ -27,4 +27,4 @@ struct GlutenVariableReferenceExpression : GlutenRowExpression {
 void to_json(json& j, const GlutenVariableReferenceExpression& p);
 void from_json(const json& j, GlutenVariableReferenceExpression& p);
 std::string json_map_key(const GlutenVariableReferenceExpression& p);
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

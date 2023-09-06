@@ -14,4 +14,4 @@
 namespace io::trino::protocol {
 void to_json(json& j, const OperatorInfo& p) {}
 void from_json(const json& j, OperatorInfo& p) {}
-} // namespace io::trino::protocol
+}  // namespace io::trino::protocol

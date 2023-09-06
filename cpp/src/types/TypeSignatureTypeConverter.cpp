@@ -14,8 +14,8 @@
 #include <boost/algorithm/string.hpp>
 #include <iostream>
 
-#include "src/types/ParseTypeSignature.h"
 #include "antlr4-runtime.h"
+#include "src/types/ParseTypeSignature.h"
 #include "src/types/TypeSignatureTypeConverter.h"
 #include "src/types/antlr/TypeSignatureLexer.h"
 #include "velox/functions/prestosql/types/HyperLogLogType.h"
@@ -70,9 +70,8 @@ antlrcpp::Any TypeSignatureTypeConverter::visitType_spec(
 
 antlrcpp::Any TypeSignatureTypeConverter::visitNamed_type(
     TypeSignatureParser::Named_typeContext* ctx) {
-  return NamedType{
-      visit(ctx->identifier()).as<std::string>(),
-      visit(ctx->type()).as<TypePtr>()};
+  return NamedType{visit(ctx->identifier()).as<std::string>(),
+                   visit(ctx->type()).as<TypePtr>()};
 }
 
 antlrcpp::Any TypeSignatureTypeConverter::visitType(
@@ -112,14 +111,13 @@ antlrcpp::Any TypeSignatureTypeConverter::visitType_list(
 
 antlrcpp::Any TypeSignatureTypeConverter::visitRow_type(
     TypeSignatureParser::Row_typeContext* ctx) {
-  return rowFromNamedTypes(
-      visit(ctx->type_list()).as<std::vector<NamedType>>());
+  return rowFromNamedTypes(visit(ctx->type_list()).as<std::vector<NamedType>>());
 }
 
 antlrcpp::Any TypeSignatureTypeConverter::visitMap_type(
     TypeSignatureParser::Map_typeContext* ctx) {
-  return mapFromKeyValueType(
-      visit(ctx->type()[0]).as<TypePtr>(), visit(ctx->type()[1]).as<TypePtr>());
+  return mapFromKeyValueType(visit(ctx->type()[0]).as<TypePtr>(),
+                             visit(ctx->type()[1]).as<TypePtr>());
 }
 
 antlrcpp::Any TypeSignatureTypeConverter::visitArray_type(
@@ -132,8 +130,8 @@ antlrcpp::Any TypeSignatureTypeConverter::visitIdentifier(
   if (ctx->WORD()) {
     return ctx->WORD()->getText();
   } else {
-    return ctx->QUOTED_ID()->getText().substr(
-        1, ctx->QUOTED_ID()->getText().length() - 2);
+    return ctx->QUOTED_ID()->getText().substr(1,
+                                              ctx->QUOTED_ID()->getText().length() - 2);
   }
 }
 
@@ -175,15 +173,11 @@ TypePtr typeFromString(const std::string& typeName) {
 
 TypePtr rowFromNamedTypes(const std::vector<NamedType>& named) {
   std::vector<std::string> names{};
-  std::transform(
-      named.begin(), named.end(), std::back_inserter(names), [](NamedType v) {
-        return v.name;
-      });
+  std::transform(named.begin(), named.end(), std::back_inserter(names),
+                 [](NamedType v) { return v.name; });
   std::vector<TypePtr> types{};
-  std::transform(
-      named.begin(), named.end(), std::back_inserter(types), [](NamedType v) {
-        return v.type;
-      });
+  std::transform(named.begin(), named.end(), std::back_inserter(types),
+                 [](NamedType v) { return v.type; });
 
   return TypeFactory<TypeKind::ROW>::create(std::move(names), std::move(types));
 }
@@ -195,4 +189,4 @@ TypePtr mapFromKeyValueType(TypePtr keyType, TypePtr valueType) {
 TypePtr arrayFromType(TypePtr valueType) {
   return TypeFactory<TypeKind::ARRAY>::create(valueType);
 }
-} // namespace io::trino
+}  // namespace io::trino
