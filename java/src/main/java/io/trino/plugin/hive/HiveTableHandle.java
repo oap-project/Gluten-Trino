@@ -523,11 +523,13 @@ public class HiveTableHandle
                 .collect(Collectors.toMap(k -> new GlutenSubfield(k.getKey().getName(), new ArrayList<>()),
                         v -> GlutenDomain.create(v.getValue().getValues().getProtocol(), v.getValue().isNullAllowed())));
         GlutenTupleDomain<GlutenSubfield> domainPredicate = GlutenTupleDomain.withColumnDomains(domains);
-        if (domainPredicate.getColumnDomains().isPresent()
-                && domainPredicate.getColumnDomains().get().get(0).getDomain().getValues() instanceof GlutenSortedRangeSet glutenSortedRangeSet
-                && glutenSortedRangeSet.getOrderedRanges().get(0).getLow().getValue() == glutenSortedRangeSet.getOrderedRanges().get(0).getHigh().getValue()
-                && (null == glutenSortedRangeSet.getOrderedRanges().get(0).getLow().getValue() || null == glutenSortedRangeSet.getOrderedRanges().get(0).getHigh().getValue())) {
-            return new GlutenHiveTableHandle(schemaName, tableName, GlutenTupleDomain.withColumnDomains(ImmutableMap.of()), analyzePartitionValues);
+        Optional<List<GlutenTupleDomain.ColumnDomain<GlutenSubfield>>> columnDomains = domainPredicate.getColumnDomains();
+        if (columnDomains.isPresent() && !columnDomains.get().isEmpty() && columnDomains.get().get(0).getDomain().getValues() instanceof GlutenSortedRangeSet glutenSortedRangeSet) {
+            Object low = glutenSortedRangeSet.getOrderedRanges().get(0).getLow().getValue();
+            Object high = glutenSortedRangeSet.getOrderedRanges().get(0).getHigh().getValue();
+            if (high == low && null == low) {
+                return new GlutenHiveTableHandle(schemaName, tableName, GlutenTupleDomain.withColumnDomains(ImmutableMap.of()), analyzePartitionValues);
+            }
         }
         return new GlutenHiveTableHandle(schemaName, tableName, domainPredicate, analyzePartitionValues);
     }
