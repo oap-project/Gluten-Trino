@@ -1342,9 +1342,6 @@ void TrinoVectorSerde::deserialize(facebook::velox::ByteStream* source,
                                    facebook::velox::RowVectorPtr* result,
                                    const Options* options) {
   bool useLosslessTimestamp = false;
-  // options != nullptr
-  //     ? static_cast<const PrestoOptions*>(options)->useLosslessTimestamp
-  //     : false;
   auto numRows = source->read<int32_t>();
   VLOG(1) << "numRows is " << numRows;
   if (!(*result) || !result->unique() || (*result)->type() != type) {
@@ -1356,10 +1353,7 @@ void TrinoVectorSerde::deserialize(facebook::velox::ByteStream* source,
 
   auto pageCodecMarker = source->read<int8_t>();
   VLOG(1) << "pageCodecMarker is " << pageCodecMarker;
-  if (numRows == 0) {
-    auto nullRowNumber = source->read<int32_t>();
-    VLOG(1) << "Read a blank value if null row number " << nullRowNumber;
-  }
+
   auto uncompressedSize = source->read<int32_t>();
   VLOG(1) << "uncompressedSize is " << uncompressedSize;
   // skip size in bytes (compressed size)

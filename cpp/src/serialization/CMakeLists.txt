@@ -17,3 +17,7 @@ target_include_directories(
 # link velox_vector_test_lib for VectorMaker
 target_link_libraries(gluten_trino_serialization PUBLIC ${VELOX_LIBS} ${FMT}
                                                         Folly::folly ${RE2})
+
+if(GLUTEN_TRINO_BUILDING_TESTS)
+  add_subdirectory(tests)
+endif()

@@ -44,9 +44,9 @@ class Unsafe {
   static int32_t getUnsafeArrayIndexScale(JNIEnv* env, jclass unsafeClass,
                                           const std::string& name);
 
-  int32_t arrayIntIndexScale;
-  int32_t arrayLongIndexScale;
-  int32_t arrayBooleanIndexScale;
+  int32_t arrayIntIndexScale = 4;
+  int32_t arrayLongIndexScale = 8;
+  int32_t arrayBooleanIndexScale = 1;
 };
 
 class NativeSqlTaskExecutionManager {

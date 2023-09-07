@@ -29,7 +29,7 @@ include_directories(${JNI_INCLUDE_DIRS})
 
 option(GLUTEN_TRINO_ENABLE_SANITIZER
        "Enable AddressSanitizer for Trino Bridge." OFF)
-option(GLUTEN_TRINO_BUILDING_TESTS "Building Tests for Trino Bridge." OFF)
+option(GLUTEN_TRINO_BUILDING_TESTS "Building Tests for Gluten Trino." ON)
 
 if(GLUTEN_TRINO_ENABLE_SANITIZER)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
