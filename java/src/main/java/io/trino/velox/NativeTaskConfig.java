@@ -40,6 +40,7 @@ public class NativeTaskConfig
     private int reservedMemoryPoolCapacityPercentage = 10;
     private long initMemoryPoolCapacity = 120 << 20;
     private long minMemoryPoolTransferCapacity = 32 << 20;
+    private int maxReadBufferSize = 64 << 10;
 
     @NotNull
     public String getLogVerboseModules()
@@ -246,6 +247,19 @@ public class NativeTaskConfig
     public NativeTaskConfig setMinMemoryPoolTransferCapacity(long minMemoryPoolTransferCapacity)
     {
         this.minMemoryPoolTransferCapacity = minMemoryPoolTransferCapacity;
+        return this;
+    }
+
+    @NotNull
+    public int getMaxReadBufferSize()
+    {
+        return maxReadBufferSize;
+    }
+
+    @Config("native.max-read-buffer-size")
+    public NativeTaskConfig setMaxReadBufferSize(int maxReadBufferSize)
+    {
+        this.maxReadBufferSize = maxReadBufferSize;
         return this;
     }
 }

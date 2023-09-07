@@ -77,6 +77,9 @@ class NativeConfigs {
   inline const uint64_t& getMinMemoryPoolTransferCapacity() const {
     return minMemoryPoolTransferCapacity;
   }
+  inline const uint32_t& getMaxReadBufferSize() const {
+    return maxReadBufferSize;
+  }
 
  private:
   // refer to io.trino.operator.DirectExchangeClientConfig#maxResponseSize
@@ -110,6 +113,7 @@ class NativeConfigs {
   int32_t reservedMemoryPoolCapacityPercentage = 10;
   uint64_t initMemoryPoolCapacity = 120 << 20;
   uint64_t minMemoryPoolTransferCapacity = 32 << 20;
+  uint32_t maxReadBufferSize = 65536;
 };
 
 using NativeConfigsPtr = std::shared_ptr<NativeConfigs>;
