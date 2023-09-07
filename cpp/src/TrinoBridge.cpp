@@ -528,14 +528,16 @@ JNIEXPORT jlong JNICALL Java_io_trino_jni_TrinoBridge_createTask(JNIEnv* env, jo
             env, __FILE__, __LINE__,
             "Task " + taskId.fullId() + " gets PlanFragment Json: " + planFragment);
         nlohmann::json json = nlohmann::json::parse(planFragment);
-        std::shared_ptr<io::trino::protocol::PlanFragment> mockPlanFragment;
-        from_json(json, mockPlanFragment);
-        if (!mockPlanFragment) {
-          JniUtils::throwJavaRuntimeException(env, "mockPlanFragment is null.");
+        std::shared_ptr<io::trino::protocol::PlanFragment> glutenPlanFragment;
+        from_json(json, glutenPlanFragment);
+        if (!glutenPlanFragment) {
+          JniUtils::throwJavaRuntimeException(
+              env,
+              "Failed to parse Json string into Gluten plan fragment" + to_string(json));
           return -1;
         }
 
-        TaskHandlePtr taskHandle = handle->createTaskHandle(taskId, *mockPlanFragment);
+        TaskHandlePtr taskHandle = handle->createTaskHandle(taskId, *glutenPlanFragment);
 
         taskHandle->task->stateChangeFuture(0)
             .via(getDriverCPUExecutor().get())
