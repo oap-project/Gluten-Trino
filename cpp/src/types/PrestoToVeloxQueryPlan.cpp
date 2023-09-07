@@ -2060,13 +2060,13 @@ core::PlanFragment VeloxQueryPlanConverterBase::toVeloxQueryPlan(
       return planFragment;
     }
 
-    int64_t numRowsPerPartition = tpchPartitioningHandle->totalRows / numPartitions;
+    int64_t rowsPerBucket = tpchPartitioningHandle->totalRows / bucketToPartition.size();
 
     planFragment.planNode = std::make_shared<core::PartitionedOutputNode>(
         "root", core::PartitionedOutputNode::Kind::kPartitioned, partitioningKeys,
         numPartitions, partitioningScheme.replicateNullsAndAny,
-        std::make_shared<io::trino::bridge::TpchPartitionFunctionSpec>(
-            numRowsPerPartition),
+        std::make_shared<io::trino::bridge::TpchPartitionFunctionSpec>(rowsPerBucket,
+                                                                       bucketToPartition),
         toRowType(partitioningScheme.outputLayout), sourceNode);
     return planFragment;
   } else if (auto hivePartitioningHandle =

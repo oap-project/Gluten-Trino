@@ -234,7 +234,8 @@ class TrinoSumAggregate : public exec::Aggregate {
   template <bool checkNullFields>
   void addSingleGroupIntermediateResultsImpl(char* group, const SelectivityVector& rows) {
     auto baseRowVector = decodedPartial_.base()->template as<RowVector>();
-    auto baseSumVector = baseRowVector->childAt(0)->template as<SimpleVector<TInput>>();
+    auto baseSumVector =
+        baseRowVector->childAt(0)->template as<SimpleVector<TAccumulator>>();
     auto baseCountVector =
         baseRowVector->childAt(1)->template as<SimpleVector<int64_t>>();
 
