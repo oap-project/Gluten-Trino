@@ -36,7 +36,7 @@ jobs:
           make release
           cd build-Release/
           ctest -V
-          cp src/libgluten_trino.so ../artifact/
+          cp src/libgluten_trino.so ../../artifact/
           cd ../..
       - name: download jars
         uses: actions/download-artifact@v3
