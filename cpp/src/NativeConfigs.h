@@ -77,9 +77,7 @@ class NativeConfigs {
   inline const uint64_t& getMinMemoryPoolTransferCapacity() const {
     return minMemoryPoolTransferCapacity;
   }
-  inline const uint32_t& getMaxReadBufferSize() const {
-    return maxReadBufferSize;
-  }
+  inline const uint32_t& getMaxReadBufferSize() const { return maxReadBufferSize; }
 
  private:
   // refer to io.trino.operator.DirectExchangeClientConfig#maxResponseSize
