@@ -41,6 +41,7 @@
 #include "velox/type/Type.h"
 
 #include "NativeConfigs.h"
+#include "proxygen/lib/http/session/HTTPSessionBase.h"
 
 using namespace facebook;
 
@@ -635,6 +636,8 @@ JNIEXPORT jlong JNICALL Java_io_trino_jni_TrinoBridge_init(JNIEnv* env, jobject 
 
   auto config =
       std::make_shared<NativeConfigs>(JniUtils::jstringToString(env, configJson));
+  proxygen::HTTPSessionBase::setMaxReadBufferSize(
+      config->getMaxHttpSessionReadBufferSize());
 
   for (auto& [moduleName, level] : config->getLogVerboseModules()) {
     google::SetVLOGLevel(moduleName.c_str(), level);
