@@ -1,3 +1,15 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 find_library(FMT fmt)
 find_library(RE2 re2 REQUIRED)
 find_package(JNI 17 REQUIRED)
@@ -29,7 +41,7 @@ include_directories(${JNI_INCLUDE_DIRS})
 
 option(GLUTEN_TRINO_ENABLE_SANITIZER
        "Enable AddressSanitizer for Trino Bridge." OFF)
-option(GLUTEN_TRINO_BUILDING_TESTS "Building Tests for Trino Bridge." OFF)
+option(GLUTEN_TRINO_BUILDING_TESTS "Building Tests for Gluten Trino." ON)
 
 if(GLUTEN_TRINO_ENABLE_SANITIZER)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
@@ -110,7 +122,3 @@ endif()
 
 target_link_libraries(gluten_trino PUBLIC ${FMT} Folly::folly ${RE2}
                                           presto_type_converter)
-
-if(GLUTEN_TRINO_BUILDING_TESTS)
-  add_subdirectory(test)
-endif()

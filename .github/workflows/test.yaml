@@ -34,8 +34,10 @@ jobs:
           export TRINO_HOME=/trino_base
           git submodule update --init --recursive --force
           make release
-          cp build-Release/src/libgluten_trino.so ../artifact/
-          cd ..
+          cd build-Release/
+          ctest -V
+          cp src/libgluten_trino.so ../../artifact/
+          cd ../..
       - name: download jars
         uses: actions/download-artifact@v3
         with:

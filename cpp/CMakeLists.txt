@@ -40,5 +40,7 @@ include_directories(velox/velox/external/xxhash)
 include_directories(${VELOX_BINARY_ROOT})
 include_directories(${CMAKE_BINARY_DIR})
 
+enable_testing()
+
 add_subdirectory(velox)
 add_subdirectory(src)
