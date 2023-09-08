@@ -1,4 +1,16 @@
-
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #include <gtest/gtest.h>
 #include <fstream>
 #include <iostream>
@@ -18,16 +30,20 @@ using namespace io::trino::protocol;
 class ProtocolTest : public testing::Test {
  public:
   ProtocolTest() { data_dir_ = getenv("DATA_DIR"); }
+  SplitAssignmentsMessage getSplitsFromFile(const std::string& file_name) {
+    std::ifstream file(data_dir_ + "/" + file_name);
+    nlohmann::json json = nlohmann::json::parse(file);
+    SplitAssignmentsMessage splits;
+    from_json(json, splits);
+    return splits;
+  }
 
  protected:
   std::string data_dir_;
 };
 
 TEST_F(ProtocolTest, TPCHConnectorSplit) {
-  std::ifstream file(data_dir_ + "/TpchSplit.json");
-  nlohmann::json json = nlohmann::json::parse(file);
-  SplitAssignmentsMessage splits;
-  from_json(json, splits);
+  SplitAssignmentsMessage splits = getSplitsFromFile("TpchSplit.json");
   EXPECT_EQ(splits.taskId, "20230906_064526_00000_nqj9b.1.2.0");
   for (auto&& splitAssignment : splits.splitAssignments) {
     for (auto& split : splitAssignment.splits) {
@@ -42,11 +58,7 @@ TEST_F(ProtocolTest, TPCHConnectorSplit) {
 }
 
 TEST_F(ProtocolTest, RemoteConnectorSplit) {
-  std::ifstream file(data_dir_ + "/RemoteSplit.json");
-  nlohmann::json json = nlohmann::json::parse(file);
-
-  SplitAssignmentsMessage splits;
-  from_json(json, splits);
+  SplitAssignmentsMessage splits = getSplitsFromFile("RemoteSplit.json");
   EXPECT_EQ(splits.taskId, "20230906_073406_00001_nqj9b.2.1.0");
   for (auto&& splitAssignment : splits.splitAssignments) {
     for (auto& split : splitAssignment.splits) {
@@ -60,11 +72,7 @@ TEST_F(ProtocolTest, RemoteConnectorSplit) {
 }
 
 TEST_F(ProtocolTest, HiveConnectorSplit) {
-  std::ifstream file(data_dir_ + "/HiveSplit.json");
-  nlohmann::json json = nlohmann::json::parse(file);
-
-  SplitAssignmentsMessage splits;
-  from_json(json, splits);
+  SplitAssignmentsMessage splits = getSplitsFromFile("HiveSplit.json");
   EXPECT_EQ(splits.taskId, "20230906_084930_00000_9cuyd.14.0.0");
   for (auto&& splitAssignment : splits.splitAssignments) {
     for (auto& split : splitAssignment.splits) {
@@ -81,9 +89,6 @@ int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
 
   int err{0};
-  err = RUN_ALL_TESTS();
-
-  return err;
   err = RUN_ALL_TESTS();
 
   return err;
