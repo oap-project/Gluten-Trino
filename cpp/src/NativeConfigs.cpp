@@ -51,7 +51,7 @@ NativeConfigs::NativeConfigs(const std::string& configJsonString) {
   GET_KEY_FROM_JSON(reservedMemoryPoolCapacityPercentage, configJson);
   GET_KEY_FROM_JSON(initMemoryPoolCapacity, configJson);
   GET_KEY_FROM_JSON(minMemoryPoolTransferCapacity, configJson);
-  GET_KEY_FROM_JSON(maxReadBufferSize, configJson);
+  GET_KEY_FROM_JSON(maxHttpSessionReadBufferSize, configJson);
 
   if (configJson.contains("logVerboseModules")) {
     std::string _logVerboseModules;

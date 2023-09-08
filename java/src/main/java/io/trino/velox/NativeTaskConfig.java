@@ -40,7 +40,7 @@ public class NativeTaskConfig
     private int reservedMemoryPoolCapacityPercentage = 10;
     private long initMemoryPoolCapacity = 120 << 20;
     private long minMemoryPoolTransferCapacity = 32 << 20;
-    private int maxReadBufferSize = 64 << 10;
+    private int maxHttpSessionReadBufferSize = 64 << 10;
 
     @NotNull
     public String getLogVerboseModules()
@@ -251,15 +251,15 @@ public class NativeTaskConfig
     }
 
     @NotNull
-    public int getMaxReadBufferSize()
+    public int getMaxHttpSessionReadBufferSize()
     {
-        return maxReadBufferSize;
+        return maxHttpSessionReadBufferSize;
     }
 
-    @Config("native.max-read-buffer-size")
-    public NativeTaskConfig setMaxReadBufferSize(int maxReadBufferSize)
+    @Config("native.max-http-session-read-buffer-size")
+    public NativeTaskConfig setMaxHttpSessionReadBufferSize(int maxHttpSessionReadBufferSize)
     {
-        this.maxReadBufferSize = maxReadBufferSize;
+        this.maxHttpSessionReadBufferSize = maxHttpSessionReadBufferSize;
         return this;
     }
 }

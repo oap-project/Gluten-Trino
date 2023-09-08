@@ -43,7 +43,7 @@ public class NativeConfigs
     private final int reservedMemoryPoolCapacityPercentage;
     private final long initMemoryPoolCapacity;
     private final long minMemoryPoolTransferCapacity;
-    private final int maxReadBufferSize;
+    private final int maxHttpSessionReadBufferSize;
 
     @Inject
     public NativeConfigs(
@@ -72,7 +72,7 @@ public class NativeConfigs
                 nativeTaskConfig.getReservedMemoryPoolCapacityPercentage(),
                 nativeTaskConfig.getInitMemoryPoolCapacity(),
                 nativeTaskConfig.getMinMemoryPoolTransferCapacity(),
-                nativeTaskConfig.getMaxReadBufferSize());
+                nativeTaskConfig.getMaxHttpSessionReadBufferSize());
     }
 
     @JsonCreator
@@ -98,7 +98,7 @@ public class NativeConfigs
             @JsonProperty int reservedMemoryPoolCapacityPercentage,
             @JsonProperty long initMemoryPoolCapacity,
             @JsonProperty long minMemoryPoolTransferCapacity,
-            @JsonProperty int maxReadBufferSize)
+            @JsonProperty int maxHttpSessionReadBufferSize)
     {
         this.maxOutputPageBytes = maxOutputPageBytes;
         this.maxWorkerThreads = maxWorkerThreads;
@@ -121,7 +121,7 @@ public class NativeConfigs
         this.reservedMemoryPoolCapacityPercentage = reservedMemoryPoolCapacityPercentage;
         this.initMemoryPoolCapacity = initMemoryPoolCapacity;
         this.minMemoryPoolTransferCapacity = minMemoryPoolTransferCapacity;
-        this.maxReadBufferSize = maxReadBufferSize;
+        this.maxHttpSessionReadBufferSize = maxHttpSessionReadBufferSize;
     }
 
     @JsonProperty
@@ -251,8 +251,8 @@ public class NativeConfigs
     }
 
     @JsonProperty
-    public int getMaxReadBufferSize()
+    public int getMaxHttpSessionReadBufferSize()
     {
-        return maxReadBufferSize;
+        return maxHttpSessionReadBufferSize;
     }
 }
