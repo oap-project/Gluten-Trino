@@ -195,7 +195,4 @@ int main(int argc, char** argv) {
   err = RUN_ALL_TESTS();
 
   return err;
-  err = RUN_ALL_TESTS();
-
-  return err;
 }
