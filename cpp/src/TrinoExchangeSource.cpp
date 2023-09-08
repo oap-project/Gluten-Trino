@@ -95,6 +95,10 @@ void TrinoExchangeSource::doRequest() {
   auto path = fmt::format("{}/{}", basePath_, sequence_);
   VLOG(1) << "Fetching data from " << host_ << ":" << port_ << " " << path;
   auto self = getSelfPtr();
+  ++requestTimes_;
+  uint64_t startMicro = std::chrono::duration_cast<std::chrono::microseconds>(
+                            std::chrono::high_resolution_clock::now().time_since_epoch())
+                            .count();
   http::RequestBuilder()
       .method(proxygen::HTTPMethod::GET)
       .url(path)
@@ -102,7 +106,7 @@ void TrinoExchangeSource::doRequest() {
       .header(protocol::TRINO_MAX_SIZE_HTTP_HEADER, "32MB")
       .send(httpClient_.get(), pool_.get())
       .via(driverThreadPool_)
-      .thenValue([path, self](std::unique_ptr<http::HttpResponse> response) {
+      .thenValue([path, self, startMicro](std::unique_ptr<http::HttpResponse> response) {
         facebook::velox::common::testutil::TestValue::adjust(
             "io::trino::bridge::TrinoExchangeSource::doRequest", self.get());
         auto* headers = response->headers();
@@ -114,16 +118,18 @@ void TrinoExchangeSource::doRequest() {
         } else if (response->hasError()) {
           self->processDataError(path, response->error(), false);
         } else {
-          self->processDataResponse(std::move(response));
+          self->processDataResponse(std::move(response), startMicro);
         }
       })
-      .thenError(folly::tag_t<std::exception>{}, [path, self](const std::exception& e) {
-        self->processDataError(path, e.what());
-      });
+      .thenError(folly::tag_t<std::exception>{},
+                 [path, self, this](const std::exception& e) {
+                   ++errorResponseTimes_;
+                   self->processDataError(path, e.what());
+                 });
 }
 
 void TrinoExchangeSource::processDataResponse(
-    std::unique_ptr<http::HttpResponse> response) {
+    std::unique_ptr<http::HttpResponse> response, uint64_t startMicroSeconds) {
   if (closed_.load()) {
     // If TrinoExchangeSource is already closed, just free all buffers
     // allocated without doing any processing. This can happen when a super slow
@@ -153,6 +159,11 @@ void TrinoExchangeSource::processDataResponse(
   const bool empty = response->empty();
   int64_t totalBytes{0};
   if (!empty) {
+    uint64_t now = std::chrono::duration_cast<std::chrono::microseconds>(
+                       std::chrono::high_resolution_clock::now().time_since_epoch())
+                       .count();
+    nonEmptyRequestMicroRTTs_ += now - startMicroSeconds;
+
     auto iobufs = response->consumeBody();
     // trino have a 16 bytes header, including 4 bytes magic, 8 bytes checksum, 4 bytes
     // page size
@@ -184,6 +195,7 @@ void TrinoExchangeSource::processDataResponse(
           TrinoExchangeSource::updateMemoryUsage(-freedBytes);
         });
   } else {
+    ++emptyResponseTimes_;
     VLOG(1) << "Received empty response for " << basePath_ << "/" << sequence_;
   }
 
@@ -197,7 +209,6 @@ void TrinoExchangeSource::processDataResponse(
       if (page) {
         VLOG(1) << "Enqueuing page for " << basePath_ << "/" << sequence_ << ": "
                 << page->size() << " bytes";
-        ++numPages_;
         queue_->enqueueLocked(std::move(page), promises);
       }
       if (complete) {
