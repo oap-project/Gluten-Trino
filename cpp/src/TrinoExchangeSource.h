@@ -41,7 +41,10 @@ class TrinoExchangeSource : public facebook::velox::exec::ExchangeSource {
   void close() override;
 
   folly::F14FastMap<std::string, int64_t> stats() const override {
-    return {{"TrinoExchangeSource.numPages", numPages_}};
+    return {{"TrinoExchangeSource.nonEmptyRequestMicroRTTs", nonEmptyRequestMicroRTTs_},
+            {"TrinoExchangeSource.errorResponseTimes", errorResponseTimes_},
+            {"TrinoExchangeSource.emptyResponseTimes", emptyResponseTimes_},
+            {"TrinoExchangeSource.requestTimes", requestTimes_}};
   }
 
   int testingFailedAttempts() const { return failedAttempts_; }
@@ -69,7 +72,8 @@ class TrinoExchangeSource : public facebook::velox::exec::ExchangeSource {
 
   void doRequest();
 
-  void processDataResponse(std::unique_ptr<http::HttpResponse> response);
+  void processDataResponse(std::unique_ptr<http::HttpResponse> response,
+                           uint64_t startMicroSeconds);
 
   // If 'retry' is true, then retry the http request failure until reaches the
   // retry limit, otherwise just set exchange source error without retry. As
@@ -106,8 +110,10 @@ class TrinoExchangeSource : public facebook::velox::exec::ExchangeSource {
 
   std::unique_ptr<http::HttpClient> httpClient_;
   int failedAttempts_;
-  // The number of pages received from this presto exchange source.
-  uint64_t numPages_{0};
+  uint64_t requestTimes_{0};
+  uint64_t emptyResponseTimes_{0};
+  uint64_t errorResponseTimes_{0};
+  uint64_t nonEmptyRequestMicroRTTs_{0};
   std::atomic_bool closed_{false};
   // A boolean indicating whether abortResults() call was issued and was
   // successfully processed by the remote server.
