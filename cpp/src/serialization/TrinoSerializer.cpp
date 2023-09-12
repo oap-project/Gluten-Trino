@@ -600,12 +600,11 @@ void serializeRowVector(const BaseVector* vector,
     for (auto offset = begin; offset < end; ++offset) {
       if (rowVector->isNullAt(offset)) {
         stream->appendNull();
-        childRanges.push_back(IndexRange{offset, 1});
       } else {
         stream->appendNonNull();
         stream->appendOffset(1);
-        childRanges.push_back(IndexRange{offset, 1});
       }
+      childRanges.push_back(IndexRange{offset, 1});
     }
   }
   for (int32_t i = 0; i < rowVector->childrenSize(); ++i) {

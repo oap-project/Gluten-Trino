@@ -134,7 +134,7 @@ public class TestHiveSplit
         schema.setProperty(META_TABLE_LOCATION, "");
         schema.setProperty(BUCKET_FIELD_NAME, "");
         schema.setProperty(BUCKET_COUNT, "0");
-        schema.setProperty(SERIALIZATION_DDL, "struct table { int id, string name}");
+        schema.setProperty(SERIALIZATION_DDL, "struct table { i64 id, string name}");
 
         ImmutableList<HivePartitionKey> partitionKeys = ImmutableList.of(new HivePartitionKey("a", "apple"), new HivePartitionKey("b", "42"));
         ImmutableList<HostAddress> addresses = ImmutableList.of(HostAddress.fromParts("127.0.0.1", 44), HostAddress.fromParts("127.0.0.1", 45));
