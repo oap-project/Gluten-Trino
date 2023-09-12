@@ -524,13 +524,17 @@ public class HiveTableHandle
                 .collect(Collectors.toMap(k -> new GlutenSubfield(k.getKey().getName(), new ArrayList<>()),
                         v -> GlutenDomain.create(v.getValue().getValues().getProtocol(), v.getValue().isNullAllowed())));
         GlutenTupleDomain<GlutenSubfield> domainPredicate = GlutenTupleDomain.withColumnDomains(domains);
-        // for isNull predicate
+        // for is not null predicate
         Optional<List<GlutenTupleDomain.ColumnDomain<GlutenSubfield>>> columnDomains = domainPredicate.getColumnDomains();
-        if (columnDomains.isPresent() && !columnDomains.get().isEmpty() && columnDomains.get().get(0).getDomain().getValues() instanceof GlutenSortedRangeSet glutenSortedRangeSet) {
-            GlutenMarker low = glutenSortedRangeSet.getOrderedRanges().get(0).getLow();
-            GlutenMarker high = glutenSortedRangeSet.getOrderedRanges().get(0).getHigh();
-            if (null == low.getValue() || null == high.getValue()) {
-                return new GlutenHiveTableHandle(schemaName, tableName, GlutenTupleDomain.withColumnDomains(ImmutableMap.of()), analyzePartitionValues);
+        if (columnDomains.isPresent() && !columnDomains.get().isEmpty()) {
+            for (int i = 0; i < columnDomains.get().size(); i++) {
+                if (columnDomains.get().get(i).getDomain().getValues() instanceof GlutenSortedRangeSet glutenSortedRangeSet && !glutenSortedRangeSet.getOrderedRanges().isEmpty()) {
+                    GlutenMarker low = glutenSortedRangeSet.getOrderedRanges().get(0).getLow();
+                    GlutenMarker high = glutenSortedRangeSet.getOrderedRanges().get(0).getHigh();
+                    if (null == low.getValue() || null == high.getValue()) {
+                        return new GlutenHiveTableHandle(schemaName, tableName, GlutenTupleDomain.withColumnDomains(ImmutableMap.of()), analyzePartitionValues);
+                    }
+                }
             }
         }
         return new GlutenHiveTableHandle(schemaName, tableName, domainPredicate, analyzePartitionValues);

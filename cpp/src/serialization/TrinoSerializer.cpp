@@ -603,8 +603,8 @@ void serializeRowVector(const BaseVector* vector,
       } else {
         stream->appendNonNull();
         stream->appendOffset(1);
-        childRanges.push_back(IndexRange{offset, 1});
       }
+      childRanges.push_back(IndexRange{offset, 1});
     }
   }
   for (int32_t i = 0; i < rowVector->childrenSize(); ++i) {
@@ -814,8 +814,8 @@ std::unique_ptr<VectorSerializer> TrinoVectorSerde::createSerializer(
     std::shared_ptr<const RowType> type, int32_t numRows, StreamArena* streamArena,
     const Options* options) {
   bool useLosslessTimestamp =
-      options != nullptr ? static_cast<const TrinoOptions*>(options)->useLosslessTimestamp
-                         : false;
+      options != nullptr &&
+      static_cast<const TrinoOptions*>(options)->useLosslessTimestamp;
   return std::make_unique<TrinoVectorSerializer>(type, numRows, streamArena,
                                                  useLosslessTimestamp);
 }
@@ -862,7 +862,7 @@ void readValues(ByteStream* source, vector_size_t size, BufferPtr nulls,
 
       int position = nonNullPositionCount - 1;
       auto rawNulls = nulls->as<uint64_t>();
-      for (int i = size - 1; i >= 0; i--) {
+      for (int i = size - 1; i >= 0 && position >= 0; i--) {
         rawValues[i] = rawValues[position];
         if (!bits::isBitNull(rawNulls, i)) {
           position--;
