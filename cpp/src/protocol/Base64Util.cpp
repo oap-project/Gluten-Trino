@@ -178,10 +178,9 @@ velox::VectorPtr readVariableWidthBlock(const velox::TypePtr& type, ByteStream& 
   if (nulls) {
     // TBD: Performance optimization
     for (auto i = 0; i < positionCount; ++i) {
-      if (velox::bits::isBitNull(nulls->as<uint64_t>(), i)) {
-        // rawBuffer[i] = velox::StringView(rawString + offset, rawLens[i]);
-        // offset += rawLens[i];
-        rawBuffer[i] = velox::StringView("", 0);
+      if (!velox::bits::isBitNull(nulls->as<uint64_t>(), i)) {
+        rawBuffer[i] = velox::StringView(rawString + offset, rawLens[i]);
+        offset += rawLens[i];
       } else {
         rawBuffer[i] = velox::StringView();
       }
