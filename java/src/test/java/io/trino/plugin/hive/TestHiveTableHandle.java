@@ -89,8 +89,7 @@ public class TestHiveTableHandle
                         ImmutableList.of())),
                 Optional.empty(),
                 Optional.empty(),
-                NO_ACID_TRANSACTION
-        );
+                NO_ACID_TRANSACTION);
         GlutenHiveTableHandle glutenHiveTableHandle = hiveTableHandle.getProtocol();
         String json = codec.toJson(glutenHiveTableHandle);
 
