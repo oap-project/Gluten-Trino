@@ -31,9 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.trino.plugin.hive.HiveColumnHandle.ColumnType.PARTITION_KEY;
 import static io.trino.plugin.hive.HiveColumnHandle.ColumnType.REGULAR;
-import static io.trino.plugin.hive.HiveType.HIVE_INT;
 import static io.trino.plugin.hive.HiveType.HIVE_LONG;
 import static io.trino.plugin.hive.acid.AcidTransaction.NO_ACID_TRANSACTION;
 import static io.trino.plugin.hive.util.HiveBucketing.BucketingVersion.BUCKETING_V1;
@@ -44,8 +42,6 @@ import static org.testng.Assert.assertEquals;
 public class TestHiveTableHandle
 {
     private static final Column BUCKET_COLUMN = new Column("id", HIVE_LONG, Optional.empty());
-    private static final Column PARTITION_COLUMN = new Column("date", HIVE_INT, Optional.empty());
-
     private static final HiveColumnHandle BUCKET_HIVE_COLUMN_HANDLE = new HiveColumnHandle(
             BUCKET_COLUMN.getName(),
             0,
@@ -53,14 +49,6 @@ public class TestHiveTableHandle
             BUCKET_COLUMN.getType().getType(TESTING_TYPE_MANAGER),
             Optional.empty(),
             REGULAR,
-            Optional.empty());
-    private static final HiveColumnHandle PARTITION_HIVE_COLUMN_HANDLE = new HiveColumnHandle(
-            PARTITION_COLUMN.getName(),
-            0,
-            PARTITION_COLUMN.getType(),
-            PARTITION_COLUMN.getType().getType(TESTING_TYPE_MANAGER),
-            Optional.empty(),
-            PARTITION_KEY,
             Optional.empty());
 
     @Test
