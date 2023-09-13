@@ -132,10 +132,10 @@ public final class ExpressionTranslator
         return new GlutenConstantExpression(constant.getValue(), constant.getType());
     }
 
-    private static GlutenSignature.FunctionQualifiedName renameTrinoBridgeFunction(String originName)
+    private static GlutenSignature.FunctionQualifiedName renameTrinoBridgeFunction(String originName, boolean isDecimal)
     {
         for (String trinoBridgeAddedFunctionName : GLUTEN_TRINO_ADDED_FUNCTION_NAMES) {
-            if (originName.toLowerCase(ENGLISH).startsWith(trinoBridgeAddedFunctionName)) {
+            if (originName.toLowerCase(ENGLISH).startsWith(trinoBridgeAddedFunctionName) && !isDecimal) {
                 return new GlutenSignature.FunctionQualifiedName("trino", "bridge", trinoBridgeAddedFunctionName);
             }
         }
@@ -148,9 +148,16 @@ public final class ExpressionTranslator
         String displayName = function.getFunctionId().toString();
         BoundSignature signature = function.getSignature();
 
+        boolean isArgumentDecimal = false;
+        for (GlutenRowExpression argument : arguments) {
+            if ("decimal".equalsIgnoreCase(argument.getType().getBaseName())) {
+                isArgumentDecimal = true;
+                break;
+            }
+        }
         // TBD: Mark variableArity as default false
         GlutenSignature functionSignature = new GlutenSignature(
-                renameTrinoBridgeFunction(signature.getName().toLowerCase(ENGLISH)),
+                renameTrinoBridgeFunction(signature.getName().toLowerCase(ENGLISH), isArgumentDecimal || "decimal".equalsIgnoreCase(signature.getReturnType().getBaseName())),
                 function.getFunctionKind(),
                 signature.getReturnType().getTypeSignature(),
                 signature.getArgumentTypes().stream().map(Type::getTypeSignature).collect(toImmutableList()),
@@ -163,9 +170,16 @@ public final class ExpressionTranslator
 
     protected static GlutenCallExpression buildCallExpression(String functionName, FunctionKind kind, Type returnType, List<GlutenRowExpression> arguments)
     {
+        boolean isArgumentDecimal = false;
+        for (GlutenRowExpression argument : arguments) {
+            if ("decimal".equalsIgnoreCase(argument.getType().getBaseName())) {
+                isArgumentDecimal = true;
+                break;
+            }
+        }
         // TBD: Mark variableArity as default false
         GlutenSignature functionSignature = new GlutenSignature(
-                renameTrinoBridgeFunction(functionName.toLowerCase(ENGLISH)),
+                renameTrinoBridgeFunction(functionName.toLowerCase(ENGLISH), isArgumentDecimal || "decimal".equalsIgnoreCase(returnType.getBaseName())),
                 kind,
                 returnType.getTypeSignature(),
                 arguments.stream().map(glutenRowExpression -> glutenRowExpression.getType().getTypeSignature()).collect(toImmutableList()),
