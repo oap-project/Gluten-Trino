@@ -80,6 +80,20 @@ class NativeConfigs {
   inline const uint32_t& getMaxHttpSessionReadBufferSize() const {
     return maxHttpSessionReadBufferSize;
   }
+  inline const bool& getSpillEnabled() const { return spillEnabled; }
+  inline const bool& getJoinSpillEnabled() const { return joinSpillEnabled; }
+  inline const bool& getAggSpillEnabled() const { return aggSpillEnabled; }
+  inline const bool& getOrderBySpillEnabled() const { return orderBySpillEnabled; }
+  inline const std::string& getSpillDir() const { return spillDir; }
+  inline const uint64_t& getJoinSpillMemoryThreshold() const {
+    return joinSpillMemoryThreshold;
+  }
+  inline const uint64_t& getAggregationSpillMemoryThreshold() const {
+    return aggregationSpillMemoryThreshold;
+  }
+  inline const uint64_t& getOrderBySpillMemoryThreshold() const {
+    return orderBySpillMemoryThreshold;
+  }
 
  private:
   // refer to io.trino.operator.DirectExchangeClientConfig#maxResponseSize
@@ -114,6 +128,14 @@ class NativeConfigs {
   uint64_t initMemoryPoolCapacity = 120 << 20;
   uint64_t minMemoryPoolTransferCapacity = 32 << 20;
   uint32_t maxHttpSessionReadBufferSize = 65536;
+  bool spillEnabled = false;
+  bool joinSpillEnabled = false;
+  bool aggSpillEnabled = false;
+  bool orderBySpillEnabled = false;
+  std::string spillDir = "";
+  uint64_t joinSpillMemoryThreshold = 0;
+  uint64_t aggregationSpillMemoryThreshold = 0;
+  uint64_t orderBySpillMemoryThreshold = 0;
 };
 
 using NativeConfigsPtr = std::shared_ptr<NativeConfigs>;

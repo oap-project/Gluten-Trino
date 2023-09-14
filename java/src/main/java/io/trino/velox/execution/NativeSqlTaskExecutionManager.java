@@ -39,6 +39,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+
 public class NativeSqlTaskExecutionManager
         implements Closeable
 {
@@ -195,11 +197,13 @@ public class NativeSqlTaskExecutionManager
                     if (!output.isEmpty()) {
                         taskExecution.updateOutput(partitionId, output);
                         // Register next listener.
-                        trinoBridge.registerOutputPartitionListener(nativeHandler,
-                                taskId.toString(),
-                                partitionId,
-                                taskExecution.getPartitionSequenceId(partitionId),
-                                maxOutputPageFetchBytes);
+                        taskExecution.isOutputBufferFull().addListener(() -> {
+                            trinoBridge.registerOutputPartitionListener(nativeHandler,
+                                    taskId.toString(),
+                                    partitionId,
+                                    taskExecution.getPartitionSequenceId(partitionId),
+                                    maxOutputPageFetchBytes);
+                        }, directExecutor());
                     }
                     else {
                         // Only partition-finished cases can enter this branch.

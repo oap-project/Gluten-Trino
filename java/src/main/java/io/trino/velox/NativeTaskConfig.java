@@ -42,6 +42,15 @@ public class NativeTaskConfig
     private long minMemoryPoolTransferCapacity = 32 << 20;
     private int maxHttpSessionReadBufferSize = 64 << 10;
 
+    private boolean joinSpillEnabled;
+    private boolean aggSpillEnabled;
+    private boolean orderBySpillEnabled;
+    private boolean spillEnabled;
+    private String spillDir;
+    private long aggregationSpillMemoryThreshold;
+    private long joinSpillMemoryThreshold;
+    private long orderBySpillMemoryThreshold;
+
     @NotNull
     public String getLogVerboseModules()
     {
@@ -260,6 +269,110 @@ public class NativeTaskConfig
     public NativeTaskConfig setMaxHttpSessionReadBufferSize(int maxHttpSessionReadBufferSize)
     {
         this.maxHttpSessionReadBufferSize = maxHttpSessionReadBufferSize;
+        return this;
+    }
+
+    @NotNull
+    public boolean isJoinSpillEnabled()
+    {
+        return joinSpillEnabled;
+    }
+
+    @NotNull
+    public boolean isAggSpillEnabled()
+    {
+        return aggSpillEnabled;
+    }
+
+    @NotNull
+    public boolean isOrderBySpillEnabled()
+    {
+        return orderBySpillEnabled;
+    }
+
+    @NotNull
+    public boolean isSpillEnabled()
+    {
+        return spillEnabled;
+    }
+
+    @NotNull
+    public String getSpillDir()
+    {
+        return spillDir;
+    }
+
+    @NotNull
+    public long getAggregationSpillMemoryThreshold()
+    {
+        return aggregationSpillMemoryThreshold;
+    }
+
+    @NotNull
+    public long getJoinSpillMemoryThreshold()
+    {
+        return joinSpillMemoryThreshold;
+    }
+
+    @NotNull
+    public long getOrderBySpillMemoryThreshold()
+    {
+        return orderBySpillMemoryThreshold;
+    }
+
+    @Config("native.agg-spill-enabled")
+    public NativeTaskConfig setAggSpillEnabled(boolean aggSpillEnabled)
+    {
+        this.aggSpillEnabled = aggSpillEnabled;
+        return this;
+    }
+
+    @Config("native.join-spill-enabled")
+    public NativeTaskConfig setJoinSpillEnabled(boolean joinSpillEnabled)
+    {
+        this.joinSpillEnabled = joinSpillEnabled;
+        return this;
+    }
+
+    @Config("native.orderby-spill-enabled")
+    public NativeTaskConfig setOrderBySpillEnabled(boolean orderBySpillEnabled)
+    {
+        this.orderBySpillEnabled = orderBySpillEnabled;
+        return this;
+    }
+
+    @Config("native.spill-enabled")
+    public NativeTaskConfig setSpillEnabled(boolean spillEnabled)
+    {
+        this.spillEnabled = spillEnabled;
+        return this;
+    }
+
+    @Config("native.spill-dir")
+    public NativeTaskConfig setSpillDir(String spillDir)
+    {
+        this.spillDir = spillDir;
+        return this;
+    }
+
+    @Config("native.agg-spill-memory-threshold")
+    public NativeTaskConfig setAggregationSpillMemoryThreshold(long aggregationSpillMemoryThreshold)
+    {
+        this.aggregationSpillMemoryThreshold = aggregationSpillMemoryThreshold;
+        return this;
+    }
+
+    @Config("native.join-spill-memory-threshold")
+    public NativeTaskConfig setJoinSpillMemoryThreshold(long joinSpillMemoryThreshold)
+    {
+        this.joinSpillMemoryThreshold = joinSpillMemoryThreshold;
+        return this;
+    }
+
+    @Config("native.orderby-spill-memory-threshold")
+    public NativeTaskConfig setOrderBySpillMemoryThreshold(long orderBySpillMemoryThreshold)
+    {
+        this.orderBySpillMemoryThreshold = orderBySpillMemoryThreshold;
         return this;
     }
 }

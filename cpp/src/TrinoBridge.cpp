@@ -13,6 +13,8 @@
  */
 #include "src/TrinoBridge.h"
 
+#include <filesystem>
+
 #include <fmt/core.h>
 #include <jni.h>
 #include <boost/stacktrace.hpp>
@@ -199,7 +201,9 @@ class JniHandle {
     driverExecutor_ = getDriverCPUExecutor(nativeConfigs_->getMaxWorkerThreads());
     exchangeIOExecutor_ =
         getExchangeIOCPUExecutor(nativeConfigs_->getExchangeClientThreads());
-
+    if (nativeConfigs->getSpillEnabled()) {
+      spillExecutor_ = getSpillExecutor();
+    }
     initializeVeloxMemory();
   }
 
@@ -250,6 +254,11 @@ class JniHandle {
                                         fragment.planNode->toString(true, true));
 
       auto task = exec::Task::create(id.fullId(), std::move(fragment), id.id(), queryCtx);
+      if (nativeConfigs_->getSpillDir() != "") {
+        std::string fullPath = nativeConfigs_->getSpillDir() + "/spill-" + id.fullId();
+        std::filesystem::create_directory(fullPath);
+        task->setSpillDirectory(fullPath);
+      }
       auto iter =
           taskMap_.insert({id.fullId(), TaskHandle::createTaskHandle(
                                             id, task, numPartitions, isBroadcast)});
@@ -449,6 +458,7 @@ class JniHandle {
   std::unordered_map<std::string, TaskHandlePtr> taskMap_;
   std::shared_ptr<folly::CPUThreadPoolExecutor> driverExecutor_;
   std::shared_ptr<folly::IOThreadPoolExecutor> exchangeIOExecutor_;
+  std::shared_ptr<folly::IOThreadPoolExecutor> spillExecutor_;
 
   std::shared_ptr<velox::cache::AsyncDataCache> cache_;
   std::unique_ptr<folly::IOThreadPoolExecutor> cacheExecutor_;
