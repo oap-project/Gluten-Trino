@@ -46,7 +46,7 @@ public class NativeTaskConfig
     private boolean aggSpillEnabled;
     private boolean orderBySpillEnabled;
     private boolean spillEnabled;
-    private String spillDir;
+    private String spillDir = "";
     private long aggregationSpillMemoryThreshold;
     private long joinSpillMemoryThreshold;
     private long orderBySpillMemoryThreshold;
