@@ -10,32 +10,22 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-# add_library( presto_type_converter OBJECT TypeSignatureTypeConverter.cpp
-# antlr/TypeSignatureLexer.cpp antlr/TypeSignatureParser.cpp)
-
-# target_link_libraries(presto_type_converter velox_type)
-
-# add_library(presto_types OBJECT PrestoToVeloxQueryPlan.cpp
-# PrestoToVeloxExpr.cpp PrestoToVeloxSplit.cpp)
-
-# add_dependencies(presto_types presto_operators presto_type_converter
-# velox_type velox_dwio_dwrf_proto)
-
-# target_link_libraries(presto_types presto_type_converter
-# velox_hive_partition_function velox_tpch_gen)
-
-# if(PRESTO_ENABLE_TESTING) add_subdirectory(tests) endif()
-
 add_library(
   presto_type_converter OBJECT
   PrestoToVeloxQueryPlan.cpp PrestoToVeloxExpr.cpp
   TypeSignatureTypeConverter.cpp antlr/TypeSignatureParser.cpp
   antlr/TypeSignatureLexer.cpp PrestoToVeloxSplit.cpp)
 
-add_dependencies(presto_type_converter velox_type velox_dwio_dwrf_proto trino_protocol)
+add_dependencies(presto_type_converter velox_type velox_dwio_dwrf_proto
+                 trino_protocol)
 
 target_link_libraries(presto_type_converter antlr4_static velox_tpch_connector
                       velox_tpch_gen velox_type)
+
 target_include_directories(
   presto_type_converter SYSTEM PRIVATE ${Protobuf_INCLUDE_DIRS}
                                        ${Antlr4_INCLUDE_DIRS})
+
+if(GLUTEN_TRINO_BUILDING_TESTS)
+  add_subdirectory(tests)
+endif()

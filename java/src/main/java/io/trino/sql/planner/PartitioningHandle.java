@@ -136,6 +136,13 @@ public class PartitioningHandle
 
     public GlutenPartitioningHandle getProtocol()
     {
+        if (connectorHandle instanceof SystemPartitioningHandle) {
+            SystemPartitioningHandle systemPartitioningHandle = (SystemPartitioningHandle) connectorHandle;
+            if (systemPartitioningHandle.getFunction() == SystemPartitioningHandle.SystemPartitionFunction.ROUND_ROBIN) {
+                throw new UnsupportedOperationException("Unsupported system partitioning function: " + SystemPartitioningHandle.SystemPartitionFunction.ROUND_ROBIN);
+            }
+        }
+
         Optional<GlutenConnectorId> glutenConnectorId = catalogHandle.map(handle -> new GlutenConnectorId(handle.getCatalogName()));
         Optional<GlutenConnectorTransactionHandle> glutenConnectorTransactionHandle = transactionHandle.map(ConnectorTransactionHandle::getProtocol);
         return new GlutenPartitioningHandle(glutenConnectorId, glutenConnectorTransactionHandle, connectorHandle);
