@@ -67,8 +67,8 @@ template <>
 velox::int128_t ByteStream::read<velox::int128_t>() {
   // Fetching int128_t value by reading two 64-bit blocks rather than one
   // 128-bit block to avoid general protection exception.
-  auto low = read<int64_t>();
   auto high = read<int64_t>();
+  auto low = read<int64_t>();
   return velox::HugeInt::build(high, low);
 }
 
