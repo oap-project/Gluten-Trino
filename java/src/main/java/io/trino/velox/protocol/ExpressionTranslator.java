@@ -209,6 +209,9 @@ public final class ExpressionTranslator
         {
             requireNonNull(toType, "toType is null.");
             requireNonNull(node, "node is null.");
+            if (node instanceof GlutenConstantExpression) {
+                return node;
+            }
             if (!toType.equals(node.getType())) {
                 String displayName = "CAST";
                 GlutenSignature newSignature = new GlutenSignature(
