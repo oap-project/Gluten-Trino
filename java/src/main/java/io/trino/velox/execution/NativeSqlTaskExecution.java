@@ -314,7 +314,6 @@ public class NativeSqlTaskExecution
         outputBuffer.enqueue(partitionId, outputs);
         long prev = partitionSequenceId[partitionId];
         partitionSequenceId[partitionId] += outputs.size();
-//        logger.info("Advanced sequenceId of output partition %d from %d to %d.", partitionId, prev, partitionSequenceId[partitionId]);
     }
 
     public ListenableFuture<Void> isOutputBufferFull()

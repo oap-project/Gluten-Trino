@@ -383,7 +383,7 @@ std::shared_ptr<folly::CPUThreadPoolExecutor> getDriverCPUExecutor(
     size_t threadNum = 8, const std::string& name = "Driver");
 
 std::shared_ptr<folly::IOThreadPoolExecutor> getExchangeIOCPUExecutor(
-    size_t threadNum = 8, const std::string& name = "ExchangeIO");
+    size_t threadNum = 8, const std::string& name = "SpillIO");
 
 std::shared_ptr<folly::IOThreadPoolExecutor> getSpillExecutor(
     size_t threadNum = 8, const std::string& name = "ExchangeIO");

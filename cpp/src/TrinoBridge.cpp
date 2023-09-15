@@ -13,11 +13,10 @@
  */
 #include "src/TrinoBridge.h"
 
-#include <filesystem>
-
 #include <fmt/core.h>
 #include <jni.h>
 #include <boost/stacktrace.hpp>
+#include <filesystem>
 
 #include "glog/logging.h"
 #include "protocol/trino_protocol.h"
@@ -254,9 +253,20 @@ class JniHandle {
                                         fragment.planNode->toString(true, true));
 
       auto task = exec::Task::create(id.fullId(), std::move(fragment), id.id(), queryCtx);
-      if (nativeConfigs_->getSpillDir() != "") {
-        std::string fullPath = nativeConfigs_->getSpillDir() + "/spill-" + id.fullId();
-        std::filesystem::create_directory(fullPath);
+      std::string parentPath = nativeConfigs_->getSpillDir();
+      if (!parentPath.empty()) {
+        if (!std::filesystem::is_directory(parentPath) ||
+            !std::filesystem::exists(parentPath)) {
+          bool ret = std::filesystem::create_directory(parentPath);
+          if (!ret) {
+            LOG(WARNING) << "Create directory " << parentPath << " failed!";
+          }
+        }
+        std::string fullPath = parentPath + "/spill-" + id.fullId();
+        bool ret = std::filesystem::create_directory(fullPath);
+        if (!ret) {
+          LOG(WARNING) << "Create directory " << fullPath << " failed!";
+        }
         task->setSpillDirectory(fullPath);
       }
       auto iter =
