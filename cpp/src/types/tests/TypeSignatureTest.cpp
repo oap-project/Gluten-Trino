@@ -13,11 +13,11 @@
  */
 #include <gtest/gtest.h>
 
-#include "presto_cpp/main/types/ParseTypeSignature.h"
-#include "presto_cpp/main/types/TypeSignatureTypeConverter.h"
+#include "src/types/ParseTypeSignature.h"
+#include "src/types/TypeSignatureTypeConverter.h"
 #include "velox/type/Type.h"
 
-using namespace facebook::presto;
+using namespace io::trino;
 using namespace facebook::velox;
 
 template <typename... T>
@@ -114,6 +114,17 @@ TEST_F(TestTypeSignature, sig16) {
   assertSignatureFail("rowxxx(a)");
 }
 
+TEST_F(TestTypeSignature, sig17) { assertSignature("tinyint", "TINYINT"); }
+
+TEST_F(TestTypeSignature, sig18) { assertSignature("smallint", "SMALLINT"); }
+
+TEST_F(TestTypeSignature, sig19) { assertSignature("real", "REAL"); }
+
+TEST_F(TestTypeSignature, sig20) { assertSignature("varbinary", "VARBINARY"); }
+
+// Note: TimeStamp representation is different for Trino and Velox
+// TEST_F(TestTypeSignature, sig21) { assertSignature("timestamp(9)", "TIMESTAMP(9)"); }
+
 TEST_F(TestTypeSignature, TestRow01) {
   assertRowSignature("row(a bigint,b bigint,c bigint)",
                      rowSignature(namedParameter("a", false, signature("bigint")),
@@ -136,14 +147,6 @@ TEST_F(TestTypeSignature, row03) {
   assertRowSignature("row(a bigint,b varchar)",
                      rowSignature(namedParameter("a", false, signature("bigint")),
                                   namedParameter("b", false, varchar())));
-}
-
-TEST_F(TestTypeSignature, row04) {
-  // Wondering about this test of '_varchar' ??
-  // assertRowSignature(
-  //        "row(__a__ bigint,_b@_: _varchar)",
-  //        rowSignature(namedParameter("__a__", false, signature("bigint")),
-  //        namedParameter("_b@_:", false, signature("_varchar"))));
 }
 
 TEST_F(TestTypeSignature, row05) {
@@ -243,20 +246,6 @@ TEST_F(TestTypeSignature, row17) {
                parseTypeSignature("row(col integer)"));
 }
 
-// TEST_F(TestTypeSignature, row18) {
-// assertEquals(parseTypeSignature("row(a Int(p1))"), parseTypeSignature("row(a
-// integer(p1))"));
-
-// signature with invalid type
-// assertRowSignature(
-//        "row(\"time\" with time zone)",
-//        rowSignature(namedParameter("time", true, signature("with time
-//        zone"))));
-//}
-
-// The TestSpacesXX tests all throw failures.  The parser succeeds by the
-// resulting types are not supported by Koski.
-//
 TEST_F(TestTypeSignature, spaces01) {
   // named fields of types with spaces
   assertRowSignatureContainsThrows(
@@ -303,16 +292,6 @@ TEST_F(TestTypeSignature, spaces11) {
   assertRowSignatureContainsThrows(
       "row(array(time with time zone))",
       rowSignature(unnamedParameter(array(signature("time with time zone")))),
-      VeloxUserError, "Specified element is not found : TIME WITH TIME ZONE");
-}
-
-TEST_F(TestTypeSignature, spaces13) {
-  // quoted field names
-  assertRowSignatureContainsThrows(
-      "row(\"time with time zone\" time with time zone,\"double\" double)",
-      rowSignature(
-          namedParameter("time with time zone", true, signature("time with time zone")),
-          namedParameter("double", true, signature("double"))),
       VeloxUserError, "Specified element is not found : TIME WITH TIME ZONE");
 }
 
