@@ -19,9 +19,11 @@ using namespace facebook::velox;
 
 namespace io::trino::bridge {
 
+// This file is directly translated from Trino's 'io.trino.plugin.tpch.TpchBucketFunction'
 class TpchPartitionFunction : public core::PartitionFunction {
  public:
-  explicit TpchPartitionFunction(int64_t rowsPerPartition, int numPartitions);
+  explicit TpchPartitionFunction(int64_t rowsPerBucket,
+                                 std::vector<int32_t> bucketToPartition);
 
   std::optional<uint32_t> partition(const RowVector& input,
                                     std::vector<uint32_t>& partitions);
@@ -30,17 +32,19 @@ class TpchPartitionFunction : public core::PartitionFunction {
   int64_t rowNumberFromOrderKey(int64_t orderKey);
 
  private:
-  const int64_t _rowsPerPartition;
-  const int _numPartitions;
+  const int64_t _rowsPerBucket;
+  const int32_t _bucketCount;
+  std::vector<int32_t> _bucketToPartition;
 
   DecodedVector decodedVector;
 };
 
 class TpchPartitionFunctionSpec : public core::PartitionFunctionSpec {
  public:
-  explicit TpchPartitionFunctionSpec(int64_t rowsPerPartition);
+  explicit TpchPartitionFunctionSpec(int64_t rowsPerBucket,
+                                     std::vector<int32_t> bucketToPartition);
 
-  std::unique_ptr<core::PartitionFunction> create(int numPartitions) const override;
+  std::unique_ptr<core::PartitionFunction> create(int /* numPartitions */) const override;
 
   std::string toString() const override;
 
@@ -50,7 +54,8 @@ class TpchPartitionFunctionSpec : public core::PartitionFunctionSpec {
                                                     void* context);
 
  private:
-  const int64_t _rowsPerPartition;
+  const int64_t _rowsPerBucket;
+  std::vector<int32_t> _bucketToPartition;
 };
 
 }  // namespace io::trino::bridge
