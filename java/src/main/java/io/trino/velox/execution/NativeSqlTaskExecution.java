@@ -14,6 +14,7 @@
 package io.trino.velox.execution;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ListenableFuture;
 import io.airlift.concurrent.SetThreadName;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
@@ -313,7 +314,11 @@ public class NativeSqlTaskExecution
         outputBuffer.enqueue(partitionId, outputs);
         long prev = partitionSequenceId[partitionId];
         partitionSequenceId[partitionId] += outputs.size();
-        logger.info("Advanced sequenceId of output partition %d from %d to %d.", partitionId, prev, partitionSequenceId[partitionId]);
+    }
+
+    public ListenableFuture<Void> isOutputBufferFull()
+    {
+        return outputBuffer.isFull();
     }
 
     private static final class CheckTaskCompletionOnBufferFinish

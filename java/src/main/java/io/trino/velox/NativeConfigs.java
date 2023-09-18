@@ -44,6 +44,14 @@ public class NativeConfigs
     private final long initMemoryPoolCapacity;
     private final long minMemoryPoolTransferCapacity;
     private final int maxHttpSessionReadBufferSize;
+    private final boolean joinSpillEnabled;
+    private final boolean aggSpillEnabled;
+    private final boolean orderBySpillEnabled;
+    private final boolean spillEnabled;
+    private final String spillDir;
+    private final long aggregationSpillMemoryThreshold;
+    private final long joinSpillMemoryThreshold;
+    private final long orderBySpillMemoryThreshold;
 
     @Inject
     public NativeConfigs(
@@ -72,7 +80,15 @@ public class NativeConfigs
                 nativeTaskConfig.getReservedMemoryPoolCapacityPercentage(),
                 nativeTaskConfig.getInitMemoryPoolCapacity(),
                 nativeTaskConfig.getMinMemoryPoolTransferCapacity(),
-                nativeTaskConfig.getMaxHttpSessionReadBufferSize());
+                nativeTaskConfig.getMaxHttpSessionReadBufferSize(),
+                nativeTaskConfig.isSpillEnabled(),
+                nativeTaskConfig.isJoinSpillEnabled(),
+                nativeTaskConfig.isAggSpillEnabled(),
+                nativeTaskConfig.isOrderBySpillEnabled(),
+                nativeTaskConfig.getSpillDir(),
+                nativeTaskConfig.getJoinSpillMemoryThreshold(),
+                nativeTaskConfig.getAggregationSpillMemoryThreshold(),
+                nativeTaskConfig.getOrderBySpillMemoryThreshold());
     }
 
     @JsonCreator
@@ -98,7 +114,15 @@ public class NativeConfigs
             @JsonProperty int reservedMemoryPoolCapacityPercentage,
             @JsonProperty long initMemoryPoolCapacity,
             @JsonProperty long minMemoryPoolTransferCapacity,
-            @JsonProperty int maxHttpSessionReadBufferSize)
+            @JsonProperty int maxHttpSessionReadBufferSize,
+            @JsonProperty boolean spillEnabled,
+            @JsonProperty boolean joinSpillEnabled,
+            @JsonProperty boolean aggSpillEnabled,
+            @JsonProperty boolean orderBySpillEnabled,
+            @JsonProperty String spillDir,
+            @JsonProperty long joinSpillMemoryThreshold,
+            @JsonProperty long aggregationSpillMemoryThreshold,
+            @JsonProperty long orderBySpillMemoryThreshold)
     {
         this.maxOutputPageBytes = maxOutputPageBytes;
         this.maxWorkerThreads = maxWorkerThreads;
@@ -122,6 +146,14 @@ public class NativeConfigs
         this.initMemoryPoolCapacity = initMemoryPoolCapacity;
         this.minMemoryPoolTransferCapacity = minMemoryPoolTransferCapacity;
         this.maxHttpSessionReadBufferSize = maxHttpSessionReadBufferSize;
+        this.spillEnabled = spillEnabled;
+        this.joinSpillEnabled = joinSpillEnabled;
+        this.aggSpillEnabled = aggSpillEnabled;
+        this.orderBySpillEnabled = orderBySpillEnabled;
+        this.spillDir = spillDir;
+        this.joinSpillMemoryThreshold = joinSpillMemoryThreshold;
+        this.aggregationSpillMemoryThreshold = aggregationSpillMemoryThreshold;
+        this.orderBySpillMemoryThreshold = orderBySpillMemoryThreshold;
     }
 
     @JsonProperty
@@ -254,5 +286,53 @@ public class NativeConfigs
     public int getMaxHttpSessionReadBufferSize()
     {
         return maxHttpSessionReadBufferSize;
+    }
+
+    @JsonProperty
+    public boolean getSpillEnabled()
+    {
+        return spillEnabled;
+    }
+
+    @JsonProperty
+    public boolean getJoinSpillEnabled()
+    {
+        return joinSpillEnabled;
+    }
+
+    @JsonProperty
+    public boolean getAggSpillEnabled()
+    {
+        return aggSpillEnabled;
+    }
+
+    @JsonProperty
+    public boolean getOrderBySpillEnabled()
+    {
+        return orderBySpillEnabled;
+    }
+
+    @JsonProperty
+    public String getSpillDir()
+    {
+        return spillDir;
+    }
+
+    @JsonProperty
+    public long getAggregationSpillMemoryThreshold()
+    {
+        return aggregationSpillMemoryThreshold;
+    }
+
+    @JsonProperty
+    public long getJoinSpillMemoryThreshold()
+    {
+        return joinSpillMemoryThreshold;
+    }
+
+    @JsonProperty
+    public long getOrderBySpillMemoryThreshold()
+    {
+        return orderBySpillMemoryThreshold;
     }
 }

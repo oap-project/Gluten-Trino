@@ -51,7 +51,14 @@ NativeConfigs::NativeConfigs(const std::string& configJsonString) {
   GET_KEY_FROM_JSON(reservedMemoryPoolCapacityPercentage, configJson);
   GET_KEY_FROM_JSON(initMemoryPoolCapacity, configJson);
   GET_KEY_FROM_JSON(minMemoryPoolTransferCapacity, configJson);
-  GET_KEY_FROM_JSON(maxHttpSessionReadBufferSize, configJson);
+  GET_KEY_FROM_JSON(spillEnabled, configJson);
+  GET_KEY_FROM_JSON(joinSpillEnabled, configJson);
+  GET_KEY_FROM_JSON(aggSpillEnabled, configJson);
+  GET_KEY_FROM_JSON(orderBySpillEnabled, configJson);
+  GET_KEY_FROM_JSON(spillDir, configJson);
+  GET_KEY_FROM_JSON(joinSpillMemoryThreshold, configJson);
+  GET_KEY_FROM_JSON(aggregationSpillMemoryThreshold, configJson);
+  GET_KEY_FROM_JSON(orderBySpillMemoryThreshold, configJson);
 
   if (configJson.contains("logVerboseModules")) {
     std::string _logVerboseModules;
@@ -95,8 +102,19 @@ NativeConfigs::NativeConfigs(const std::string& configJsonString) {
 }
 
 std::unordered_map<std::string, std::string> NativeConfigs::getQueryConfigs() const {
-  return {{core::QueryConfig::kMaxPartitionedOutputBufferSize,
-           std::to_string(getMaxOutputPageBytes())}};
+  return {
+      {core::QueryConfig::kMaxPartitionedOutputBufferSize,
+       std::to_string(getMaxOutputPageBytes())},
+      {core::QueryConfig::kSpillEnabled, std::to_string(getSpillEnabled())},
+      {core::QueryConfig::kJoinSpillEnabled, std::to_string(getJoinSpillEnabled())},
+      {core::QueryConfig::kAggregationSpillEnabled, std::to_string(getAggSpillEnabled())},
+      {core::QueryConfig::kOrderBySpillEnabled, std::to_string(getOrderBySpillEnabled())},
+      {core::QueryConfig::kJoinSpillMemoryThreshold,
+       std::to_string(getJoinSpillMemoryThreshold())},
+      {core::QueryConfig::kAggregationSpillMemoryThreshold,
+       std::to_string(getAggregationSpillMemoryThreshold())},
+      {core::QueryConfig::kOrderBySpillMemoryThreshold,
+       std::to_string(getJoinSpillMemoryThreshold())}};
 }
 
 std::unordered_map<std::string, std::shared_ptr<Config>>
