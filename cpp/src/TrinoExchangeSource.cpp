@@ -334,7 +334,8 @@ std::unique_ptr<exec::ExchangeSource> TrinoExchangeSource::createExchangeSource(
     return std::make_unique<TrinoExchangeSource>(folly::Uri(url), destination, queue,
                                                  pool);
   } else if (strncmp(url.c_str(), "https://", 8) == 0) {
-    const auto clientCertAndKeyPath = NativeConfigs::instance().getHttpsClientCertAndKeyPath();
+    const auto clientCertAndKeyPath =
+        NativeConfigs::instance().getHttpsClientCertAndKeyPath();
     const auto ciphers = NativeConfigs::instance().getHttpsSupportedCiphers();
     return std::make_unique<TrinoExchangeSource>(folly::Uri(url), destination, queue,
                                                  pool, clientCertAndKeyPath, ciphers);

@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#include "NativeConfigs.h"
 #include "utils/HttpClient.h"
+#include "NativeConfigs.h"
 #include "utils/ThreadUtils.h"
 #include "velox/common/base/Exceptions.h"
 
