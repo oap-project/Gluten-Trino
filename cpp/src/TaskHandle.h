@@ -80,7 +80,7 @@ class TaskHandle {
 };
 using TaskHandlePtr = boost::intrusive_ptr<TaskHandle>;
 
-void intrusive_ptr_add_ref(TaskHandle* handle) { handle->addRef(); }
-void intrusive_ptr_release(TaskHandle* handle) { handle->release(); }
+void intrusive_ptr_add_ref(TaskHandle* handle);
+void intrusive_ptr_release(TaskHandle* handle);
 
 }  // namespace io::trino::bridge

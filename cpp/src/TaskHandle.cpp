@@ -319,4 +319,7 @@ void TaskHandle::release() {
   }
 }
 
+void intrusive_ptr_add_ref(TaskHandle* handle) { handle->addRef(); }
+void intrusive_ptr_release(TaskHandle* handle) { handle->release(); }
+
 }  // namespace io::trino::bridge
