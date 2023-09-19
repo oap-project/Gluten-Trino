@@ -365,9 +365,11 @@ FOLLY_ALWAYS_INLINE int128_t toJavaDecimalValue(int128_t value) {
   // Java side of Trino is earlier than reading original higher part.
   uint64_t high = static_cast<uint64_t>(value & 0xffffffffffffffff);
   uint64_t low = static_cast<uint64_t>((value >> 64) & 0xffffffffffffffff);
-  // This method may be accessed twice during a query. In this case, value has already
-  // been reversed, so it shouldn't be reversed twice.
-  if (high == value) {
+  // This method may be accessed more than once during a query. In this case, value has
+  // already been reversed, so it shouldn't be reversed twice.
+  // FIXME: temporary solution, still lead to error when high bit of decimal value is not
+  // zero. Find a better way.
+  if (low != 0 || high == value) {
     value = (static_cast<int128_t>(high) << 64) | static_cast<int128_t>(low);
   }
   // Presto Java UnscaledDecimal128 representation uses signed magnitude
