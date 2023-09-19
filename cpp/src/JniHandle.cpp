@@ -54,10 +54,10 @@ extern void registerTrinoSumAggregate(const std::string& prefix);
 
 JniHandle::JniHandle(const NativeSqlTaskExecutionManagerPtr& javaManager)
     : javaManager_(javaManager) {
-  driverExecutor_ = getDriverCPUExecutor(nativeConfigs_->getMaxWorkerThreads());
-  exchangeIOExecutor_ =
-      getExchangeIOCPUExecutor(nativeConfigs_->getExchangeClientThreads());
-  if (nativeConfigs->getSpillEnabled()) {
+  auto& config = NativeConfigs::instance();
+  driverExecutor_ = getDriverCPUExecutor(config.getMaxWorkerThreads());
+  exchangeIOExecutor_ = getExchangeIOCPUExecutor(config.getExchangeClientThreads());
+  if (config.getSpillEnabled()) {
     spillExecutor_ = getSpillExecutor();
   }
 
@@ -111,53 +111,53 @@ void JniHandle::initializeVelox() {
 }
 
 void JniHandle::initializeVeloxMemory() {
-  const int64_t memoryBytes = nativeConfigs_->getMaxNodeMemory();
+  auto& config = NativeConfigs::instance();
+  const int64_t memoryBytes = config.getMaxNodeMemory();
   LOG(INFO) << "Starting with node memory " << (memoryBytes >> 30) << "GB";
 
-  if (nativeConfigs_->getUseMmapAllocator()) {
+  if (config.getUseMmapAllocator()) {
     memory::MmapAllocator::Options options;
     options.capacity = memoryBytes;
-    options.useMmapArena = nativeConfigs_->getUseMmapArena();
-    options.mmapArenaCapacityRatio = nativeConfigs_->getMmapArenaCapacityRatio();
+    options.useMmapArena = config.getUseMmapArena();
+    options.mmapArenaCapacityRatio = config.getMmapArenaCapacityRatio();
     allocator_ = std::make_shared<memory::MmapAllocator>(options);
   } else {
     allocator_ = memory::MemoryAllocator::createDefaultInstance();
   }
   memory::MemoryAllocator::setDefaultInstance(allocator_.get());
 
-  if (nativeConfigs_->getAsyncDataCacheEnabled()) {
+  if (config.getAsyncDataCacheEnabled()) {
     std::unique_ptr<cache::SsdCache> ssd;
-    const auto asyncCacheSsdSize = nativeConfigs_->getAsyncCacheSsdSize();
+    const auto asyncCacheSsdSize = config.getAsyncCacheSsdSize();
     if (asyncCacheSsdSize > 0) {
       constexpr int32_t kNumSsdShards = 16;
       cacheExecutor_ = std::make_unique<folly::IOThreadPoolExecutor>(kNumSsdShards);
-      auto asyncCacheSsdCheckpointSize = nativeConfigs_->getAsyncCacheSsdCheckpointSize();
-      auto asyncCacheSsdDisableFileCow = nativeConfigs_->getAsyncCacheSsdDisableFileCow();
+      auto asyncCacheSsdCheckpointSize = config.getAsyncCacheSsdCheckpointSize();
+      auto asyncCacheSsdDisableFileCow = config.getAsyncCacheSsdDisableFileCow();
       LOG(INFO) << "Initializing SSD cache with capacity " << (asyncCacheSsdSize >> 30)
                 << "GB, checkpoint size " << (asyncCacheSsdCheckpointSize >> 30)
                 << "GB, file cow "
                 << (asyncCacheSsdDisableFileCow ? "DISABLED" : "ENABLED");
       ssd = std::make_unique<velox::cache::SsdCache>(
-          nativeConfigs_->getAsyncCacheSsdPath(), asyncCacheSsdSize, kNumSsdShards,
+          config.getAsyncCacheSsdPath(), asyncCacheSsdSize, kNumSsdShards,
           cacheExecutor_.get(), asyncCacheSsdCheckpointSize, asyncCacheSsdDisableFileCow);
     }
     cache_ = velox::cache::AsyncDataCache::create(allocator_.get(), std::move(ssd));
   } else {
-    VELOX_CHECK_EQ(nativeConfigs_->getAsyncCacheSsdSize(), 0,
+    VELOX_CHECK_EQ(config.getAsyncCacheSsdSize(), 0,
                    "Async data cache cannot be disabled if ssd cache is enabled");
   }
 
   // Set up velox memory manager.
   memory::MemoryManagerOptions options;
   options.capacity = memoryBytes;
-  options.checkUsageLeak = nativeConfigs_->getEnableMemoryLeakCheck();
-  if (nativeConfigs_->getEnableMemoryArbitration()) {
-    options.arbitratorKind = nativeConfigs_->getMemoryArbitratorKind();
+  options.checkUsageLeak = config.getEnableMemoryLeakCheck();
+  if (config.getEnableMemoryArbitration()) {
+    options.arbitratorKind = config.getMemoryArbitratorKind();
     options.capacity =
-        memoryBytes * 100 / nativeConfigs_->getReservedMemoryPoolCapacityPercentage();
-    options.memoryPoolInitCapacity = nativeConfigs_->getInitMemoryPoolCapacity();
-    options.memoryPoolTransferCapacity =
-        nativeConfigs_->getMinMemoryPoolTransferCapacity();
+        memoryBytes * 100 / config.getReservedMemoryPoolCapacityPercentage();
+    options.memoryPoolInitCapacity = config.getInitMemoryPoolCapacity();
+    options.memoryPoolTransferCapacity = config.getMinMemoryPoolTransferCapacity();
   }
   const auto& manager = memory::MemoryManager::getInstance(options);
   LOG(INFO) << "Memory manager has been setup: " << manager.toString();
@@ -194,12 +194,12 @@ TaskHandlePtr JniHandle::createTaskHandle(const io::trino::TrinoTaskId& id,
     LOG(INFO) << fmt::format("Task {} contains {} output buffer.", id.fullId(),
                              numPartitions);
 
+    auto& config = NativeConfigs::instance();
     auto queryCtx = std::make_shared<core::QueryCtx>(
-        driverExecutor_.get(), std::move(nativeConfigs_->getQueryConfigs()),
-        std::move(nativeConfigs_->getConnectorConfigs()),
-        cache::AsyncDataCache::getInstance(),
-        memory::defaultMemoryManager().addRootPool(
-            id.fullId(), nativeConfigs_->getQueryMaxMemoryPerNode()));
+        driverExecutor_.get(), std::move(config.getQueryConfigs()),
+        std::move(config.getConnectorConfigs()), cache::AsyncDataCache::getInstance(),
+        memory::defaultMemoryManager().addRootPool(id.fullId(),
+                                                   config.getQueryMaxMemoryPerNode()));
 
     VeloxInteractiveQueryPlanConverter convertor(getPlanConvertorMemPool().get());
     core::PlanFragment fragment = convertor.toVeloxQueryPlan(plan, nullptr, id.fullId());
@@ -208,7 +208,7 @@ TaskHandlePtr JniHandle::createTaskHandle(const io::trino::TrinoTaskId& id,
                              fragment.planNode->toString(true, true));
 
     auto task = exec::Task::create(id.fullId(), std::move(fragment), id.id(), queryCtx);
-    std::string parentPath = nativeConfigs_->getSpillDir();
+    std::string parentPath = config.getSpillDir();
     if (!parentPath.empty()) {
       std::string fullPath = parentPath + "/spill-" + id.fullId();
       bool ret = std::filesystem::create_directories(fullPath);
@@ -236,7 +236,7 @@ TaskHandlePtr JniHandle::getTaskHandle(const io::trino::TrinoTaskId& id) {
 bool JniHandle::removeTask(const io::trino::TrinoTaskId& id) {
   return withWLock([this, &id]() {
     if (auto taskIter = taskMap_.find(id.fullId()); taskIter != taskMap_.end()) {
-      auto&& task = taskIter->second->task;
+      auto&& task = taskIter->second->getTask();
 
       printTaskStatus(id, task);
 
@@ -249,22 +249,22 @@ bool JniHandle::removeTask(const io::trino::TrinoTaskId& id) {
 }
 
 void JniHandle::terminateTask(const io::trino::TrinoTaskId& id, exec::TaskState state) {
-  TaskHandlePtr task_handle;
-  withRLock([this, &id, state, &task_handle]() {
+  TaskHandlePtr taskHandle;
+  withRLock([this, &id, &taskHandle]() {
     if (auto taskIter = taskMap_.find(id.fullId()); taskIter != taskMap_.end()) {
-      TaskHandlePtr new_ptr(taskIter->second);
-      task_handle.swap(new_ptr);
+      TaskHandlePtr newPtr(taskIter->second);
+      taskHandle.swap(newPtr);
     } else {
       LOG(WARNING) << fmt::format("Attempt to terminate a removed task {}", id.fullId());
     }
   });
-  if (task_handle) {
+  if (taskHandle) {
     switch (state) {
       case exec::TaskState::kCanceled:
-        task_handle->task->requestCancel().wait();
+        taskHandle->getTask()->requestCancel().wait();
         break;
       case exec::TaskState::kAborted:
-        task_handle->task->requestAbort().wait();
+        taskHandle->getTask()->requestAbort().wait();
         break;
       default:
         break;

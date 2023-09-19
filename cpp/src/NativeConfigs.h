@@ -13,6 +13,7 @@
  */
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <thread>
@@ -100,7 +101,14 @@ class NativeConfigs : public boost::noncopyable {
   }
   inline const int32_t& getConcurrentLifespans() const { return concurrentLifespans; }
   inline const std::string& getBaseUrl() const { return baseUrl; }
-  inline const std::string& getInstanceId() const { return instanceId; };
+  inline const std::string& getInstanceId() const { return instanceId; }
+  inline const uint64_t& getHttpMaxAllocateBytes() const { return httpMaxAllocateBytes; }
+  inline const std::string& getHttpsClientCertAndKeyPath() const {
+    return httpsClientCertAndKeyPath;
+  }
+  inline const std::string& getHttpsSupportedCiphers() const {
+    return httpsSupportedCiphers;
+  }
 
  private:
   std::atomic_bool initialized{false};
@@ -148,8 +156,9 @@ class NativeConfigs : public boost::noncopyable {
   int32_t concurrentLifespans = 10;
   std::string baseUrl = "http://localhost:9090";
   std::string instanceId = "";
+  uint64_t httpMaxAllocateBytes = 64 << 10;
+  std::string httpsClientCertAndKeyPath = "";
+  std::string httpsSupportedCiphers = "ECDHE-ECDSA-AES256-GCM-SHA384,AES256-GCM-SHA384";
 };
-
-using NativeConfigsPtr = std::shared_ptr<NativeConfigs>;
 
 }  // namespace io::trino::bridge
