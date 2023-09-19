@@ -1,7 +1,5 @@
 #include "utils/ThreadUtils.h"
 
-using namespace facebook;
-
 namespace io::trino::bridge {
 
 std::shared_ptr<folly::CPUThreadPoolExecutor> getDriverCPUExecutor(

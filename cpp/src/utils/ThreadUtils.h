@@ -13,14 +13,11 @@
  */
 #pragma once
 
-#include <folly/SocketAddress.h>
-#include <folly/executors/IOThreadPoolExecutor.h>
 #include <memory>
 #include <string>
-#include <unordered_map>
-#include "velox/core/Config.h"
 
 #include "folly/executors/CPUThreadPoolExecutor.h"
+#include "folly/executors/IOThreadPoolExecutor.h"
 
 namespace io::trino::bridge {
 
