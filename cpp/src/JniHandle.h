@@ -16,27 +16,21 @@
 
 #include <memory>
 #include "boost/intrusive_ptr.hpp"
-#include "velox/exec/TaskStructs.h"
+#include "folly/executors/CPUThreadPoolExecutor.h"
+#include "folly/executors/IOThreadPoolExecutor.h"
+#include "velox/exec/Task.h"
 
 namespace facebook::velox {
 namespace memory {
 class MemoryPool;
 class MemoryAllocator;
 }  // namespace memory
-namespace exec {
-class Task;
-}
 namespace cache {
 class AsyncDataCache;
 }
 }  // namespace facebook::velox
 
 using namespace facebook::velox;
-
-namespace folly {
-class CPUThreadPoolExecutor;
-class IOThreadPoolExecutor;
-}  // namespace folly
 
 namespace io::trino {
 class TrinoTaskId;

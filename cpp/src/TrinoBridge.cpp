@@ -205,8 +205,8 @@ JNIEXPORT jlong JNICALL Java_io_trino_jni_TrinoBridge_init(JNIEnv* env, jobject 
 
   JniHandle* handle =
       new JniHandle(std::make_shared<NativeSqlTaskExecutionManager>(manager));
+  handle->initializeVelox();
   jniHandleHolder.emplace_back(handle);
-
   return reinterpret_cast<int64_t>(handle);
 }
 
