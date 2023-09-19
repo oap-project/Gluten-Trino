@@ -26,8 +26,16 @@ namespace io::trino::bridge {
     JSON.at(#KEY).get_to(KEY);       \
   }
 
-NativeConfigs::NativeConfigs(const std::string& configJsonString) {
-  LOG(INFO) << "Get configJsonString is " << configJsonString;
+NativeConfigs& NativeConfigs::instance() {
+  static NativeConfigs configs;
+  return configs;
+}
+
+void NativeConfigs::initialize(const std::string& configJsonString) {
+  if (initialized) {
+    return;
+  }
+  VLOG(2) << "Initializing Native Configs with config json: " << configJsonString;
 
   nlohmann::json configJson = nlohmann::json::parse(configJsonString);
   GET_KEY_FROM_JSON(maxOutputPageBytes, configJson);
@@ -59,6 +67,9 @@ NativeConfigs::NativeConfigs(const std::string& configJsonString) {
   GET_KEY_FROM_JSON(joinSpillMemoryThreshold, configJson);
   GET_KEY_FROM_JSON(aggregationSpillMemoryThreshold, configJson);
   GET_KEY_FROM_JSON(orderBySpillMemoryThreshold, configJson);
+  GET_KEY_FROM_JSON(concurrentLifespans, configJson);
+  GET_KEY_FROM_JSON(baseUrl, configJson);
+  GET_KEY_FROM_JSON(instanceId, configJson);
 
   if (configJson.contains("logVerboseModules")) {
     std::string _logVerboseModules;
@@ -99,6 +110,8 @@ NativeConfigs::NativeConfigs(const std::string& configJsonString) {
       start = ++index;
     }
   }
+
+  initialized = true;
 }
 
 std::unordered_map<std::string, std::string> NativeConfigs::getQueryConfigs() const {

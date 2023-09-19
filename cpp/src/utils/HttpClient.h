@@ -17,8 +17,8 @@
 #include <proxygen/lib/http/connpool/SessionPool.h>
 #include <proxygen/lib/http/session/HTTPUpstreamSession.h>
 #include <velox/common/memory/MemoryPool.h>
-#include "utils/Configs.h"
 #include "utils/HttpConstants.h"
+#include "utils/ThreadUtils.h"
 #include "velox/common/base/Exceptions.h"
 
 namespace io::trino::bridge::http {

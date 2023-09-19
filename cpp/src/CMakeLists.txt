@@ -45,8 +45,6 @@ option(GLUTEN_TRINO_BUILDING_TESTS "Building Tests for Gluten Trino." ON)
 
 if(GLUTEN_TRINO_ENABLE_SANITIZER)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
-else()
-  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
 endif()
 
 add_subdirectory(functions)
@@ -56,9 +54,9 @@ add_subdirectory(protocol)
 set(TRINO_CPP_UTILS_SOURCES utils/JniUtils.cpp)
 
 set(TRINO_EXCHANGE_SOURCES TrinoExchangeSource.cpp utils/HttpClient.cpp
-                           utils/Configs.cpp)
+        utils/ThreadUtils.cpp)
 
-set(SOURCES TrinoBridge.cpp utils.cpp NativeConfigs.cpp
+set(SOURCES TrinoBridge.cpp utils.cpp NativeConfigs.cpp JniHandle.cpp TaskHandle.cpp PartitionOutputData.cpp
             ${TRINO_CPP_UTILS_SOURCES})
 
 if(ENABLE_TRINO_EXCHANGE)

@@ -13,8 +13,8 @@
  */
 #include <velox/common/base/Exceptions.h>
 
-#include "utils/Configs.h"
 #include "utils/HttpClient.h"
+#include "utils/ThreadUtils.h"
 
 using namespace facebook;
 
