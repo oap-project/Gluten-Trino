@@ -56,7 +56,7 @@ set(TRINO_CPP_UTILS_SOURCES utils/JniUtils.cpp)
 set(TRINO_EXCHANGE_SOURCES TrinoExchangeSource.cpp utils/HttpClient.cpp
         utils/ThreadUtils.cpp)
 
-set(SOURCES TrinoBridge.cpp utils.cpp NativeConfigs.cpp JniHandle.cpp TaskHandle.cpp PartitionOutputData.cpp
+set(SOURCES TrinoBridge.cpp NativeConfigs.cpp JniHandle.cpp TaskHandle.cpp PartitionOutputData.cpp
             ${TRINO_CPP_UTILS_SOURCES})
 
 if(ENABLE_TRINO_EXCHANGE)
