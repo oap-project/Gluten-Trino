@@ -16,6 +16,7 @@
 #include "NativeConfigs.h"
 #include "PartitionOutputData.h"
 #include "protocol/trino_protocol.h"
+#include "utils/ThreadUtils.h"
 #include "velox/exec/Task.h"
 
 namespace io::trino::bridge {
@@ -23,7 +24,8 @@ namespace io::trino::bridge {
 TaskHandle::TaskHandle(const io::trino::TrinoTaskId& id,
                        io::trino::bridge::TaskHandle::TaskPtr task_ptr,
                        size_t numPartitions, bool broadcast)
-    : taskId(id),
+    : driverExecutor_(getDriverCPUExecutor()),
+      taskId(id),
       task(std::move(task_ptr)),
       outputs(numPartitions),
       isBroadcast(broadcast),
