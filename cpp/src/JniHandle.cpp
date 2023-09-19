@@ -13,6 +13,9 @@
  */
 
 #include "JniHandle.h"
+
+#include <filesystem>
+
 #include "NativeConfigs.h"
 #include "TaskHandle.h"
 #include "protocol/trino_protocol.h"

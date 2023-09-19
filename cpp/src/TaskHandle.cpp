@@ -110,8 +110,8 @@ io::trino::protocol::TaskStatus TaskHandle::getTaskStatus() {
   taskStatus.state = toTrinoTaskState(task->state());
   taskStatus.memoryReservation = {static_cast<double>(task->pool()->currentBytes()),
                                   io::trino::protocol::DataUnit::BYTE};
-  taskStatus.self =
-      fmt::format("{}/v1/task/{}", NativeConfigs::instance().getBaseUrl(), taskId);
+  taskStatus.self = fmt::format("{}/v1/task/{}", NativeConfigs::instance().getBaseUrl(),
+                                taskId.fullId());
 
   return taskStatus;
 }
