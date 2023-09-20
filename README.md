@@ -1,4 +1,4 @@
-# Gluten-Trino: Plugin to Double Trino's Performance
+# Gluten-Trino: Plugin to Boost Trino's Performance
 
 This plugin is still under active development now, and doesn't have a stable release. Welcome to evaluate it. If you encounter any issues or have any suggestions, please submit to our issue list. We'd like to hear your feedback
 
@@ -86,3 +86,9 @@ gluten-trino.plugin.dir=/path/to/Gluten-Trino-{Trino-version}.jar
 ## Contact
 Gluten-Trino was initiated by Intel and Alibaba in 2023. If you are interested in Gluten project, please contact below email address for further discussion.
 cheng.a.xu@intel.com; kunshang.ji@intel.com; jiang1.li@intel.com
+
+## Known issue and limitation
+
+Since this repo is a bridge between Trino and Velox, there are some limitations inherited from Velox, like only x86 architecture and hive connector are supported and verified.
+
+Meanwhile, this project is developed based on Trino 411 version, not latest version.
