@@ -59,6 +59,7 @@ void NativeConfigs::initialize(const std::string& configJsonString) {
   GET_KEY_FROM_JSON(reservedMemoryPoolCapacityPercentage, configJson);
   GET_KEY_FROM_JSON(initMemoryPoolCapacity, configJson);
   GET_KEY_FROM_JSON(minMemoryPoolTransferCapacity, configJson);
+  GET_KEY_FROM_JSON(maxHttpSessionReadBufferSize, configJson);
   GET_KEY_FROM_JSON(spillEnabled, configJson);
   GET_KEY_FROM_JSON(joinSpillEnabled, configJson);
   GET_KEY_FROM_JSON(aggSpillEnabled, configJson);
