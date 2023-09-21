@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_executable(gluten_trino_tests NativeConfigsTest.cpp PartitionOutputDataTest.cpp)
+add_executable(gluten_trino_tests NativeConfigsTest.cpp
+                                  PartitionOutputDataTest.cpp)
 add_test(gluten_trino_tests gluten_trino_tests)
 target_link_libraries(gluten_trino_tests gluten_trino gtest_main)
