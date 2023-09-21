@@ -123,4 +123,4 @@ target_link_libraries(gluten_trino PUBLIC ${FMT} Folly::folly ${RE2}
 
 if(GLUTEN_TRINO_BUILDING_TESTS)
   add_subdirectory(tests)
-endif ()
+endif()
