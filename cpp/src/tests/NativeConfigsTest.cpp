@@ -28,7 +28,7 @@ TEST(NativeConfigsTests, basic) {
       "\"exchangeClientThreads\": 5,"
       "\"queryMaxMemoryPerNode\": 6,"
       "\"logVerboseModules\": \"a=1,b=2,c=3\","
-      "\"maxNodeMemory\": \"8\","
+      "\"maxNodeMemory\": 8,"
       "\"useMmapAllocator\": false,"
       "\"useMmapArena\": true,"
       "\"mmapArenaCapacityRatio\": 11,"
