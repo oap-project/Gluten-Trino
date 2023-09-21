@@ -10,8 +10,10 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-add_executable(type_convertor_test TypeSignatureTest.cpp RowExpressionTest.cpp
-                                   VeloxSplitConvertorTest.cpp)
+add_executable(
+  type_convertor_test
+  TypeSignatureConverterTest.cpp RowExpressionConverterTest.cpp
+  VeloxSplitConverterTest.cpp PlanNodeConverterTest.cpp)
 
 add_test(
   NAME type_convertor_test
