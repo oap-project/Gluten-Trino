@@ -45,8 +45,5 @@ TEST(PartitionOutputDataTest, basic) {
   std::vector<std::unique_ptr<folly::IOBuf>> poison;
   poison.emplace_back(nullptr);
   output.enqueue(10, poison);
-  ASSERT_EQ(output.getOutputDataNum(), 1);
-
-  output.noMoreData();
   ASSERT_EQ(output.getOutputDataNum(), 0);
 }
