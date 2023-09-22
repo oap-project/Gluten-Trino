@@ -1,6 +1,4 @@
 #!/bin/bash
-# Copyright (c) Facebook, Inc. and its affiliates.
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -212,5 +210,9 @@ cd build
 make -j ${JOBS} install
 popd
 popd
+
+# install some dependencies for generating protocol files.
+pip3 install --upgrade pip # need upgrade before installing, otherwise errors occur here.
+pip3 install regex pyyaml chevron clang-format
 
 echo "Every dependencies have been installed in your environment, but you still need to install JDK manually which version must be no less than 17."
