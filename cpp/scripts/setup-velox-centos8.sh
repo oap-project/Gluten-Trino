@@ -20,11 +20,16 @@ set -o pipefail
 PROJECT_DIR="$(cd "`dirname "$0"`"; cd ..; pwd)"
 THIRDPARTY_DIR=${PROJECT_DIR}/thirdparty
 
+if [[ ! -d ${THIRDPARTY_DIR} ]]; then
+  mkdir -p ${THIRDPARTY_DIR}
+fi
+
 source ${PROJECT_DIR}/scripts/setup-helper-functions.sh
 
 BUILD_FLAGS="$(get_cxx_flags)"
-export CXXFLAGS="${BUILD_FLAGS}"
-export CPPFLAGS="${BUILD_FLAGS}"
+export CFLAGS="-fPIC ${BUILD_FLAGS}"
+export CXXFLAGS="-fPIC ${BUILD_FLAGS}"
+export CPPFLAGS="-fPIC ${BUILD_FLAGS}"
 BUILD_TYPE=RelWithDebInfo
 JOBS=$(nproc)
 
@@ -52,52 +57,64 @@ dnf_install conda
 # Activate gcc9; enable errors on unset variables afterwards.
 source /opt/rh/gcc-toolset-9/enable || exit 1
 
-function cmake_install_deps {
-  cmake -B "$1-build" -GNinja -DCMAKE_CXX_STANDARD=17 \
-    -DCMAKE_CXX_FLAGS="${CFLAGS}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=Release -Wno-dev "$@"
-  ninja -C "$1-build" install
-}
-
-function wget_and_untar {
-  local URL=$1
-  local DIR=$2
-  mkdir -p "${DIR}"
-  wget -q --max-redirect 3 -O - "${URL}" | tar -xz -C "${DIR}" --strip-components=1
-}
-
-
-# Fetch sources.
-wget_and_untar https://github.com/gflags/gflags/archive/v2.2.2.tar.gz gflags &
-wget_and_untar https://github.com/google/glog/archive/v0.4.0.tar.gz glog &
-wget_and_untar http://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz lzo &
-wget_and_untar https://boostorg.jfrog.io/artifactory/main/release/1.72.0/source/boost_1_72_0.tar.gz boost &
-wget_and_untar https://github.com/google/snappy/archive/1.1.8.tar.gz snappy &
-wget_and_untar https://github.com/fmtlib/fmt/archive/8.0.1.tar.gz fmt &
-
-wait  # For cmake and source downloads to complete.
-
-# Build & install.
-(
-  cd lzo
-  ./configure --prefix=/usr --enable-shared --disable-static --docdir=/usr/share/doc/lzo-2.10
-  make "-j$(nproc)"
-  make install
-)
-
-(
-  cd boost
-  ./bootstrap.sh --prefix=/usr/local
-  ./b2 "-j$(nproc)" -d0 install threading=multi
-)
-
-cmake_install_deps gflags -DBUILD_SHARED_LIBS=ON -DBUILD_STATIC_LIBS=ON -DBUILD_gflags_LIB=ON -DLIB_SUFFIX=64 -DCMAKE_INSTALL_PREFIX:PATH=/usr
-cmake_install_deps glog -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX:PATH=/usr
-cmake_install_deps snappy -DSNAPPY_BUILD_TESTS=OFF
-cmake_install_deps fmt -DFMT_TEST=OFF
-
 dnf clean all
 
 FACEBOOK_TOOLCHAIN_VERSION="v2022.11.14.00"
+
+# build lzo 2.10
+pushd ${THIRDPARTY_DIR}
+wget http://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz
+tar zxf lzo-2.10.tar.gz
+cd lzo-2.10
+./configure --prefix=/usr --enable-shared --disable-static --docdir=/usr/share/doc/lzo-2.10
+make "-j${JOBS}"
+make install
+popd
+
+# build boost 1.72.0
+pushd ${THIRDPARTY_DIR}
+wget https://boostorg.jfrog.io/artifactory/main/release/1.72.0/source/boost_1_72_0.tar.gz
+tar zxf boost_1_72_0.tar.gz
+cd boost_1_72_0
+./bootstrap.sh --prefix=/usr/local
+./b2 "-j${JOBS}" -d0 install threading=multi
+popd
+
+# build gflags 2.2.2
+pushd ${THIRDPARTY_DIR}
+wget -O gflags-2.2.2.tar.gz https://github.com/gflags/gflags/archive/v2.2.2.tar.gz
+tar zxf gflags-2.2.2.tar.gz
+mkdir -p gflags-2.2.2/bld && cd gflags-2.2.2/bld
+cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_SHARED_LIBS=ON -DBUILD_STATIC_LIBS=ON -DBUILD_gflags_LIB=ON -DLIB_SUFFIX=64 -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_CXX_FLAGS="${CXXFLAGS}" -G Ninja
+ninja install
+popd
+
+# build glog 0.4.0
+pushd ${THIRDPARTY_DIR}
+wget -O glog-0.4.0.tar.gz https://github.com/google/glog/archive/v0.4.0.tar.gz
+tar zxf glog-0.4.0.tar.gz
+mkdir -p glog-0.4.0/bld && cd glog-0.4.0/bld
+cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_CXX_FLAGS="${CXXFLAGS}" -G Ninja
+ninja install
+popd
+
+# build snappy 1.1.8
+pushd ${THIRDPARTY_DIR}
+wget -O snappy-1.1.8.tar.gz https://github.com/google/snappy/archive/1.1.8.tar.gz
+tar zxf snappy-1.1.8.tar.gz
+mkdir -p snappy-1.1.8/bld && cd snappy-1.1.8/bld
+cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DSNAPPY_BUILD_TESTS=OFF -DCMAKE_CXX_FLAGS="${CXXFLAGS}" -G Ninja
+ninja install
+popd
+
+# build fmt 8.0.1
+pushd ${THIRDPARTY_DIR}
+wget -O fmt-8.0.1.tar.gz https://github.com/fmtlib/fmt/archive/8.0.1.tar.gz
+tar zxf fmt-8.0.1.tar.gz
+mkdir fmt-8.0.1/bld && cd fmt-8.0.1/bld
+cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DFMT_TEST=OFF -DCMAKE_CXX_FLAGS="${CXXFLAGS}" -G Ninja
+ninja install
+popd
 
 # build libsodium 1.0.17
 pushd ${THIRDPARTY_DIR}
@@ -187,10 +204,13 @@ mkdir -p hawq/depends/libhdfs3/build
 mkdir -p hawq/depends/thirdparty/googletest/build && cd hawq/depends/thirdparty/googletest/build
 cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -Dgtest_force_shared_crt=ON -DCMAKE_CXX_FLAGS="${CXXFLAGS}" -G Ninja
 ninja
-cd $BUILD_BASE_DIR/hawq/depends/libhdfs3
+pushd ${THIRDPARTY_DIR}/hawq/depends/libhdfs3
 sed -i "/-lc++/d" CMake/FindGoogleTest.cmake
 sed -i "s/-dumpversion/--version/g" CMake/Platform.cmake
 cd build
 ./../bootstrap --prefix=/usr/local
 make -j ${JOBS} install
 popd
+popd
+
+echo "Every dependencies have been installed in your environment, but you still need to install JDK manually which version must be no less than 17."
