@@ -11,10 +11,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <velox/common/base/Exceptions.h>
 
-#include "utils/Configs.h"
 #include "utils/HttpClient.h"
+#include "NativeConfigs.h"
+#include "utils/ThreadUtils.h"
+#include "velox/common/base/Exceptions.h"
 
 using namespace facebook;
 
@@ -33,7 +34,7 @@ HttpClient::HttpClient(folly::EventBase* eventBase, const folly::SocketAddress& 
       clientCertAndKeyPath_(clientCertAndKeyPath),
       ciphers_(ciphers),
       reportOnBodyStatsFunc_(std::move(reportOnBodyStatsFunc)),
-      maxResponseAllocBytes_(SystemConfig::instance()->httpMaxAllocateBytes()) {
+      maxResponseAllocBytes_(NativeConfigs::instance().getHttpMaxAllocateBytes()) {
   sessionPool_ = std::make_unique<proxygen::SessionPool>(nullptr, 10);
   // clientCertAndKeyPath_ and ciphers_ both needed to be set for https. For
   // http, both need to be unset. One set and another is not set is not a valid

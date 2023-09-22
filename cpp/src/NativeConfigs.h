@@ -13,10 +13,13 @@
  */
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <thread>
 #include <unordered_map>
+
+#include "boost/noncopyable.hpp"
 
 #include "velox/common/base/BitUtil.h"
 
@@ -28,9 +31,11 @@ using namespace facebook::velox;
 
 namespace io::trino::bridge {
 
-class NativeConfigs {
+class NativeConfigs : public boost::noncopyable {
  public:
-  explicit NativeConfigs(const std::string& configJsonString);
+  static NativeConfigs& instance();
+
+  void initialize(const std::string& configJsonString);
 
   std::unordered_map<std::string, std::string> getQueryConfigs() const;
 
@@ -94,8 +99,20 @@ class NativeConfigs {
   inline const uint64_t& getOrderBySpillMemoryThreshold() const {
     return orderBySpillMemoryThreshold;
   }
+  inline const int32_t& getConcurrentLifespans() const { return concurrentLifespans; }
+  inline const std::string& getBaseUrl() const { return baseUrl; }
+  inline const std::string& getInstanceId() const { return instanceId; }
+  inline const uint64_t& getHttpMaxAllocateBytes() const { return httpMaxAllocateBytes; }
+  inline const std::string& getHttpsClientCertAndKeyPath() const {
+    return httpsClientCertAndKeyPath;
+  }
+  inline const std::string& getHttpsSupportedCiphers() const {
+    return httpsSupportedCiphers;
+  }
 
  private:
+  std::atomic_bool initialized{false};
+
   // refer to io.trino.operator.DirectExchangeClientConfig#maxResponseSize
   int64_t maxOutputPageBytes = 16 << 20;
   // refer to io.trino.execution.TaskManagerConfig#maxWorkerThreads
@@ -136,8 +153,12 @@ class NativeConfigs {
   uint64_t joinSpillMemoryThreshold = 0;
   uint64_t aggregationSpillMemoryThreshold = 0;
   uint64_t orderBySpillMemoryThreshold = 0;
+  int32_t concurrentLifespans = 10;
+  std::string baseUrl = "http://localhost:9090";
+  std::string instanceId = "";
+  uint64_t httpMaxAllocateBytes = 64 << 10;
+  std::string httpsClientCertAndKeyPath = "";
+  std::string httpsSupportedCiphers = "ECDHE-ECDSA-AES256-GCM-SHA384,AES256-GCM-SHA384";
 };
-
-using NativeConfigsPtr = std::shared_ptr<NativeConfigs>;
 
 }  // namespace io::trino::bridge

@@ -14,17 +14,17 @@
 #include "TrinoExchangeSource.h"
 
 #include <fmt/core.h>
-#include <folly/SocketAddress.h>
 #include <re2/re2.h>
 #include <sstream>
 
+#include "NativeConfigs.h"
+#include "folly/SocketAddress.h"
 #include "protocol/trino_protocol.h"
+#include "utils/Counters.h"
 #include "velox/common/base/Exceptions.h"
 #include "velox/common/base/StatsReporter.h"
 #include "velox/common/testutil/TestValue.h"
 #include "velox/exec/Operator.h"
-
-#include "utils/Counters.h"
 
 using namespace facebook::velox;
 
@@ -334,10 +334,9 @@ std::unique_ptr<exec::ExchangeSource> TrinoExchangeSource::createExchangeSource(
     return std::make_unique<TrinoExchangeSource>(folly::Uri(url), destination, queue,
                                                  pool);
   } else if (strncmp(url.c_str(), "https://", 8) == 0) {
-    const auto systemConfig = SystemConfig::instance();
     const auto clientCertAndKeyPath =
-        systemConfig->httpsClientCertAndKeyPath().value_or("");
-    const auto ciphers = systemConfig->httpsSupportedCiphers();
+        NativeConfigs::instance().getHttpsClientCertAndKeyPath();
+    const auto ciphers = NativeConfigs::instance().getHttpsSupportedCiphers();
     return std::make_unique<TrinoExchangeSource>(folly::Uri(url), destination, queue,
                                                  pool, clientCertAndKeyPath, ciphers);
   }

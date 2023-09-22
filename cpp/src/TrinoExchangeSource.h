@@ -15,8 +15,8 @@
 
 #include <folly/Uri.h>
 
-#include "utils/Configs.h"
 #include "utils/HttpClient.h"
+#include "utils/ThreadUtils.h"
 #include "velox/common/memory/Memory.h"
 #include "velox/exec/Exchange.h"
 
