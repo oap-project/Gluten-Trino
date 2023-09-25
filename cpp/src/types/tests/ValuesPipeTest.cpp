@@ -13,56 +13,23 @@
  */
 #include <gtest/gtest.h>
 
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
-#include <ios>
-#include <iosfwd>
-
-#include "presto_cpp/main/common/tests/test_json.h"
-#include "presto_cpp/main/types/PrestoToVeloxQueryPlan.h"
-#include "presto_cpp/presto_protocol/presto_protocol.h"
+#include "src/protocol/trino_protocol.h"
+#include "src/types/PrestoToVeloxQueryPlan.h"
 #include "velox/exec/Operator.h"
 #include "velox/type/Type.h"
 #include "velox/vector/FlatVector.h"
 
-namespace fs = boost::filesystem;
-
-using namespace facebook::presto;
+using namespace io::trino;
 using namespace facebook::velox;
-
-namespace {
-std::string getDataPath(const std::string& fileName) {
-  std::string currentPath = fs::current_path().c_str();
-  if (boost::algorithm::ends_with(currentPath, "fbcode")) {
-    return currentPath +
-           "/github/presto-trunk/presto-native-execution/presto_cpp/main/types/tests/"
-           "data/" +
-           fileName;
-  }
-  if (boost::algorithm::ends_with(currentPath, "fbsource")) {
-    return currentPath + "/third-party/presto_cpp/main/types/tests/data/" + fileName;
-  }
-
-  // CLion runs the tests from cmake-build-release/ or cmake-build-debug/
-  // directory. Hard-coded json files are not copied there and test fails with
-  // file not found. Fixing the path so that we can trigger these tests from
-  // CLion.
-  boost::algorithm::replace_all(currentPath, "cmake-build-release/", "");
-  boost::algorithm::replace_all(currentPath, "cmake-build-debug/", "");
-
-  return currentPath + "/data/" + fileName;
-}
-}  // namespace
 
 class TestValues : public ::testing::Test {};
 
 TEST_F(TestValues, valuesRowVector) {
-  std::string str = slurp(getDataPath("ValuesNode.json"));
+  std::string str =
+      R"##({ "@type": "values", "id": "0", "outputVariables": [ { "@type": "variable", "name": "field", "type": "integer" }, { "@type": "variable", "name": "field_0", "type": "varchar(1)" } ], "rows": [ [ { "@type": "constant", "valueBlock": "CQAAAElOVF9BUlJBWQEAAAAAAQAAAA==", "type": "integer" }, { "@type": "constant", "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAAABAAAAAAEAAABh", "type": "varchar(1)" } ], [ { "@type": "constant", "valueBlock": "CQAAAElOVF9BUlJBWQEAAAAAAgAAAA==", "type": "integer" }, { "@type": "constant", "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAAABAAAAAAEAAABi", "type": "varchar(1)" } ], [ { "@type": "constant", "valueBlock": "CQAAAElOVF9BUlJBWQEAAAAAAwAAAA==", "type": "integer" }, { "@type": "constant", "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAAABAAAAAAEAAABj", "type": "varchar(1)" } ] ] })##";
 
   json j = json::parse(str);
   std::shared_ptr<protocol::ValuesNode> p = j;
-
-  testJsonRoundtrip(j, p);
 
   auto pool = memory::addDefaultLeafMemoryPool();
   VeloxInteractiveQueryPlanConverter converter(pool.get());
@@ -93,13 +60,12 @@ TEST_F(TestValues, valuesRowVector) {
 TEST_F(TestValues, valuesPlan) {
   // select a, b from (VALUES (1, 'a'), (2, 'b'), (3, 'c')) as t (a, b) where a
   // = 1;
-  //
-  std::string str = slurp(getDataPath("ValuesPipeTest.json"));
+
+  std::string str =
+      R"##({ "id": "0", "root": { "@type": "output", "id": "8", "source": { "@type": "filter", "id": "3", "source": { "@type": "exchange", "id": "150", "type": "REPARTITION", "scope": "LOCAL", "partitioningScheme": { "partitioning": { "handle": { "connectorHandle": { "@type": "system:io.trino.sql.planner.SystemPartitioningHandle", "partitioning": "FIXED", "function": "ROUND_ROBIN" } }, "arguments": [] }, "outputLayout": [ { "@type": "variable", "name": "field", "type": "integer" }, { "@type": "variable", "name": "field_0", "type": "varchar(1)" } ], "replicateNullsAndAny": false }, "sources": [ { "@type": "values", "id": "0", "outputVariables": [ { "@type": "variable", "name": "field", "type": "integer" }, { "@type": "variable", "name": "field_0", "type": "varchar(1)" } ], "rows": [ [ { "@type": "constant", "valueBlock": "CQAAAElOVF9BUlJBWQEAAAAAAQAAAA==", "type": "integer" }, { "@type": "constant", "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAAABAAAAAAEAAABh", "type": "varchar(1)" } ], [ { "@type": "constant", "valueBlock": "CQAAAElOVF9BUlJBWQEAAAAAAgAAAA==", "type": "integer" }, { "@type": "constant", "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAAABAAAAAAEAAABi", "type": "varchar(1)" } ], [ { "@type": "constant", "valueBlock": "CQAAAElOVF9BUlJBWQEAAAAAAwAAAA==", "type": "integer" }, { "@type": "constant", "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAAABAAAAAAEAAABj", "type": "varchar(1)" } ] ] } ], "inputs": [ [ { "@type": "variable", "name": "field", "type": "integer" }, { "@type": "variable", "name": "field_0", "type": "varchar(1)" } ] ], "ensureSourceOrdering": false }, "predicate": { "@type": "call", "displayName": "$operator$equal<t:comparable>(t,t):boolean", "functionHandle": { "@type": "static", "signature": { "name": "presto.default.$operator$equal", "kind": "SCALAR", "returnType": "boolean", "argumentTypes": [ "integer", "integer" ], "variableArity": false } }, "returnType": "boolean", "arguments": [ { "@type": "variable", "name": "field", "type": "integer" }, { "@type": "constant", "valueBlock": "CQAAAElOVF9BUlJBWQEAAAAAAQAAAA==", "type": "integer" } ] } }, "columnNames": [ "a", "b" ], "outputVariables": [ { "@type": "variable", "name": "field", "type": "integer" }, { "@type": "variable", "name": "field_0", "type": "varchar(1)" } ] }, "partitioningScheme": { "partitioning": { "handle": { "connectorHandle": { "@type": "system:io.trino.sql.planner.SystemPartitioningHandle", "partitioning": "SINGLE", "function": "SINGLE" } }, "arguments": [] }, "outputLayout": [ { "@type": "variable", "name": "field", "type": "integer" }, { "@type": "variable", "name": "field_0", "type": "varchar(1)" } ], "replicateNullsAndAny": false, "bucketToPartition": [ 0 ] } })##";
 
   json j = json::parse(str);
   std::shared_ptr<protocol::PlanFragment> p = j;
-
-  testJsonRoundtrip(j, p);
 
   auto pool = memory::addDefaultLeafMemoryPool();
   VeloxInteractiveQueryPlanConverter converter(pool.get());
@@ -112,6 +78,6 @@ TEST_F(TestValues, valuesPlan) {
   ASSERT_EQ(values->sources()[0]->sources()[0]->name(), "Project");
   ASSERT_EQ(values->sources()[0]->sources()[0]->sources()[0]->name(), "Values");
 
-  ASSERT_EQ(values->id(), "4");
+  ASSERT_EQ(values->id(), "3");
   ASSERT_EQ(values->sources()[0]->sources()[0]->sources()[0]->id(), "0");
 }

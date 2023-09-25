@@ -13,7 +13,7 @@
 add_executable(
   type_convertor_test
   TypeSignatureConverterTest.cpp RowExpressionConverterTest.cpp
-  VeloxSplitConverterTest.cpp PlanNodeConverterTest.cpp)
+  VeloxSplitConverterTest.cpp PlanNodeConverterTest.cpp ValuesPipeTest.cpp)
 
 add_test(
   NAME type_convertor_test
