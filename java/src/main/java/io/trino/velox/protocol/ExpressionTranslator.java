@@ -226,6 +226,9 @@ public final class ExpressionTranslator
             if (node instanceof GlutenConstantExpression) {
                 return node;
             }
+            if ((node.getType() instanceof DecimalType) && (toType instanceof DecimalType)) {
+                return node;
+            }
             if (!toType.equals(node.getType())) {
                 String displayName = "CAST";
                 GlutenSignature newSignature = new GlutenSignature(
