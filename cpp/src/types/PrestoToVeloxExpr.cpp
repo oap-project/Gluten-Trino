@@ -358,7 +358,7 @@ TypedExprPtr VeloxExprConverter::toVeloxExpr(
     auto returnType = parseTypeSignature(pexpr.returnType);
     if (getFunctionName(signature) == "presto.default.avg" ||
         getFunctionName(signature) == "presto.default.sum") {
-      if (args[0]->type()->isDecimal()) {
+      if (args[0]->type()->isDecimal() && returnType->kind() == velox::TypeKind::ROW) {
         auto varbinary = facebook::velox::VarbinaryType::create();
         return std::make_shared<CallTypedExpr>(varbinary, args,
                                                getFunctionName(signature));

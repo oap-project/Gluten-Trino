@@ -571,7 +571,8 @@ public final class ExpressionTranslator
             GlutenRowExpression right = process(node.getRight(), context);
 
             // Do not convert interval time, do it native side
-            if (!left.getType().equals(right.getType()) && !left.getType().equals(INTERVAL_DAY_TIME) && !right.getType().equals(INTERVAL_DAY_TIME)) {
+            if (!left.getType().equals(right.getType()) && !left.getType().equals(INTERVAL_DAY_TIME) && !right.getType().equals(INTERVAL_DAY_TIME)
+                    && !(left.getType() instanceof DecimalType) && !(right.getType() instanceof DecimalType)) {
                 if (isConvertible(left, right.getType())) {
                     left = castIfNeeded(left, right.getType());
                 }
