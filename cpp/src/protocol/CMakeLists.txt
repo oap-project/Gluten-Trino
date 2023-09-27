@@ -1,14 +1,14 @@
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
 
 get_filename_component(TRINO_CPP_PLUGIN_DIR "${PROJECT_SOURCE_DIR}/../java"
                        ABSOLUTE)
@@ -41,9 +41,4 @@ add_library(trino_protocol OBJECT ${TRINO_PROTOCOL_SOURCE} DataSize.cpp
                                   Duration.cpp Base64Util.cpp)
 add_dependencies(trino_protocol internal_trino_protocol)
 
-target_link_libraries(trino_protocol ${RE2} ${FMT} Folly::folly velox_vector)
-target_include_directories(trino_protocol SYSTEM PRIVATE ${Xsimd_INCLUDE_DIRS})
-
-if(GLUTEN_TRINO_BUILDING_TESTS)
-  add_subdirectory(tests)
-endif()
+target_link_libraries(trino_protocol PUBLIC ${RE2} ${FMT} Folly::folly velox_vector)

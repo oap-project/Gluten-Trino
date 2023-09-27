@@ -22,11 +22,4 @@ add_test(
 
 add_dependencies(type_convertor_test gluten_trino)
 
-target_link_libraries(
-  type_convertor_test
-  gtest
-  gtest_main
-  gluten_trino
-  ${GLOG}
-  ${GFLAGS_LIBRARIES}
-  pthread)
+target_link_libraries(type_convertor_test gtest_main gluten_trino)

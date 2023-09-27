@@ -1,14 +1,14 @@
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
 
 find_library(FMT fmt)
 find_library(RE2 re2 REQUIRED)
@@ -17,65 +17,42 @@ find_package(Folly REQUIRED CONFIG)
 find_package(gflags REQUIRED COMPONENTS shared CONFIG)
 find_package(antlr4-runtime REQUIRED)
 find_path(
-  ANTLR4_RUNTIME_INCLUDE_DIR
+  ANTLR4_RUNTIME_INCLUDE_DIRS
   NAMES antlr4-runtime.h
   PATH_SUFFIXES antlr4-runtime)
-
-set(ENABLE_TRINO_EXCHANGE ON)
-
-if(ENABLE_TRINO_EXCHANGE)
-  add_definitions(-DENABLE_TRINO_EXCHANGE)
-  find_library(PROXYGEN proxygen REQUIRED)
-  find_library(PROXYGEN_HTTP_SERVER proxygenhttpserver REQUIRED)
-  find_library(WANGLE wangle REQUIRED)
-  find_library(FIZZ fizz REQUIRED)
-  set(PROXYGEN_LIBRARIES ${PROXYGEN_HTTP_SERVER} ${PROXYGEN} ${WANGLE} ${FIZZ})
-  find_path(PROXYGEN_DIR NAMES include/proxygen)
-  set(PROXYGEN_INCLUDE_DIR "${PROXYGEN_DIR}/include/proxygen")
-endif()
-
-include_directories(SYSTEM ${ANTLR4_RUNTIME_INCLUDE_DIR})
-set(Protobuf_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/_deps/protobuf-src/src/)
-set(Xsimd_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/_deps/xsimd-src/include/)
-include_directories(${JNI_INCLUDE_DIRS})
-
-option(GLUTEN_TRINO_ENABLE_SANITIZER
-       "Enable AddressSanitizer for Trino Bridge." OFF)
-option(GLUTEN_TRINO_BUILDING_TESTS "Building Tests for Gluten Trino." ON)
+find_library(PROXYGEN proxygen REQUIRED)
+find_library(PROXYGEN_HTTP_SERVER proxygenhttpserver REQUIRED)
+find_library(WANGLE wangle REQUIRED)
+find_library(FIZZ fizz REQUIRED)
+set(PROXYGEN_LIBRARIES ${PROXYGEN_HTTP_SERVER} ${PROXYGEN} ${WANGLE} ${FIZZ})
+find_path(PROXYGEN_DIR NAMES include/proxygen)
+set(PROXYGEN_INCLUDE_DIRS "${PROXYGEN_DIR}/include/proxygen")
 
 if(GLUTEN_TRINO_ENABLE_SANITIZER)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 endif()
 
+include_directories(SYSTEM ${ANTLR4_RUNTIME_INCLUDE_DIRS}
+                    ${PROXYGEN_INCLUDE_DIRS} ${JNI_INCLUDE_DIRS})
+
 add_subdirectory(functions)
 add_subdirectory(types)
 add_subdirectory(protocol)
+add_subdirectory(serialization)
 
 set(TRINO_CPP_UTILS_SOURCES utils/JniUtils.cpp)
-
 set(TRINO_EXCHANGE_SOURCES TrinoExchangeSource.cpp utils/HttpClient.cpp
                            utils/ThreadUtils.cpp)
-
-set(SOURCES TrinoBridge.cpp NativeConfigs.cpp JniHandle.cpp TaskHandle.cpp
-            PartitionOutputData.cpp ${TRINO_CPP_UTILS_SOURCES})
-
-if(ENABLE_TRINO_EXCHANGE)
-  set(SOURCES ${SOURCES} ${TRINO_EXCHANGE_SOURCES})
-endif()
+set(SOURCES
+    TrinoBridge.cpp
+    NativeConfigs.cpp
+    JniHandle.cpp
+    TaskHandle.cpp
+    PartitionOutputData.cpp
+    ${TRINO_CPP_UTILS_SOURCES}
+    ${TRINO_EXCHANGE_SOURCES})
 
 add_library(gluten_trino SHARED ${SOURCES})
-
-target_include_directories(
-  gluten_trino
-  PUBLIC ${CMAKE_SYSTEM_INCLUDE_PATH}
-         ${JNI_INCLUDE_DIRS}
-         ${CMAKE_CURRENT_SOURCE_DIR}
-         ${root_directory}/src
-         ${VELOX_HOME}
-         ${VELOX_BUILD_PATH}
-         ${VELOX_HOME}/velox/vector
-         ${Xsimd_INCLUDE_DIRS}
-         ${Protobuf_INCLUDE_DIRS})
 
 set(VELOX_LIBS
     velox_core
@@ -103,23 +80,22 @@ set(VELOX_LIBS
     velox_parse_utils
     velox_parse_expression)
 
-if(VELOX_ENABLE_S3)
-  add_definitions(-DENABLE_TRINO_S3)
+if(GLUTEN_TRINO_ENABLE_S3)
   list(APPEND VELOX_LIBS velox_s3fs)
 endif()
 
-add_subdirectory(serialization)
-
 target_link_libraries(
-  gluten_trino PUBLIC gluten_trino_functions gluten_trino_serialization
-                      ${VELOX_LIBS} trino_protocol velox_vector_test_lib)
-
-if(ENABLE_TRINO_EXCHANGE)
-  target_link_libraries(gluten_trino PUBLIC ${PROXYGEN_LIBRARIES})
-endif()
-
-target_link_libraries(gluten_trino PUBLIC ${FMT} Folly::folly ${RE2}
-                                          presto_type_converter)
+  gluten_trino
+  PUBLIC gluten_trino_functions
+         gluten_trino_serialization
+         ${VELOX_LIBS}
+         trino_protocol
+         velox_vector_test_lib
+         presto_type_converter
+         ${FMT}
+         Folly::folly
+         ${RE2}
+         ${PROXYGEN_LIBRARIES})
 
 if(GLUTEN_TRINO_BUILDING_TESTS)
   add_subdirectory(tests)
