@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #include "src/protocol/Base64Util.h"
+
 #include "velox/common/base/BitUtil.h"
 #include "velox/common/encode/Base64.h"
 #include "velox/functions/prestosql/types/TimestampWithTimeZoneType.h"

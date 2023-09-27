@@ -11,8 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "DataSize.h"
 #include <math.h>
+
+#include "src/protocol/DataSize.h"
 
 namespace io::trino::protocol {
 

@@ -12,8 +12,12 @@
  * limitations under the License.
  */
 
-#include "TrinoSerializer.h"
+#include "src/serialization/TrinoSerializer.h"
+
 #include <glog/logging.h>
+
+#include "src/serialization/TrinoByteStream.h"
+#include "src/utils/JniUtils.h"
 #include "velox/common/base/Crc.h"
 #include "velox/common/memory/ByteStream.h"
 #include "velox/common/memory/MemoryPool.h"
@@ -24,11 +28,6 @@
 #include "velox/vector/ComplexVector.h"
 #include "velox/vector/FlatVector.h"
 #include "velox/vector/VectorTypeUtils.h"
-
-#include <iostream>
-
-#include "TrinoByteStream.h"
-#include "utils/JniUtils.h"
 
 using namespace facebook::velox;
 

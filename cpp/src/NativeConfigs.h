@@ -14,12 +14,11 @@
 #pragma once
 
 #include <atomic>
+#include <boost/noncopyable.hpp>
 #include <memory>
 #include <string>
 #include <thread>
 #include <unordered_map>
-
-#include "boost/noncopyable.hpp"
 
 #include "velox/common/base/BitUtil.h"
 

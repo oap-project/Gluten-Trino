@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Duration.h"
+#include "src/protocol/Duration.h"
 
 namespace io::trino::protocol {
 

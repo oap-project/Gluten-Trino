@@ -12,20 +12,20 @@
  * limitations under the License.
  */
 
+// TypeSignatureTypeConverter.h must be included after presto_protocol.h
+// because it changes the macro EOF in some way (maybe deleting it?) which
+// is used in third_party/json/json.hpp
+
 #include <stdexcept>
 #include <vector>
-// #include "presto_cpp/main/operators/ShuffleInterface.h"
-#include "TrinoTaskId.h"
+
 #include "src/protocol/trino_protocol.h"
+#include "src/types/PrestoToVeloxExpr.h"
+#include "src/types/TrinoTaskId.h"
 #include "velox/core/Expressions.h"
 #include "velox/core/PlanFragment.h"
 #include "velox/core/PlanNode.h"
 #include "velox/type/Variant.h"
-// TypeSignatureTypeConverter.h must be included after presto_protocol.h
-// because it changes the macro EOF in some way (maybe deleting it?) which
-// is used in third_party/json/json.hpp
-//
-#include "src/types/PrestoToVeloxExpr.h"
 
 namespace io::trino {
 using namespace facebook;  // TODO: Remove it, for temporary use.

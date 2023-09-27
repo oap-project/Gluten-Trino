@@ -16,10 +16,11 @@
 #include <proxygen/lib/http/HTTPConnector.h>
 #include <proxygen/lib/http/connpool/SessionPool.h>
 #include <proxygen/lib/http/session/HTTPUpstreamSession.h>
-#include <velox/common/memory/MemoryPool.h>
-#include "utils/HttpConstants.h"
-#include "utils/ThreadUtils.h"
+
+#include "src/utils/HttpConstants.h"
+#include "src/utils/ThreadUtils.h"
 #include "velox/common/base/Exceptions.h"
+#include "velox/common/memory/MemoryPool.h"
 
 namespace io::trino::bridge::http {
 

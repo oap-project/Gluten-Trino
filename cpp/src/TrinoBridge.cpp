@@ -12,15 +12,17 @@
  * limitations under the License.
  */
 
-#include "TrinoBridge.h"
-#include "JniHandle.h"
-#include "NativeConfigs.h"
-#include "PartitionOutputData.h"
-#include "TaskHandle.h"
-#include "protocol/trino_protocol.h"
-#include "proxygen/lib/http/session/HTTPSessionBase.h"
-#include "types/PrestoToVeloxSplit.h"
-#include "utils/JniUtils.h"
+#include "src/TrinoBridge.h"
+
+#include <proxygen/lib/http/session/HTTPSessionBase.h>
+
+#include "src/JniHandle.h"
+#include "src/NativeConfigs.h"
+#include "src/PartitionOutputData.h"
+#include "src/TaskHandle.h"
+#include "src/protocol/trino_protocol.h"
+#include "src/types/PrestoToVeloxSplit.h"
+#include "src/utils/JniUtils.h"
 #include "velox/exec/PartitionedOutputBufferManager.h"
 #include "velox/exec/Task.h"
 

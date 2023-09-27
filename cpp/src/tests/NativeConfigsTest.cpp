@@ -12,8 +12,9 @@
  * limitations under the License.
  */
 
-#include "NativeConfigs.h"
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+
+#include "src/NativeConfigs.h"
 
 class NativeConfigsTests : public ::testing::Test {};
 

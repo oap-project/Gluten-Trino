@@ -12,11 +12,10 @@
  * limitations under the License.
  */
 
-#include <thread>
+#include <folly/io/IOBuf.h>
+#include <gtest/gtest.h>
 
-#include "PartitionOutputData.h"
-#include "folly/io/IOBuf.h"
-#include "gtest/gtest.h"
+#include "src/PartitionOutputData.h"
 
 class PartitionOutputDataTest : public ::testing::Test {};
 

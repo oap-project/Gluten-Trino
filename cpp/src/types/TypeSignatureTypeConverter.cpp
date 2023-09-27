@@ -11,10 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <antlr4-runtime.h>
 #include <boost/algorithm/string.hpp>
-#include <iostream>
 
-#include "antlr4-runtime.h"
 #include "src/types/ParseTypeSignature.h"
 #include "src/types/TypeSignatureTypeConverter.h"
 #include "src/types/antlr/TypeSignatureLexer.h"

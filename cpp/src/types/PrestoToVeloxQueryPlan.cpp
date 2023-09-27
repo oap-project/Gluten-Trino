@@ -14,6 +14,9 @@
 
 // clang-format off
 #include "src/types/PrestoToVeloxQueryPlan.h"
+
+#include <folly/container/F14Set.h>
+
 #include "velox/connectors/hive/HiveConnector.h"
 #include "velox/connectors/hive/HiveDataSource.h"
 #include "velox/connectors/hive/HivePartitionFunction.h"
@@ -24,21 +27,9 @@
 #include "velox/type/fbhive/HiveTypeParser.h"
 #include "velox/vector/ComplexVector.h"
 #include "velox/vector/FlatVector.h"
+#include "src/functions/TpchPartitionFunction.h"
 #include "src/types/TypeSignatureTypeConverter.h"
-/*
-#include "presto_cpp/main/operators/PartitionAndSerialize.h"
-#include "presto_cpp/main/operators/ShuffleWrite.h"
-#include "presto_cpp/main/operators/ShuffleRead.h"
-#include "presto_cpp/presto_protocol/presto_protocol.h"
-*/
-#include <velox/core/Expressions.h>
 // clang-format on
-
-#include <folly/container/F14Set.h>
-/*
-#include "presto_cpp/main/operators/PartitionAndSerialize.h"
-*/
-#include "functions/TpchPartitionFunction.h"
 
 using namespace facebook::velox;
 using namespace facebook::velox::exec;

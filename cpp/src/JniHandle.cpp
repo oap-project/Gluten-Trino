@@ -12,16 +12,17 @@
  * limitations under the License.
  */
 
-#include "JniHandle.h"
+#include "src/JniHandle.h"
 
 #include <filesystem>
 
-#include "NativeConfigs.h"
-#include "TaskHandle.h"
-#include "protocol/trino_protocol.h"
-#include "serialization/TrinoSerializer.h"
-#include "types/PrestoToVeloxQueryPlan.h"
-#include "utils/JniUtils.h"
+#include "src/NativeConfigs.h"
+#include "src/TaskHandle.h"
+#include "src/TrinoExchangeSource.h"
+#include "src/protocol/trino_protocol.h"
+#include "src/serialization/TrinoSerializer.h"
+#include "src/types/PrestoToVeloxQueryPlan.h"
+#include "src/utils/JniUtils.h"
 #include "velox/common/file/FileSystems.h"
 #include "velox/common/memory/MmapAllocator.h"
 #include "velox/connectors/hive/HiveConnector.h"
@@ -30,19 +31,15 @@
 #include "velox/core/QueryCtx.h"
 #include "velox/dwio/dwrf/reader/DwrfReader.h"
 #include "velox/dwio/parquet/RegisterParquetReader.h"
+#include "velox/exec/Exchange.h"
 #include "velox/exec/Task.h"
 #include "velox/functions/prestosql/aggregates/RegisterAggregateFunctions.h"
 #include "velox/functions/prestosql/registration/RegistrationFunctions.h"
 #include "velox/functions/prestosql/window/WindowFunctionsRegistration.h"
 #include "velox/parse/TypeResolver.h"
 
-#ifdef ENABLE_TRINO_S3
+#ifdef ENABLE_GLUTEN_TRINO_S3
 #include "velox/connectors/hive/storage_adapters/s3fs/RegisterS3FileSystem.h"
-#endif
-
-#ifdef ENABLE_TRINO_EXCHANGE
-#include "TrinoExchangeSource.h"
-#include "velox/exec/Exchange.h"
 #endif
 
 using namespace facebook::velox;
@@ -90,7 +87,7 @@ void JniHandle::initializeVelox() {
 
   velox::filesystems::registerHdfsFileSystem();
 
-#ifdef ENABLE_TRINO_S3
+#ifdef ENABLE_GLUTEN_TRINO_S3
   velox::filesystems::registerS3FileSystem();
 #endif
 

@@ -14,10 +14,10 @@
 
 #pragma once
 
+#include <folly/io/IOBuf.h>
 #include <memory>
 #include <mutex>
 #include <vector>
-#include "folly/io/IOBuf.h"
 
 namespace io::trino::bridge {
 
