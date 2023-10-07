@@ -19,8 +19,9 @@ add_library(
 add_dependencies(presto_type_converter velox_type velox_dwio_dwrf_proto
                  trino_protocol)
 
-target_link_libraries(presto_type_converter PUBLIC antlr4_static velox_tpch_connector
-                      velox_tpch_gen velox_type)
+target_link_libraries(
+  presto_type_converter PUBLIC antlr4_static velox_tpch_connector
+                               velox_tpch_gen velox_type)
 
 if(GLUTEN_TRINO_BUILDING_TESTS)
   add_subdirectory(tests)

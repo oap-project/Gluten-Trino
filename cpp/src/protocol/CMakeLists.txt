@@ -41,4 +41,5 @@ add_library(trino_protocol OBJECT ${TRINO_PROTOCOL_SOURCE} DataSize.cpp
                                   Duration.cpp Base64Util.cpp)
 add_dependencies(trino_protocol internal_trino_protocol)
 
-target_link_libraries(trino_protocol PUBLIC ${RE2} ${FMT} Folly::folly velox_vector)
+target_link_libraries(trino_protocol PUBLIC ${RE2} ${FMT} Folly::folly
+                                            velox_vector)
