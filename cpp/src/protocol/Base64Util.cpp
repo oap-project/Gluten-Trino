@@ -69,6 +69,7 @@ velox::int128_t ByteStream::read<velox::int128_t>() {
   // 128-bit block to avoid general protection exception.
   auto high = read<int64_t>();
   auto low = read<int64_t>();
+  VLOG(1) << "base64 read--high:" << high << " low:" << low;
   return velox::HugeInt::build(high, low);
 }
 
