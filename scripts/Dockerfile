@@ -37,4 +37,4 @@ RUN wget "https://repo1.maven.org/maven2/io/trino/trino-server/411/trino-server-
 RUN tar zxf trino-server-411.tar.gz
 RUN rm -rf trino-server-411.tar.gz
  
-RUN sed -i 's/classpath = pathjoin/classpath = \"\/opt\/TrinoBridge\/bridge\/Gluten-Trino-411.jar\:\" + pathjoin/g' /trino-server-411/bin/launcher.py
+RUN sed -i 's/classpath = pathjoin/classpath = \"\/Gluten-Trino\/Gluten-Trino-411.jar\:\" + pathjoin/g' /trino-server-411/bin/launcher.py
