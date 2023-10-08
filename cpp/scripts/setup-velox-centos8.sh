@@ -213,6 +213,7 @@ popd
 
 # install some dependencies for generating protocol files.
 pip3 install --upgrade pip # need upgrade before installing, otherwise errors occur here.
-pip3 install regex pyyaml chevron clang-format
+pip3 install --ignore-installed regex pyyaml chevron clang-format # should ignore installed for pyyaml.
+dnf_install jq
 
 echo "Every dependencies have been installed in your environment, but you still need to install JDK manually which version must be no less than 17."
