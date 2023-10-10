@@ -87,9 +87,8 @@ public class NativeSqlTaskExecution
                 .map(bucketToPartitions -> Arrays.stream(bucketToPartitions).reduce(Integer::max).orElse(0))
                 .orElse(0);
 
-        if (1 != outputPartitionNum && planFragment.getPartitionScheme().getPartitioning().getHandle().getConnectorHandle() instanceof SystemPartitioningHandle) {
-            SystemPartitioningHandle handle = (SystemPartitioningHandle) planFragment.getPartitionScheme().getPartitioning().getHandle().getConnectorHandle();
-            if (handle.getFunction().equals(SystemPartitioningHandle.SystemPartitionFunction.BROADCAST)) {
+        if (1 != outputPartitionNum && planFragment.getPartitionScheme().getPartitioning().getHandle().getConnectorHandle() instanceof SystemPartitioningHandle handle) {
+            if (handle.equals(SystemPartitioningHandle.FIXED_BROADCAST_DISTRIBUTION) || handle.equals(SystemPartitioningHandle.FIXED_ARBITRARY_DISTRIBUTION)) {
                 outputPartitionNum = 1;
             }
         }
