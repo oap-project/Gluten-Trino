@@ -701,10 +701,11 @@ void setCellFromVariantByKind(const VectorPtr& column, vector_size_t row,
 }
 
 template <>
-void setCellFromVariantByKind<TypeKind::VARBINARY>(const VectorPtr& /*column*/,
-                                                   vector_size_t /*row*/,
+void setCellFromVariantByKind<TypeKind::VARBINARY>(const VectorPtr& column,
+                                                   vector_size_t row,
                                                    const velox::variant& value) {
-  VELOX_UNSUPPORTED("Return of VARBINARY data is not supported.");
+  auto values = column->as<FlatVector<StringView>>();
+  values->set(row, StringView(value.value<Varbinary>()));
 }
 
 template <>
