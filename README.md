@@ -70,6 +70,14 @@ cd ${REPO}/java
 mvn clean package -DskipTests=True -Dair.check.skip-duplicate-finder=True
 ```
 
+### Build Docker Container to test
+
+```
+git clone https://github.com/oap-project/Gluten-Trino.git
+docker build -t gluten-trino:test -f Gluten-Trino/scripts/Dockerfile .
+docker run -it -d -v /path/to/TrinoConfigs:/trino-server-411/etc gluten-trino:test /trino-server-411/bin/launcher start
+```
+
 ## How to use
 
 1. Copy `libgluten_trino.so` to your system `LD_LIBRARY_PATH` on each worker node.
