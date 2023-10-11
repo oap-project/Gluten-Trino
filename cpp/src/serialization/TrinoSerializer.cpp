@@ -372,11 +372,8 @@ FOLLY_ALWAYS_INLINE int128_t toJavaDecimalValue(int128_t value) {
   if (low != 0 || high == value) {
     value = (static_cast<int128_t>(high) << 64) | static_cast<int128_t>(low);
   }
-  // Presto Java UnscaledDecimal128 representation uses signed magnitude
-  // representation. Only negative values differ in this representation.
-  if (value < 0) {
-    value *= -1;
-    value |= kInt128SerializeMask;
+  if (value < 0 && low == 0) {
+    value = (static_cast<int128_t>(high) << 64) | 0xffffffffffffffff;
   }
   return value;
 }
