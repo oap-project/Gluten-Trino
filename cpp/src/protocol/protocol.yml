@@ -119,6 +119,7 @@ AbstractClasses:
         - { name: GlutenHiveSplit,             key: system:io.trino.plugin.hive.protocol.GlutenHiveSplit }
         - { name: GlutenTpchSplit,             key: system:io.trino.plugin.tpch.protocol.GlutenTpchSplit}
         - { name: GlutenRemoteSplit,           key: system:io.trino.velox.protocol.GlutenRemoteSplit}
+        - { name: GlutenEmptySplit,            key: system:io.trino.velox.protocol.GlutenEmptySplit}
 
     GlutenConnectorTableLayoutHandle:
       super: JsonEncodedSubclass
@@ -198,6 +199,7 @@ trinoCppJavaClasses:
   - src/main/java/io/trino/velox/protocol/GlutenCatalogProperties.java
   - src/main/java/io/trino/velox/protocol/GlutenConnectorId.java
   - src/main/java/io/trino/velox/protocol/GlutenConstantExpression.java
+  - src/main/java/io/trino/velox/protocol/GlutenEmptySplit.java
   - src/main/java/io/trino/velox/protocol/GlutenEnforceSingleRowNode.java
   - src/main/java/io/trino/velox/protocol/GlutenExchangeNode.java
   - src/main/java/io/trino/velox/protocol/GlutenFilterNode.java
@@ -234,41 +236,10 @@ trinoCppJavaClasses:
   - src/main/java/io/trino/velox/protocol/GlutenVariableExpressionSerializer.java
   - src/main/java/io/trino/velox/protocol/GlutenVariableReferenceExpression.java
   - src/main/java/io/trino/velox/protocol/SplitAssignmentsMessage.java
-  - src/main/java/io/trino/velox/protocol/GlutenPartitioningScheme.java
-  - src/main/java/io/trino/velox/protocol/GlutenConnectorId.java
-  - src/main/java/io/trino/velox/protocol/GlutenPartitioning.java
-  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchColumnHandle.java
-  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchTableLayoutHandle.java
-  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchSplit.java
-  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchTransactionHandle.java
-  - src/main/java/io/trino/plugin/tpch/protocol/GlutenTpchTableHandle.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenTableToPartitionMapping.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenBucketFunctionType.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveTransactionHandle.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenDwrfEncryptionMetadata.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveBucketProperty.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenEncryptionMetadata.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveColumnHandle.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveSplit.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenStorage.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenEncryptionInformation.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveTableHandle.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenHiveFileSplit.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenCacheQuotaScope.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenCacheQuotaRequirement.java
-  - src/main/java/io/trino/plugin/hive/protocol/GlutenBucketConversion.java
   - src/main/java/io/trino/spi/predicate/GlutenMarker.java
   - src/main/java/io/trino/spi/protocol/GlutenAllOrNoneValueSet.java
-  - src/main/java/io/trino/spi/protocol/GlutenConnectorTableLayoutHandle.java
-  - src/main/java/io/trino/spi/protocol/GlutenColumnHandle.java
   - src/main/java/io/trino/spi/protocol/GlutenDomain.java
   - src/main/java/io/trino/spi/protocol/GlutenEquatableValueSet.java
-  - src/main/java/io/trino/spi/protocol/GlutenSubfieldTokenizer.java
-  - src/main/java/io/trino/spi/protocol/GlutenConnectorSplit.java
-  - src/main/java/io/trino/spi/protocol/GlutenNodeSelectionStrategy.java
   - src/main/java/io/trino/spi/protocol/GlutenRange.java
-  - src/main/java/io/trino/spi/protocol/GlutenConnectorTableHandle.java
   - src/main/java/io/trino/spi/protocol/GlutenSortedRangeSet.java
-  - src/main/java/io/trino/spi/protocol/GlutenSubfield.java
-  - src/main/java/io/trino/spi/protocol/GlutenConnectorTransactionHandle.java
   - src/main/java/io/trino/spi/protocol/GlutenValueSet.java

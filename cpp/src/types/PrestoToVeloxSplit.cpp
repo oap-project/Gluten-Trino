@@ -86,10 +86,10 @@ velox::exec::Split toVeloxSplit(const protocol::ScheduledSplit& scheduledSplit) 
                                   "tpch", tpchSplit->totalParts, tpchSplit->partNumber),
                               splitGroupId);
   }
-  // if (std::dynamic_pointer_cast<const protocol::EmptySplit>(connectorSplit)) {
-  //   // We return NULL for empty splits to signal to do nothing.
-  //   return velox::exec::Split(nullptr, splitGroupId);
-  // }
+   if (std::dynamic_pointer_cast<const protocol::EmptySplit>(connectorSplit)) {
+     // We return NULL for empty splits to signal to do nothing.
+     return velox::exec::Split(nullptr, splitGroupId);
+   }
 
   VELOX_CHECK(false, "Unknown split type {}", connectorSplit->_type);
 }
