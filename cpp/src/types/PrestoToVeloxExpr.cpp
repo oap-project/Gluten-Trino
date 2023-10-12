@@ -241,36 +241,38 @@ std::optional<TypedExprPtr> tryConvertLiteral(const protocol::Signature& signatu
   VELOX_CHECK_NOT_NULL(encoded);
   auto encodedString = encoded->value().value<velox::StringView>();
 
-  auto buffer = velox::AlignedBuffer::allocate<velox::StringView>(1, pool);
-  velox::FlatVectorPtr<velox::StringView> result =
-      std::make_shared<velox::FlatVector<velox::StringView>>(
-          pool, velox::VARBINARY(), nullptr, 1, buffer, std::vector<velox::BufferPtr>());
-  result->resize(1);
+  if (returnType == "varbinary") {
+    auto buffer = velox::AlignedBuffer::allocate<velox::StringView>(1, pool);
+    velox::FlatVectorPtr<velox::StringView> result =
+        std::make_shared<velox::FlatVector<velox::StringView>>(
+            pool, velox::VARBINARY(), nullptr, 1, buffer,
+            std::vector<velox::BufferPtr>());
+    result->resize(1);
 
-  velox::exec::StringWriter<false> writer(result.get(), 0);
-  auto inputSize = encodedString.size();
-  writer.resize(
-      velox::encoding::Base64::calculateDecodedSize(encodedString.data(), inputSize));
-  velox::encoding::Base64::decode(encodedString.data(), encodedString.size(),
-                                  writer.data());
-  writer.finalize();
+    velox::exec::StringWriter<false> writer(result.get(), 0);
+    auto inputSize = encodedString.size();
+    writer.resize(
+        velox::encoding::Base64::calculateDecodedSize(encodedString.data(), inputSize));
+    velox::encoding::Base64::decode(encodedString.data(), encodedString.size(),
+                                    writer.data());
+    writer.finalize();
 
-  VLOG(1) << "return type:" << returnType << " ";
+    return std::make_shared<ConstantTypedExpr>(
+        velox::VARBINARY(), velox::variant::binary(result->valueAt(0).str()));
+  }
+
+  auto elementsVector =
+      protocol::readBlock(type->asArray().elementType(), encodedString, pool);
+
+  velox::BufferPtr offsets =
+      velox::AlignedBuffer::allocate<velox::vector_size_t>(1, pool, 0);
+  velox::BufferPtr sizes = velox::AlignedBuffer::allocate<velox::vector_size_t>(
+      1, pool, elementsVector->size());
+  auto arrayVector = std::make_shared<velox::ArrayVector>(pool, type, nullptr, 1, offsets,
+                                                          sizes, elementsVector);
+
   return std::make_shared<ConstantTypedExpr>(
-      velox::VARBINARY(), velox::variant::binary(result->valueAt(0).str()));
-
-//  auto elementsVector =
-//      protocol::readBlock(type->asArray().elementType(), encodedString, pool);
-//
-//  velox::BufferPtr offsets =
-//      velox::AlignedBuffer::allocate<velox::vector_size_t>(1, pool, 0);
-//  velox::BufferPtr sizes = velox::AlignedBuffer::allocate<velox::vector_size_t>(
-//      1, pool, elementsVector->size());
-//  auto arrayVector = std::make_shared<velox::ArrayVector>(pool, type, nullptr, 1, offsets,
-//                                                          sizes, elementsVector);
-//
-//  return std::make_shared<ConstantTypedExpr>(
-//      velox::BaseVector::wrapInConstant(1, 0, arrayVector));
+      velox::BaseVector::wrapInConstant(1, 0, arrayVector));
 }
 }  // namespace
 
