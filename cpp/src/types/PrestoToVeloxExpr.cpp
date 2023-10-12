@@ -255,8 +255,22 @@ std::optional<TypedExprPtr> tryConvertLiteral(const protocol::Signature& signatu
                                   writer.data());
   writer.finalize();
 
+  VLOG(1) << "return type:" << returnType << " ";
   return std::make_shared<ConstantTypedExpr>(
       velox::VARBINARY(), velox::variant::binary(result->valueAt(0).str()));
+
+//  auto elementsVector =
+//      protocol::readBlock(type->asArray().elementType(), encodedString, pool);
+//
+//  velox::BufferPtr offsets =
+//      velox::AlignedBuffer::allocate<velox::vector_size_t>(1, pool, 0);
+//  velox::BufferPtr sizes = velox::AlignedBuffer::allocate<velox::vector_size_t>(
+//      1, pool, elementsVector->size());
+//  auto arrayVector = std::make_shared<velox::ArrayVector>(pool, type, nullptr, 1, offsets,
+//                                                          sizes, elementsVector);
+//
+//  return std::make_shared<ConstantTypedExpr>(
+//      velox::BaseVector::wrapInConstant(1, 0, arrayVector));
 }
 }  // namespace
 
