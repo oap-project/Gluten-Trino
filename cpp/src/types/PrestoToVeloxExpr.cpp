@@ -19,6 +19,8 @@
 #include "src/protocol/Base64Util.h"
 #include "src/types/ParseTypeSignature.h"
 #include "velox/common/base/Exceptions.h"
+#include "velox/common/encode/Base64.h"
+#include "velox/expression/StringWriter.h"
 #include "velox/vector/ComplexVector.h"
 #include "velox/vector/ConstantVector.h"
 #include "velox/vector/FlatVector.h"
@@ -238,18 +240,23 @@ std::optional<TypedExprPtr> tryConvertLiteral(const protocol::Signature& signatu
   auto encoded = std::dynamic_pointer_cast<const ConstantTypedExpr>(call->inputs()[0]);
   VELOX_CHECK_NOT_NULL(encoded);
   auto encodedString = encoded->value().value<velox::StringView>();
-  auto elementsVector =
-      protocol::readBlock(type->asArray().elementType(), encodedString, pool);
 
-  velox::BufferPtr offsets =
-      velox::AlignedBuffer::allocate<velox::vector_size_t>(1, pool, 0);
-  velox::BufferPtr sizes = velox::AlignedBuffer::allocate<velox::vector_size_t>(
-      1, pool, elementsVector->size());
-  auto arrayVector = std::make_shared<velox::ArrayVector>(pool, type, nullptr, 1, offsets,
-                                                          sizes, elementsVector);
+  auto buffer = velox::AlignedBuffer::allocate<velox::StringView>(1, pool);
+  velox::FlatVectorPtr<velox::StringView> result =
+      std::make_shared<velox::FlatVector<velox::StringView>>(
+          pool, velox::VARBINARY(), nullptr, 1, buffer, std::vector<velox::BufferPtr>());
+  result->resize(1);
+
+  velox::exec::StringWriter<false> writer(result.get(), 0);
+  auto inputSize = encodedString.size();
+  writer.resize(
+      velox::encoding::Base64::calculateDecodedSize(encodedString.data(), inputSize));
+  velox::encoding::Base64::decode(encodedString.data(), encodedString.size(),
+                                  writer.data());
+  writer.finalize();
 
   return std::make_shared<ConstantTypedExpr>(
-      velox::BaseVector::wrapInConstant(1, 0, arrayVector));
+      velox::VARBINARY(), velox::variant::binary(result->valueAt(0).str()));
 }
 }  // namespace
 

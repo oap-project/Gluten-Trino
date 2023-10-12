@@ -277,85 +277,59 @@ TEST_F(RowExpressionTest, varchar3) {
   testConstantExpression(str, "VARCHAR", "\"102\"");
 }
 
-// TODO: varbinary will cause std::bad_cast
-// TEST_F(RowExpressionTest, varbinary1) {
-//   // The result was generated from
-//   // `select to_big_endian_32(1)`.
-//   std::string str = R"##(
-//         {
-//             "@type": "constant",
-//             "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAQAAAAABAAAAAAAAAE=",
-//             "type": "varbinary"
-//         }
-//     )##";
-//   // The expected value is a Base64 value for 1 in big endian.
-//   testConstantExpression(str, "VARBINARY", "\"AAAAAQ==\"");
-// }
+TEST_F(RowExpressionTest, varbinary1) {
+  // The result was generated from
+  // `select to_big_endian_32(1)`.
+  std::string str =
+      R"##({ "@type": "call", "displayName": "$literal$<f,t>(f):t", "functionHandle": { "@type": "static", "signature": { "name": "presto.default.$literal$", "kind": "SCALAR", "returnType": "varbinary", "argumentTypes": [ "varbinary" ], "variableArity": false } }, "returnType": "varbinary", "arguments": [ { "@type": "call", "displayName": "from_base64(varchar(x)):varbinary", "functionHandle": { "@type": "static", "signature": { "name": "presto.default.from_base64", "kind": "SCALAR", "returnType": "varbinary", "argumentTypes": [ "varchar" ], "variableArity": false } }, "returnType": "varbinary", "arguments": [ { "@type": "constant", "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAAAIAAAAAAgAAABBQUFBQVE9PQ==", "type": "varchar(8)" } ] } ] })##";
+  // The expected value is a Base64 value for 1 in big endian.
+  testConstantExpression(str, "VARBINARY", "\"AAAAAQ==\"");
+}
 
-// TEST_F(RowExpressionTest, varbinary2) {
-//   // The result was generated from
-//   // `select cast('value' as varbinary)`.
-//   std::string str = R"##(
-//         {
-//             "@type": "constant",
-//             "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAUAAAAABQAAAHZhbHVl",
-//             "type": "varbinary"
-//         }
-//     )##";
-//   testConstantExpression(str, "VARBINARY", '"' + encoding::Base64::encode("value") +
-//   '"');
-// }
+TEST_F(RowExpressionTest, varbinary2) {
+  // The result was generated from
+  // `select cast('value' as varbinary)`.
+  std::string str =
+      R"##({ "@type": "call", "displayName": "$literal$<f,t>(f):t", "functionHandle": { "@type": "static", "signature": { "name": "presto.default.$literal$", "kind": "SCALAR", "returnType": "varbinary", "argumentTypes": [ "varbinary" ], "variableArity": false } }, "returnType": "varbinary", "arguments": [ { "@type": "call", "displayName": "from_base64(varchar(x)):varbinary", "functionHandle": { "@type": "static", "signature": { "name": "presto.default.from_base64", "kind": "SCALAR", "returnType": "varbinary", "argumentTypes": [ "varchar" ], "variableArity": false } }, "returnType": "varbinary", "arguments": [ { "@type": "constant", "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAAAIAAAAAAgAAABkbUZzZFdVPQ==", "type": "varchar(8)" } ] } ] })##";
+  testConstantExpression(str, "VARBINARY", '"' + encoding::Base64::encode("value") + '"');
+}
 
-// TEST_F(RowExpressionTest, varbinary3) {
-//   // The result was generated from
-//   // `select cast('SPECIAL_#@,$|%/^~?{}+-' as varbinary)`.
-//   std::string str = R"##(
-//         {
-//             "@type": "constant",
-//             "valueBlock":
-//             "DgAAAFZBUklBQkxFX1dJRFRIAQAAABYAAAAAFgAAAFNQRUNJQUxfI0AsJHwlL15+P3t9Ky0=",
-//             "type": "varbinary"
-//         }
-//     )##";
-//   testConstantExpression(str, "VARBINARY",
-//                          '"' + encoding::Base64::encode("SPECIAL_#@,$|%/^~?{}+-") +
-//                          '"');
-// }
+TEST_F(RowExpressionTest, varbinary3) {
+  // The result was generated from
+  // `select cast('SPECIAL_#@,$|%/^~?{}+-' as varbinary)`.
+  std::string str =
+      R"##({ "@type": "call", "displayName": "$literal$<f,t>(f):t", "functionHandle": { "@type": "static", "signature": { "name": "presto.default.$literal$", "kind": "SCALAR", "returnType": "varbinary", "argumentTypes": [ "varbinary" ], "variableArity": false } }, "returnType": "varbinary", "arguments": [ { "@type": "call", "displayName": "from_base64(varchar(x)):varbinary", "functionHandle": { "@type": "static", "signature": { "name": "presto.default.from_base64", "kind": "SCALAR", "returnType": "varbinary", "argumentTypes": [ "varchar" ], "variableArity": false } }, "returnType": "varbinary", "arguments": [ { "@type": "constant", "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAAAgAAAAACAAAABVMUJGUTBsQlRGOGpRQ3drZkNVdlhuNC9lMzByTFE9PQ==", "type": "varchar(32)" } ] } ] })##";
+  testConstantExpression(str, "VARBINARY",
+                         '"' + encoding::Base64::encode("SPECIAL_#@,$|%/^~?{}+-") + '"');
+}
 
-// TEST_F(RowExpressionTest, varbinary4) {
-//   // The result was generated from
-//   // `select cast(null as varbinary)`.
-//   std::string str = R"##(
-//         {
-//             "@type": "constant",
-//             "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAAAAAABgAAAAAA=",
-//             "type": "varbinary"
-//         }
-//     )##";
-//   testConstantExpression(str, "VARBINARY", "null");
-// }
+TEST_F(RowExpressionTest, varbinary4) {
+  // The result was generated from
+  // `select cast(null as varbinary)`.
+  std::string str = R"##(
+        {
+            "@type": "constant",
+            "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAAAAAABgAAAAAA=",
+            "type": "varbinary"
+        }
+    )##";
+  testConstantExpression(str, "VARBINARY", "null");
+}
 
-// TEST_F(RowExpressionTest, varbinary5) {
-//   // The result was generated from
-//   // `select
-//   //
-//   cast('0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
-//   // as varbinary)`.
-//   std::string str = R"##(
-//         {
-//             "@type": "constant",
-//             "valueBlock":
-//             "DgAAAFZBUklBQkxFX1dJRFRIAQAAAGQAAAAAZAAAADAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODk=",
-//             "type": "varbinary"
-//         }
-//     )##";
-//   testConstantExpression(
-//       str, "VARBINARY",
-//       '"' +
-//           encoding::Base64::encode("01234567890123456789012345678901234567890123456789012"
-//                                    "34567890123456789012345678901234567890123456789") +
-//           '"');
-// }
+TEST_F(RowExpressionTest, varbinary5) {
+  // The result was generated from
+  // `select
+  // cast('0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
+  // as varbinary)`.
+  std::string str =
+      R"##({ "@type": "call", "displayName": "$literal$<f,t>(f):t", "functionHandle": { "@type": "static", "signature": { "name": "presto.default.$literal$", "kind": "SCALAR", "returnType": "varbinary", "argumentTypes": [ "varbinary" ], "variableArity": false } }, "returnType": "varbinary", "arguments": [ { "@type": "call", "displayName": "from_base64(varchar(x)):varbinary", "functionHandle": { "@type": "static", "signature": { "name": "presto.default.from_base64", "kind": "SCALAR", "returnType": "varbinary", "argumentTypes": [ "varchar" ], "variableArity": false } }, "returnType": "varbinary", "arguments": [ { "@type": "constant", "valueBlock": "DgAAAFZBUklBQkxFX1dJRFRIAQAAAAEAAACIAAAAAIgAAABNREV5TXpRMU5qYzRPVEF4TWpNME5UWTNPRGt3TVRJek5EVTJOemc1TURFeU16UTFOamM0T1RBeE1qTTBOVFkzT0Rrd01USXpORFUyTnpnNU1ERXlNelExTmpjNE9UQXhNak0wTlRZM09Ea3dNVEl6TkRVMk56ZzVNREV5TXpRMU5qYzRPUT09", "type": "varchar(136)" } ] } ] })##";
+  testConstantExpression(
+      str, "VARBINARY",
+      '"' +
+          encoding::Base64::encode("01234567890123456789012345678901234567890123456789012"
+                                   "34567890123456789012345678901234567890123456789") +
+          '"');
+}
 
 TEST_F(RowExpressionTest, timestamp) {
   std::string str = R"(
