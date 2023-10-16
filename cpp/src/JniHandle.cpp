@@ -50,8 +50,6 @@ using namespace facebook::velox;
 namespace io::trino::bridge {
 
 const std::string JniHandle::kGlutenTrinoFunctionPrefix("trino.bridge.");
-const std::string JniHandle::kHiveConnectorId("hive");
-const std::string JniHandle::kTpchConnectorId("tpch");
 
 extern void registerTrinoSumAggregate(const std::string& prefix);
 
@@ -70,21 +68,6 @@ JniHandle::JniHandle(const NativeSqlTaskExecutionManagerPtr& javaManager)
 void JniHandle::initializeVelox() {
   // Setup and register.
   filesystems::registerLocalFileSystem();
-
-  std::unordered_map<std::string, std::string> configurationValues;
-
-  auto properties = std::make_shared<const velox::core::MemConfig>(configurationValues);
-  auto hiveConnectorExecutor = getConnectorIOExecutor(30, "HiveConnectorIO");
-  auto hiveConnector =
-      velox::connector::getConnectorFactory(
-          velox::connector::hive::HiveConnectorFactory::kHiveConnectorName)
-          ->newConnector(kHiveConnectorId, properties, hiveConnectorExecutor.get());
-  velox::connector::registerConnector(hiveConnector);
-
-  auto tpchConnector = connector::getConnectorFactory(
-                           connector::tpch::TpchConnectorFactory::kTpchConnectorName)
-                           ->newConnector(kTpchConnectorId, nullptr);
-  velox::connector::registerConnector(tpchConnector);
 
   velox::parquet::registerParquetReaderFactory();
 
