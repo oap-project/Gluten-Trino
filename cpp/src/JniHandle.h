@@ -100,8 +100,6 @@ class JniHandle {
   std::shared_ptr<memory::MemoryAllocator> allocator_;
 
   static const std::string kGlutenTrinoFunctionPrefix;
-  static const std::string kHiveConnectorId;
-  static const std::string kTpchConnectorId;
 };
 }  // namespace bridge
 }  // namespace io::trino
