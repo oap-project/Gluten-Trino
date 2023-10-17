@@ -13,10 +13,10 @@
  */
 
 #include <gtest/gtest.h>
-#include "serialization/TrinoBuffer.h"
-#include "serialization/TrinoBufferStream.h"
-#include "serialization/TrinoSerializer.h"
 
+#include "src/serialization/TrinoBuffer.h"
+#include "src/serialization/TrinoBufferStream.h"
+#include "src/serialization/TrinoSerializer.h"
 #include "velox/vector/tests/utils/VectorMaker.h"
 #include "velox/vector/tests/utils/VectorTestBase.h"
 

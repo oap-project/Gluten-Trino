@@ -1,7 +1,6 @@
 #include "JniUtils.h"
 
 #include <glog/logging.h>
-#include <iostream>
 #include <sstream>
 
 #include "velox/common/base/Exceptions.h"

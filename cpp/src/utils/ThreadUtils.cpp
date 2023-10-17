@@ -1,4 +1,4 @@
-#include "utils/ThreadUtils.h"
+#include "src/utils/ThreadUtils.h"
 
 namespace io::trino::bridge {
 

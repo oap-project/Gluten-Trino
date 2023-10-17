@@ -12,10 +12,9 @@
  * limitations under the License.
  */
 
-#include "functions/TpchPartitionFunction.h"
-#include "gtest/gtest.h"
-#include "velox/buffer/Buffer.h"
-#include "velox/type/Type.h"
+#include <gtest/gtest.h>
+
+#include "src/functions/TpchPartitionFunction.h"
 #include "velox/vector/FlatVector.h"
 
 using namespace facebook::velox;

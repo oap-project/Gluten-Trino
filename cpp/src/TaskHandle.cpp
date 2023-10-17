@@ -12,11 +12,11 @@
  * limitations under the License.
  */
 
-#include "TaskHandle.h"
-#include "NativeConfigs.h"
-#include "PartitionOutputData.h"
-#include "protocol/trino_protocol.h"
-#include "utils/ThreadUtils.h"
+#include "src/TaskHandle.h"
+#include "src/NativeConfigs.h"
+#include "src/PartitionOutputData.h"
+#include "src/protocol/trino_protocol.h"
+#include "src/utils/ThreadUtils.h"
 #include "velox/exec/Task.h"
 
 namespace io::trino::bridge {

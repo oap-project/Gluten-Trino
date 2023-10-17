@@ -14,10 +14,11 @@
 
 #pragma once
 
+#include <folly/executors/CPUThreadPoolExecutor.h>
+#include <folly/executors/IOThreadPoolExecutor.h>
+#include <boost/intrusive_ptr.hpp>
 #include <memory>
-#include "boost/intrusive_ptr.hpp"
-#include "folly/executors/CPUThreadPoolExecutor.h"
-#include "folly/executors/IOThreadPoolExecutor.h"
+
 #include "velox/exec/Task.h"
 
 namespace facebook::velox {

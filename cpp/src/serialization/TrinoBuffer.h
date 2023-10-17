@@ -12,8 +12,10 @@
  * limitations under the License.
  */
 #pragma once
+#include <cstdlib>
 #include <memory>
 #include <unordered_map>
+
 namespace io::trino::bridge {
 class MemoryManager {
  public:

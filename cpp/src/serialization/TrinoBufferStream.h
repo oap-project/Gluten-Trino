@@ -13,12 +13,10 @@
  */
 #pragma once
 
+#include "src/serialization/TrinoBuffer.h"
 #include "velox/common/memory/ByteStream.h"
 #include "velox/common/memory/StreamArena.h"
 #include "velox/type/Type.h"
-
-// #include <folly/io/IOBuf.h>
-#include "TrinoBuffer.h"
 
 namespace io::trino::bridge {
 

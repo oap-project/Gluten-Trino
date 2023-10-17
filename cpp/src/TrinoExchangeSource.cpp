@@ -11,16 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "TrinoExchangeSource.h"
+#include "src/TrinoExchangeSource.h"
 
 #include <fmt/core.h>
+#include <folly/SocketAddress.h>
 #include <re2/re2.h>
 #include <sstream>
 
-#include "NativeConfigs.h"
-#include "folly/SocketAddress.h"
-#include "protocol/trino_protocol.h"
-#include "utils/Counters.h"
+#include "src/NativeConfigs.h"
+#include "src/protocol/trino_protocol.h"
+#include "src/utils/Counters.h"
 #include "velox/common/base/Exceptions.h"
 #include "velox/common/base/StatsReporter.h"
 #include "velox/common/testutil/TestValue.h"

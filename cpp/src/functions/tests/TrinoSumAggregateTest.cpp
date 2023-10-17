@@ -12,7 +12,8 @@
  * limitations under the License.
  */
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+
 #include "velox/buffer/Buffer.h"
 #include "velox/core/PlanNode.h"
 #include "velox/exec/Aggregate.h"

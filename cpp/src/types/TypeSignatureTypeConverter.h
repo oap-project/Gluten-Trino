@@ -15,7 +15,6 @@
 #pragma once
 
 #include "velox/type/Type.h"
-
 #include "src/types/antlr/TypeSignatureBaseVisitor.h"
 
 namespace io {

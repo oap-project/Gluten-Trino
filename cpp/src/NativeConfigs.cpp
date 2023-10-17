@@ -11,9 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "NativeConfigs.h"
+#include "src/NativeConfigs.h"
 
-#include "protocol/external/json/json.hpp"
+#include "src/protocol/external/json/json.hpp"
 #include "velox/core/Config.h"
 #include "velox/core/QueryConfig.h"
 

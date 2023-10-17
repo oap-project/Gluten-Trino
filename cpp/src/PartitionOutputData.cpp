@@ -12,7 +12,8 @@
  * limitations under the License.
  */
 
-#include "PartitionOutputData.h"
+#include "src/PartitionOutputData.h"
+
 #include "velox/common/base/Exceptions.h"
 
 namespace io::trino::bridge {

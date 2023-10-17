@@ -11,8 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <glog/logging.h>
 #include <thread>
-#include "glog/logging.h"
+
 #include "velox/common/base/Exceptions.h"
 #include "velox/exec/Aggregate.h"
 #include "velox/exec/AggregateUtil.h"

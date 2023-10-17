@@ -12,9 +12,10 @@
  * limitations under the License.
  */
 
-#include "utils/HttpClient.h"
-#include "NativeConfigs.h"
-#include "utils/ThreadUtils.h"
+#include "src/utils/HttpClient.h"
+
+#include "src/NativeConfigs.h"
+#include "src/utils/ThreadUtils.h"
 #include "velox/common/base/Exceptions.h"
 
 using namespace facebook;
