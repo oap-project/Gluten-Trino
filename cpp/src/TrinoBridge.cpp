@@ -305,8 +305,7 @@ JNIEXPORT jint JNICALL Java_io_trino_jni_TrinoBridge_getBufferStep1(
           size_t data_num = output->withLock(
               [&taskId, &destination, &taskHandle](PartitionOutputData& data) {
                 if (data.noMoreData() && data.getOutputDataNum() == 0) {
-                  auto manager =
-                      exec::OutputBufferManager::getInstance().lock();
+                  auto manager = exec::OutputBufferManager::getInstance().lock();
                   manager->deleteResults(taskId.fullId(), destination);
                 }
                 return data.getOutputDataNum();

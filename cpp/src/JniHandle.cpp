@@ -162,9 +162,8 @@ TaskHandlePtr JniHandle::createTaskHandle(const TrinoTaskId& id,
     }
 
     bool isBroadcast = false;
-    if (auto handle =
-            std::dynamic_pointer_cast<protocol::SystemPartitioningHandle>(
-                plan.partitioningScheme.partitioning.handle.connectorHandle)) {
+    if (auto handle = std::dynamic_pointer_cast<protocol::SystemPartitioningHandle>(
+            plan.partitioningScheme.partitioning.handle.connectorHandle)) {
       if (handle->function == protocol::SystemPartitionFunction::BROADCAST) {
         LOG(INFO) << fmt::format("Task {} contains broadcast output buffer.",
                                  id.fullId());
@@ -265,8 +264,7 @@ JniHandle::getPlanConvertorMemPool() {
 }
 
 void JniHandle::printTaskStatus(
-    const TrinoTaskId& id,
-    const std::shared_ptr<facebook::velox::exec::Task>& task) {
+    const TrinoTaskId& id, const std::shared_ptr<facebook::velox::exec::Task>& task) {
   std::stringstream ss;
   ss << fmt::format("Task {} status:\n", id.fullId());
 
