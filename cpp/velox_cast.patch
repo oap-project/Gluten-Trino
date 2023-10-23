@@ -5,8 +5,7 @@ Subject: [PATCH 1/2] Add rescale double utility function.
 
 ---
  velox/type/DecimalUtil.h         | 45 +++++++++++++++++
- velox/type/tests/DecimalTest.cpp | 83 ++++++++++++++++++++++++++++++++
- 2 files changed, 128 insertions(+)
+ 1 files changed, 45 insertions(+)
 
 diff --git a/velox/type/DecimalUtil.h b/velox/type/DecimalUtil.h
 index dec802c0431..60c11ca8416 100644
@@ -71,99 +70,6 @@ index dec802c0431..60c11ca8416 100644
    template <typename R, typename A, typename B>
    inline static R divideWithRoundUp(
        R& r,
-diff --git a/velox/type/tests/DecimalTest.cpp b/velox/type/tests/DecimalTest.cpp
-index dbaf8f316ef..0e0176d3eac 100644
---- a/velox/type/tests/DecimalTest.cpp
-+++ b/velox/type/tests/DecimalTest.cpp
-@@ -177,5 +177,88 @@ TEST(DecimalTest, toByteArray) {
-   testToByteArray(DecimalUtil::kLongDecimalMax, expected8, 16);
- }
-
-+TEST(DecimalTest, rescaleDouble) {
-+  std::vector<double> inputs{-3333.03, -2222.02, -1.0, 0.00, 100, 99999.99};
-+  std::vector<int64_t> precision10scale1{
-+      -33'330'300, -22'220'200, -10'000, 0, 1'000'000, 999'999'900};
-+  std::vector<int128_t> precision20scale1{
-+      -33'330, -22'220, -10, 0, 1'000, 1'000'000};
-+  std::vector<int128_t> precision20scale10{
-+      -33'330'300'000'000,
-+      -22'220'200'000'000,
-+      -10'000'000'000,
-+      0,
-+      1'000'000'000'000,
-+      999'999'900'000'000};
-+
-+  for (size_t index = 0; index < inputs.size(); ++index) {
-+    ASSERT_EQ(
-+        precision10scale1[index],
-+        DecimalUtil::rescaleDouble<int64_t>(inputs[index], 10, 4));
-+    ASSERT_EQ(
-+        precision20scale1[index],
-+        DecimalUtil::rescaleDouble<int128_t>(inputs[index], 20, 1));
-+    ASSERT_EQ(
-+        precision20scale10[index],
-+        DecimalUtil::rescaleDouble<int128_t>(inputs[index], 20, 10));
-+  }
-+
-+  auto checkThrowError = [](double value, TypePtr& type) {
-+    if (type->isShortDecimal()) {
-+      auto shortDecimalType = type->asShortDecimal();
-+      VELOX_ASSERT_THROW(
-+          DecimalUtil::rescaleDouble<int64_t>(
-+              value, shortDecimalType.precision(), shortDecimalType.scale()),
-+          fmt::format(
-+              "Cannot cast DOUBLE '{:f}' to {}",
-+              value,
-+              shortDecimalType.toString()));
-+    } else {
-+      auto longDecimalType = type->asLongDecimal();
-+      VELOX_ASSERT_THROW(
-+          DecimalUtil::rescaleDouble<int128_t>(
-+              value, longDecimalType.precision(), longDecimalType.scale()),
-+          fmt::format(
-+              "Cannot cast DOUBLE '{:f}' to {}",
-+              value,
-+              longDecimalType.toString()));
-+    }
-+  };
-+
-+  auto decimalTypePrecision10Scale2 = DECIMAL(10, 2);
-+  auto decimalTypePrecision20Scale2 = DECIMAL(20, 2);
-+  auto decimalTypePrecision38Scale2 = DECIMAL(38, 2);
-+
-+  // Test infinity double type numbers.
-+  checkThrowError(NAN, decimalTypePrecision10Scale2);
-+  checkThrowError(INFINITY, decimalTypePrecision10Scale2);
-+
-+  // Expected failures.
-+  double numberExceededPrecision = 9999999999999999999999.99;
-+  checkThrowError(numberExceededPrecision, decimalTypePrecision10Scale2);
-+
-+  double numberBiggerThanInt64Max = static_cast<double>(
-+      static_cast<int128_t>(std::numeric_limits<int64_t>::max()) + 1);
-+  checkThrowError(numberBiggerThanInt64Max, decimalTypePrecision10Scale2);
-+
-+  double numberSmallerThanInt64Min = static_cast<double>(
-+      static_cast<int128_t>(std::numeric_limits<int64_t>::min()) - 1);
-+  checkThrowError(numberSmallerThanInt64Min, decimalTypePrecision10Scale2);
-+
-+  double numberBiggerThanDecimal20 =
-+      static_cast<double>(DecimalUtil::kLongDecimalMax);
-+  checkThrowError(numberBiggerThanDecimal20, decimalTypePrecision20Scale2);
-+
-+  double numberSmallerThanDecimal20 =
-+      static_cast<double>(DecimalUtil::kLongDecimalMin);
-+  checkThrowError(numberSmallerThanDecimal20, decimalTypePrecision20Scale2);
-+
-+  double doubleMax = std::numeric_limits<double>::max();
-+  checkThrowError(doubleMax, decimalTypePrecision38Scale2);
-+
-+  double doubleMin = std::numeric_limits<double>::min();
-+  ASSERT_EQ(0, DecimalUtil::rescaleDouble<int128_t>(doubleMin, 38, 2));
-+}
-+
- } // namespace
- } // namespace facebook::velox
 
 From 8ce863707131e7ae77cb1fb37ae5edda30795a58 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=E6=9E=A2=E6=9C=A8?= <wuxueyang.wxy@alibaba-inc.com>
@@ -171,63 +77,11 @@ Date: Fri, 21 Jul 2023 15:26:00 +0800
 Subject: [PATCH 2/2] Add support for casting Double to Decimal.
 
 ---
- velox/docs/functions/presto/conversion.rst | 26 +++++++-
  velox/expression/CastExpr-inl.h            | 24 +++++++
  velox/expression/CastExpr.cpp              |  4 ++
  velox/expression/CastExpr.h                |  8 +++
  velox/expression/tests/CastExprTest.cpp    | 74 ++++++++++++++++++++++
- 5 files changed, 134 insertions(+), 2 deletions(-)
-
-diff --git a/velox/docs/functions/presto/conversion.rst b/velox/docs/functions/presto/conversion.rst
-index 9ecd14ca925..9a36863d2ce 100644
---- a/velox/docs/functions/presto/conversion.rst
-+++ b/velox/docs/functions/presto/conversion.rst
-@@ -128,7 +128,7 @@ supported conversions to/from JSON are listed in :doc:`json`.
-      - Y
-      -
-      -
--     -
-+     - Y
-    * - varchar
-      - Y
-      - Y
-@@ -488,7 +488,7 @@ Cast to Decimal
- From integral types
- ^^^^^^^^^^^^^^^^^^^
-
--Casting an integral numberto a decimal of given precision and scale is allowed
-+Casting an integral number to a decimal of given precision and scale is allowed
- if the input value can be represented by the precision and scale. Casting from
- invalid input values throws.
-
-@@ -507,6 +507,28 @@ Invalid examples
-   SELECT cast(123 as decimal(6, 4)); -- Out of range
-   SELECT cast(123 as decimal(4, 2)); -- Out of range
-
-+From double precision floating-point types
-+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-+
-+Casting a double precision floating-point type number to a decimal of given precision
-+and scale is allowed if the input value can be represented by the precision and scale.
-+Casting from invalid input values throws.
-+
-+Valid example
-+
-+::
-+
-+  SELECT cast(0.12 as decimal(4,4)); -- decimal '0.1200'
-+  SELECT cast(0.12 as decimal(4,1)); -- decimal '0.1'
-+  SELECT cast(0.19 as decimal(4,1)); -- decimal '0.2'
-+
-+Invalid example
-+
-+::
-+
-+  SELECT cast(123.12 as decimal(6,4)); -- Out of range
-+  SELECT cast(99999.99 as decimal(6,2)); -- Out of range
-+
- From decimal
- ^^^^^^^^^^^^
+ 4 files changed, 134 insertions(+)
 
 diff --git a/velox/expression/CastExpr-inl.h b/velox/expression/CastExpr-inl.h
 index 6680243f643..ff05a400c24 100644
@@ -383,4 +237,3 @@ index d5cf922916e..57c1c2dc362 100644
  TEST_F(CastExprTest, castInTry) {
    // Test try(cast(array(varchar) as array(bigint))) whose input vector is
    // wrapped in dictinary encoding. The row of ["2a"] should trigger an error
-

@@ -23,6 +23,7 @@ using namespace facebook;
 namespace io::trino::bridge::http {
 HttpClient::HttpClient(folly::EventBase* eventBase, const folly::SocketAddress& address,
                        std::chrono::milliseconds timeout,
+                       std::shared_ptr<velox::memory::MemoryPool> pool,
                        const std::string& clientCertAndKeyPath,
                        const std::string& ciphers,
                        std::function<void(int)>&& reportOnBodyStatsFunc)
@@ -32,6 +33,7 @@ HttpClient::HttpClient(folly::EventBase* eventBase, const folly::SocketAddress& 
           eventBase_,
           std::chrono::milliseconds(folly::HHWheelTimer::DEFAULT_TICK_INTERVAL),
           folly::AsyncTimeout::InternalEnum::NORMAL, timeout)),
+      pool_(std::move(pool)),
       clientCertAndKeyPath_(clientCertAndKeyPath),
       ciphers_(ciphers),
       reportOnBodyStatsFunc_(std::move(reportOnBodyStatsFunc)),
@@ -52,10 +54,10 @@ HttpClient::~HttpClient() {
 }
 
 HttpResponse::HttpResponse(std::unique_ptr<proxygen::HTTPMessage> headers,
-                           velox::memory::MemoryPool* pool,
+                           std::shared_ptr<velox::memory::MemoryPool> pool,
                            uint64_t minResponseAllocBytes, uint64_t maxResponseAllocBytes)
     : headers_(std::move(headers)),
-      pool_(pool),
+      pool_(std::move(pool)),
       minResponseAllocBytes_(minResponseAllocBytes),
       maxResponseAllocBytes_(maxResponseAllocBytes) {
   VELOX_CHECK_NOT_NULL(pool_);
@@ -66,15 +68,90 @@ HttpResponse::~HttpResponse() {
   freeBuffers();
 }
 
-void HttpResponse::append(std::unique_ptr<folly::IOBuf>&& iobuf) {
+void HttpResponse::appendWithCopy(std::unique_ptr<folly::IOBuf>&& iobuf) {
+  VELOX_CHECK_NOT_NULL(pool_);
   VELOX_CHECK(!iobuf->isChained());
   VELOX_CHECK(!hasError());
 
+  uint64_t dataLength = iobuf->length();
+  auto dataStart = iobuf->data();
+  if (!bodyChain_.empty()) {
+    auto tail = bodyChain_.back().get();
+    auto space = tail->tailroom();
+    auto copySize = std::min<size_t>(space, dataLength);
+    ::memcpy(tail->writableTail(), dataStart, copySize);
+    tail->append(copySize);
+    dataLength -= copySize;
+    if (dataLength == 0) {
+      return;
+    }
+    dataStart += copySize;
+  }
+
+  const size_t roundedSize = nextAllocationSize(dataLength);
+  void* newBuf{nullptr};
+  try {
+    newBuf = pool_->allocate(roundedSize);
+  } catch (const velox::VeloxException& ex) {
+    // NOTE: we need to catch exception and process it later in driver execution
+    // context when processing the data response. Otherwise, the presto server
+    // process will die.
+    setError(ex);
+    return;
+  }
+  VELOX_CHECK_NOT_NULL(newBuf);
+  bodyChainBytes_ += roundedSize;
+  ::memcpy(newBuf, dataStart, dataLength);
+  bodyChain_.emplace_back(folly::IOBuf::wrapBuffer(newBuf, roundedSize));
+  bodyChain_.back()->trimEnd(roundedSize - dataLength);
+}
+
+void HttpResponse::appendWithoutCopy(std::unique_ptr<folly::IOBuf>&& iobuf) {
+  VELOX_CHECK_NULL(pool_);
+  VELOX_CHECK(!iobuf->isChained());
+  VELOX_CHECK(!hasError());
   bodyChainBytes_ += iobuf->length();
   bodyChain_.emplace_back(std::move(iobuf));
 }
 
-void HttpResponse::freeBuffers() { bodyChain_.clear(); }
+void HttpResponse::append(std::unique_ptr<folly::IOBuf>&& iobuf) {
+  if (pool_ == nullptr) {
+    appendWithoutCopy(std::move(iobuf));
+  } else {
+    appendWithCopy(std::move(iobuf));
+  }
+}
+
+std::unique_ptr<folly::IOBuf> HttpResponse::consumeBody(velox::memory::MemoryPool* pool) {
+  VELOX_CHECK_NULL(pool_);
+  VELOX_CHECK(!hasError());
+  uint64_t totalBytes{0};
+  for (const auto& iobuf : bodyChain_) {
+    VELOX_CHECK(!iobuf->isChained());
+    totalBytes += iobuf->length();
+  }
+  void* newBuf = pool->allocate(totalBytes);
+  void* curr = newBuf;
+  for (auto& iobuf : bodyChain_) {
+    const auto length = iobuf->length();
+    ::memcpy(curr, iobuf->data(), length);
+    curr = (char*)curr + length;
+    iobuf.reset();
+  }
+  bodyChain_.clear();
+  return folly::IOBuf::wrapBuffer(newBuf, totalBytes);
+}
+
+void HttpResponse::freeBuffers() {
+  if (pool_ != nullptr) {
+    for (auto& iobuf : bodyChain_) {
+      if (iobuf != nullptr) {
+        pool_->free(iobuf->writableData(), iobuf->capacity());
+      }
+    }
+  }
+  bodyChain_.clear();
+}
 
 FOLLY_ALWAYS_INLINE size_t HttpResponse::nextAllocationSize(uint64_t dataLength) const {
   const size_t minAllocSize = velox::bits::nextPowerOfTwo(
@@ -100,18 +177,18 @@ std::string HttpResponse::dumpBodyChain() const {
 
 class ResponseHandler : public proxygen::HTTPTransactionHandler {
  public:
-  ResponseHandler(const proxygen::HTTPMessage& request, velox::memory::MemoryPool* pool,
-                  uint64_t maxResponseAllocBytes, const std::string& body,
-                  std::function<void(int)> reportOnBodyStatsFunc)
+  ResponseHandler(const proxygen::HTTPMessage& request, uint64_t maxResponseAllocBytes,
+                  const std::string& body, std::function<void(int)> reportOnBodyStatsFunc,
+                  std::shared_ptr<HttpClient> client)
       : request_(request),
         body_(body),
         reportOnBodyStatsFunc_(std::move(reportOnBodyStatsFunc)),
-        pool_(pool),
-        minResponseAllocBytes_(
-            velox::memory::AllocationTraits::pageBytes(pool_->sizeClasses().front())),
-        maxResponseAllocBytes_(std::max(minResponseAllocBytes_, maxResponseAllocBytes)) {
-    VELOX_CHECK_NOT_NULL(pool_);
-  }
+        minResponseAllocBytes_(client->memoryPool() == nullptr
+                                   ? 0
+                                   : velox::memory::AllocationTraits::pageBytes(
+                                         client->memoryPool()->sizeClasses().front())),
+        maxResponseAllocBytes_(std::max(minResponseAllocBytes_, maxResponseAllocBytes)),
+        client_(std::move(client)) {}
 
   folly::SemiFuture<std::unique_ptr<HttpResponse>> initialize(
       std::shared_ptr<ResponseHandler> self) {
@@ -124,18 +201,19 @@ class ResponseHandler : public proxygen::HTTPTransactionHandler {
   void setTransaction(proxygen::HTTPTransaction* /* txn */) noexcept override {}
   void detachTransaction() noexcept override { self_.reset(); }
 
-  void onChunkHeader(size_t length) noexcept override {
-    VLOG(1) << "Request " << request_.getURL() << " receiving chunk with " << length
-            << " bytes.";
-  }
-
-  void onChunkComplete() noexcept override {
-    VLOG(1) << "Request " << request_.getURL() << " received chunk.";
-  }
+  //  void onChunkHeader(size_t length) noexcept override {
+  //    VLOG(1) << "Request " << request_.getURL() << " receiving chunk with " << length
+  //            << " bytes.";
+  //  }
+  //
+  //  void onChunkComplete() noexcept override {
+  //    VLOG(1) << "Request " << request_.getURL() << " received chunk.";
+  //  }
 
   void onHeadersComplete(std::unique_ptr<proxygen::HTTPMessage> msg) noexcept override {
-    response_ = std::make_unique<HttpResponse>(
-        std::move(msg), pool_, minResponseAllocBytes_, maxResponseAllocBytes_);
+    response_ =
+        std::make_unique<HttpResponse>(std::move(msg), client_->memoryPool(),
+                                       minResponseAllocBytes_, maxResponseAllocBytes_);
   }
 
   void onBody(std::unique_ptr<folly::IOBuf> chain) noexcept override {
@@ -184,12 +262,12 @@ class ResponseHandler : public proxygen::HTTPTransactionHandler {
   const proxygen::HTTPMessage request_;
   const std::string body_;
   const std::function<void(int)> reportOnBodyStatsFunc_;
-  velox::memory::MemoryPool* const pool_;
   const uint64_t minResponseAllocBytes_;
   const uint64_t maxResponseAllocBytes_;
   std::unique_ptr<HttpResponse> response_;
   folly::Promise<std::unique_ptr<HttpResponse>> promise_;
   std::shared_ptr<ResponseHandler> self_;
+  std::shared_ptr<HttpClient> client_;
 };
 
 class ConnectionHandler : public proxygen::HTTPConnector::Callback {
@@ -248,13 +326,12 @@ class ConnectionHandler : public proxygen::HTTPConnector::Callback {
 };
 
 folly::SemiFuture<std::unique_ptr<HttpResponse>> HttpClient::sendRequest(
-    const proxygen::HTTPMessage& request, velox::memory::MemoryPool* pool,
-    const std::string& body) {
+    const proxygen::HTTPMessage& request, const std::string& body, int64_t delayMs) {
   auto responseHandler = std::make_shared<ResponseHandler>(
-      request, pool, maxResponseAllocBytes_, body, reportOnBodyStatsFunc_);
+      request, maxResponseAllocBytes_, body, reportOnBodyStatsFunc_, shared_from_this());
   auto future = responseHandler->initialize(responseHandler);
 
-  eventBase_->runInEventBaseThreadAlwaysEnqueue([this, responseHandler]() {
+  auto send = [this, responseHandler]() {
     auto txn = sessionPool_->getTransaction(responseHandler.get());
     if (txn) {
       responseHandler->sendRequest(txn);
@@ -266,7 +343,15 @@ folly::SemiFuture<std::unique_ptr<HttpResponse>> HttpClient::sendRequest(
                               eventBase_, address_, clientCertAndKeyPath_, ciphers_);
 
     connectionHandler->connect();
-  });
+  };
+
+  if (delayMs > 0) {
+    // schedule() is expected to be run in the event base thread
+    eventBase_->runInEventBaseThread(
+        [=]() { eventBase_->schedule(send, std::chrono::milliseconds(delayMs)); });
+  } else {
+    eventBase_->runInEventBaseThreadAlwaysEnqueue(send);
+  }
 
   return future;
 }

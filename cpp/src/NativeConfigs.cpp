@@ -74,6 +74,9 @@ void NativeConfigs::initialize(const std::string& configJsonString) {
   GET_KEY_FROM_JSON(httpMaxAllocateBytes, configJson);
   GET_KEY_FROM_JSON(httpsClientCertAndKeyPath, configJson);
   GET_KEY_FROM_JSON(httpsSupportedCiphers, configJson);
+  GET_KEY_FROM_JSON(exchangeMaxErrorDuration, configJson);
+  GET_KEY_FROM_JSON(exchangeRequestTimeout, configJson);
+  GET_KEY_FROM_JSON(exchangeImmediateBufferTransfer, configJson);
 
   if (configJson.contains("logVerboseModules")) {
     std::string _logVerboseModules;

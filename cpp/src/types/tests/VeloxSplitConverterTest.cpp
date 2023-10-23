@@ -20,9 +20,6 @@
 #include "velox/exec/Exchange.h"
 #include "velox/velox/common/encode/Base64.h"
 
-using namespace facebook::velox;
-using namespace io::trino;
-
 class PrestoToVeloxSplitTest : public ::testing::Test {};
 
 TEST_F(PrestoToVeloxSplitTest, RemoteConnectorSplit) {
