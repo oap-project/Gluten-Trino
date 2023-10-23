@@ -27,7 +27,7 @@ public class NativeTaskConfig
 
     private DataSize maxQueryMemoryPerNode = DataSize.of(1, DataSize.Unit.GIGABYTE);
     private DataSize maxNodeMemory = DataSize.of(1, DataSize.Unit.GIGABYTE);
-    private boolean useMmapAllocator;
+    private boolean useMmapAllocator = true;
     private boolean useMmapArena;
     private int mmapArenaCapacityRatio = 10;
     private boolean asyncDataCacheEnabled = true;
