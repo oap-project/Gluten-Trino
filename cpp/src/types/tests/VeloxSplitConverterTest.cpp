@@ -28,7 +28,7 @@ TEST_F(PrestoToVeloxSplitTest, RemoteConnectorSplit) {
 
   nlohmann::json json = nlohmann::json::parse(json_str);
   io::trino::protocol::ScheduledSplit split;
-  protocol::from_json(json, split);
+  io::trino::protocol::from_json(json, split);
 
   facebook::velox::exec::Split veloxSplit = io::trino::toVeloxSplit(split);
   EXPECT_TRUE(veloxSplit.hasConnectorSplit());
@@ -43,7 +43,7 @@ TEST_F(PrestoToVeloxSplitTest, TPCHConnectorSplit) {
 
   nlohmann::json json = nlohmann::json::parse(json_str);
   io::trino::protocol::ScheduledSplit split;
-  protocol::from_json(json, split);
+  io::trino::protocol::from_json(json, split);
 
   facebook::velox::exec::Split veloxSplit = io::trino::toVeloxSplit(split);
   EXPECT_TRUE(veloxSplit.hasConnectorSplit());
@@ -59,7 +59,7 @@ TEST_F(PrestoToVeloxSplitTest, HiveConnectorSplit) {
 
   nlohmann::json json = nlohmann::json::parse(json_str);
   io::trino::protocol::ScheduledSplit split;
-  protocol::from_json(json, split);
+  io::trino::protocol::from_json(json, split);
 
   facebook::velox::exec::Split veloxSplit = io::trino::toVeloxSplit(split);
   EXPECT_TRUE(veloxSplit.hasConnectorSplit());
