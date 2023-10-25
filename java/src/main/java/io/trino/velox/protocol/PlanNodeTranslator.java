@@ -270,7 +270,7 @@ public class PlanNodeTranslator
                             .map(filter_ -> ExpressionTranslator.translateExpressionTree(filter_, metadata, typeManager, blockEncodingSerde, session, symbolType));
                 }
                 GlutenAggregationNode.Aggregation glutenAggregation = new GlutenAggregationNode.Aggregation(glutenFunction,
-                        filter, ordering, aggregation.isDistinct(), mask);
+                        filter, ordering, aggregation.isDistinct(), mask, glutenFunction.getFunctionHandle(), arguments);
 
                 aggregations.put(aggValue, glutenAggregation);
             }));

@@ -28,8 +28,8 @@ namespace io::trino::bridge::http {
 class HttpResponse {
  public:
   HttpResponse(std::unique_ptr<proxygen::HTTPMessage> headers,
-               facebook::velox::memory::MemoryPool* pool, uint64_t minResponseAllocBytes,
-               uint64_t maxResponseAllocBytes);
+               std::shared_ptr<facebook::velox::memory::MemoryPool> pool,
+               uint64_t minResponseAllocBytes, uint64_t maxResponseAllocBytes);
 
   ~HttpResponse();
 
@@ -62,11 +62,23 @@ class HttpResponse {
     return std::move(bodyChain_);
   }
 
+  /// Consumes the response body. The memory of body will be transferred to the
+  /// memory to be allocated from 'pool'.
+  std::unique_ptr<folly::IOBuf> consumeBody(facebook::velox::memory::MemoryPool* pool);
+
   void freeBuffers();
 
   std::string dumpBodyChain() const;
 
  private:
+  // The append operation that copies the 'iobuf' to velox memory 'pool_' and
+  // free 'iobuf' immediately.
+  void appendWithCopy(std::unique_ptr<folly::IOBuf>&& iobuf);
+
+  // Appends the 'iobuf' to 'bodyChain_', and copies them all once into a single
+  // large buffer after receives the entire http response payload.
+  void appendWithoutCopy(std::unique_ptr<folly::IOBuf>&& iobuf);
+
   // Invoked to set the error on the first encountered 'exception'.
   void setError(const std::exception& exception) {
     VELOX_CHECK(!hasError())
@@ -78,7 +90,7 @@ class HttpResponse {
   FOLLY_ALWAYS_INLINE size_t nextAllocationSize(uint64_t dataLength) const;
 
   const std::unique_ptr<proxygen::HTTPMessage> headers_;
-  facebook::velox::memory::MemoryPool* const pool_;
+  const std::shared_ptr<facebook::velox::memory::MemoryPool> pool_;
   const uint64_t minResponseAllocBytes_;
   const uint64_t maxResponseAllocBytes_;
 
@@ -91,10 +103,11 @@ class HttpResponse {
 // EventBase thread. Hence, the destructor of HttpClient must run on the
 // EventBase thread as well. Consider running HttpClient's destructor
 // via EventBase::runOnDestruction.
-class HttpClient {
+class HttpClient : public std::enable_shared_from_this<HttpClient> {
  public:
   HttpClient(folly::EventBase* FOLLY_NONNULL eventBase,
              const folly::SocketAddress& address, std::chrono::milliseconds timeout,
+             std::shared_ptr<facebook::velox::memory::MemoryPool> pool,
              const std::string& clientCertAndKeyPath = "",
              const std::string& ciphers = "",
              std::function<void(int)>&& reportOnBodyStatsFunc = nullptr);
@@ -103,13 +116,18 @@ class HttpClient {
 
   // TODO Avoid copy by using IOBuf for body
   folly::SemiFuture<std::unique_ptr<HttpResponse>> sendRequest(
-      const proxygen::HTTPMessage& request, facebook::velox::memory::MemoryPool* pool,
-      const std::string& body = "");
+      const proxygen::HTTPMessage& request, const std::string& body = "",
+      int64_t delayMs = 0);
+
+  const std::shared_ptr<facebook::velox::memory::MemoryPool>& memoryPool() {
+    return pool_;
+  }
 
  private:
   folly::EventBase* const eventBase_;
   const folly::SocketAddress address_;
   const folly::HHWheelTimer::UniquePtr timer_;
+  const std::shared_ptr<facebook::velox::memory::MemoryPool> pool_;
   // clientCertAndKeyPath_ Points to a file (usually with pem extension) which
   // contains certificate and key concatenated together
   const std::string clientCertAndKeyPath_;
@@ -146,12 +164,12 @@ class RequestBuilder {
     return *this;
   }
 
-  folly::SemiFuture<std::unique_ptr<HttpResponse>> send(
-      HttpClient* client, facebook::velox::memory::MemoryPool* pool,
-      const std::string& body = "") {
+  folly::SemiFuture<std::unique_ptr<HttpResponse>> send(HttpClient* client,
+                                                        const std::string& body = "",
+                                                        int64_t delayMs = 0) {
     header(proxygen::HTTP_HEADER_CONTENT_LENGTH, std::to_string(body.size()));
     headers_.ensureHostHeader();
-    return client->sendRequest(headers_, pool, body);
+    return client->sendRequest(headers_, body, delayMs);
   }
 
  private:

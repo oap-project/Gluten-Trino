@@ -42,8 +42,6 @@
 #include "velox/connectors/hive/storage_adapters/s3fs/RegisterS3FileSystem.h"
 #endif
 
-using namespace facebook::velox;
-
 namespace io::trino::bridge {
 
 const std::string JniHandle::kGlutenTrinoFunctionPrefix("trino.bridge.");
@@ -64,24 +62,25 @@ JniHandle::JniHandle(const NativeSqlTaskExecutionManagerPtr& javaManager)
 
 void JniHandle::initializeVelox() {
   // Setup and register.
-  filesystems::registerLocalFileSystem();
+  facebook::velox::filesystems::registerLocalFileSystem();
 
-  velox::parquet::registerParquetReaderFactory();
+  facebook::velox::parquet::registerParquetReaderFactory();
 
-  velox::filesystems::registerHdfsFileSystem();
+  facebook::velox::filesystems::registerHdfsFileSystem();
 
 #ifdef ENABLE_GLUTEN_TRINO_S3
-  velox::filesystems::registerS3FileSystem();
+  facebook::velox::filesystems::registerS3FileSystem();
 #endif
 
-  velox::dwrf::registerDwrfReaderFactory();
+  facebook::velox::dwrf::registerDwrfReaderFactory();
   // Register Velox functions
   static const std::string kPrestoDefaultPrefix{"presto.default."};
-  velox::functions::prestosql::registerAllScalarFunctions(kPrestoDefaultPrefix);
-  velox::aggregate::prestosql::registerAllAggregateFunctions(kPrestoDefaultPrefix);
-  velox::window::prestosql::registerAllWindowFunctions(kPrestoDefaultPrefix);
+  facebook::velox::functions::prestosql::registerAllScalarFunctions(kPrestoDefaultPrefix);
+  facebook::velox::aggregate::prestosql::registerAllAggregateFunctions(
+      kPrestoDefaultPrefix);
+  facebook::velox::window::prestosql::registerAllWindowFunctions(kPrestoDefaultPrefix);
 
-  velox::parse::registerTypeResolver();
+  facebook::velox::parse::registerTypeResolver();
 
   TrinoVectorSerde::registerVectorSerde();
 
@@ -99,15 +98,15 @@ void JniHandle::initializeVeloxMemory() {
   LOG(INFO) << "Starting with node memory " << (memoryBytes >> 30) << "GB";
 
   if (config.getUseMmapAllocator()) {
-    memory::MmapAllocator::Options options;
+    facebook::velox::memory::MmapAllocator::Options options;
     options.capacity = memoryBytes;
     options.useMmapArena = config.getUseMmapArena();
     options.mmapArenaCapacityRatio = config.getMmapArenaCapacityRatio();
-    allocator_ = std::make_shared<memory::MmapAllocator>(options);
+    allocator_ = std::make_shared<facebook::velox::memory::MmapAllocator>(options);
   } else {
-    allocator_ = memory::MemoryAllocator::createDefaultInstance();
+    allocator_ = facebook::velox::memory::MemoryAllocator::createDefaultInstance();
   }
-  memory::MemoryAllocator::setDefaultInstance(allocator_.get());
+  facebook::velox::memory::MemoryAllocator::setDefaultInstance(allocator_.get());
 
   if (config.getAsyncDataCacheEnabled()) {
     std::unique_ptr<cache::SsdCache> ssd;
@@ -132,7 +131,7 @@ void JniHandle::initializeVeloxMemory() {
   }
 
   // Set up velox memory manager.
-  memory::MemoryManagerOptions options;
+  facebook::velox::memory::MemoryManagerOptions options;
   options.capacity = memoryBytes;
   options.checkUsageLeak = config.getEnableMemoryLeakCheck();
   if (config.getEnableMemoryArbitration()) {
@@ -142,11 +141,11 @@ void JniHandle::initializeVeloxMemory() {
     options.memoryPoolInitCapacity = config.getInitMemoryPoolCapacity();
     options.memoryPoolTransferCapacity = config.getMinMemoryPoolTransferCapacity();
   }
-  const auto& manager = memory::MemoryManager::getInstance(options);
+  const auto& manager = facebook::velox::memory::MemoryManager::getInstance(options);
   LOG(INFO) << "Memory manager has been setup: " << manager.toString();
 }
 
-TaskHandlePtr JniHandle::createTaskHandle(const io::trino::TrinoTaskId& id,
+TaskHandlePtr JniHandle::createTaskHandle(const TrinoTaskId& id,
                                           const protocol::PlanFragment& plan) {
   return withWLock([&id, &plan, this]() {
     if (auto iter = taskMap_.find(id.fullId()); iter != taskMap_.end()) {
@@ -163,10 +162,9 @@ TaskHandlePtr JniHandle::createTaskHandle(const io::trino::TrinoTaskId& id,
     }
 
     bool isBroadcast = false;
-    if (auto handle =
-            std::dynamic_pointer_cast<io::trino::protocol::SystemPartitioningHandle>(
-                plan.partitioningScheme.partitioning.handle.connectorHandle)) {
-      if (handle->function == io::trino::protocol::SystemPartitionFunction::BROADCAST) {
+    if (auto handle = std::dynamic_pointer_cast<protocol::SystemPartitioningHandle>(
+            plan.partitioningScheme.partitioning.handle.connectorHandle)) {
+      if (handle->function == protocol::SystemPartitionFunction::BROADCAST) {
         LOG(INFO) << fmt::format("Task {} contains broadcast output buffer.",
                                  id.fullId());
         isBroadcast = true;
@@ -178,19 +176,21 @@ TaskHandlePtr JniHandle::createTaskHandle(const io::trino::TrinoTaskId& id,
                              numPartitions);
 
     auto& config = NativeConfigs::instance();
-    auto queryCtx = std::make_shared<core::QueryCtx>(
+    auto queryCtx = std::make_shared<facebook::velox::core::QueryCtx>(
         driverExecutor_.get(), std::move(config.getQueryConfigs()),
         std::move(config.getConnectorConfigs()), cache::AsyncDataCache::getInstance(),
         memory::defaultMemoryManager().addRootPool(id.fullId(),
                                                    config.getQueryMaxMemoryPerNode()));
 
     VeloxInteractiveQueryPlanConverter convertor(getPlanConvertorMemPool().get());
-    core::PlanFragment fragment = convertor.toVeloxQueryPlan(plan, nullptr, id.fullId());
+    facebook::velox::core::PlanFragment fragment =
+        convertor.toVeloxQueryPlan(plan, nullptr, id.fullId());
 
     LOG(INFO) << fmt::format("Task {},\n PlanFragment: {}", id.fullId(),
                              fragment.planNode->toString(true, true));
 
-    auto task = exec::Task::create(id.fullId(), std::move(fragment), id.id(), queryCtx);
+    auto task = facebook::velox::exec::Task::create(id.fullId(), std::move(fragment),
+                                                    id.id(), queryCtx);
     std::string parentPath = config.getSpillDir();
     if (!parentPath.empty()) {
       std::string fullPath = parentPath + "/spill-" + id.fullId();
@@ -206,7 +206,7 @@ TaskHandlePtr JniHandle::createTaskHandle(const io::trino::TrinoTaskId& id,
   });
 }
 
-TaskHandlePtr JniHandle::getTaskHandle(const io::trino::TrinoTaskId& id) {
+TaskHandlePtr JniHandle::getTaskHandle(const TrinoTaskId& id) {
   return withRLock([&id, this]() -> TaskHandle* {
     if (auto iter = taskMap_.find(id.fullId()); iter != taskMap_.end()) {
       return iter->second.get();
@@ -216,7 +216,7 @@ TaskHandlePtr JniHandle::getTaskHandle(const io::trino::TrinoTaskId& id) {
   });
 }
 
-bool JniHandle::removeTask(const io::trino::TrinoTaskId& id) {
+bool JniHandle::removeTask(const TrinoTaskId& id) {
   return withWLock([this, &id]() {
     if (auto taskIter = taskMap_.find(id.fullId()); taskIter != taskMap_.end()) {
       auto&& task = taskIter->second->getTask();
@@ -231,7 +231,8 @@ bool JniHandle::removeTask(const io::trino::TrinoTaskId& id) {
   });
 }
 
-void JniHandle::terminateTask(const io::trino::TrinoTaskId& id, exec::TaskState state) {
+void JniHandle::terminateTask(const TrinoTaskId& id,
+                              facebook::velox::exec::TaskState state) {
   TaskHandlePtr taskHandle;
   withRLock([this, &id, &taskHandle]() {
     if (auto taskIter = taskMap_.find(id.fullId()); taskIter != taskMap_.end()) {
@@ -255,14 +256,15 @@ void JniHandle::terminateTask(const io::trino::TrinoTaskId& id, exec::TaskState 
   }
 }
 
-std::shared_ptr<memory::MemoryPool> JniHandle::getPlanConvertorMemPool() {
-  static std::shared_ptr<memory::MemoryPool> pool =
-      velox::memory::addDefaultLeafMemoryPool("PlanConvertor");
+std::shared_ptr<facebook::velox::memory::MemoryPool>
+JniHandle::getPlanConvertorMemPool() {
+  static std::shared_ptr<facebook::velox::memory::MemoryPool> pool =
+      facebook::velox::memory::addDefaultLeafMemoryPool("PlanConvertor");
   return pool;
 }
 
-void JniHandle::printTaskStatus(const io::trino::TrinoTaskId& id,
-                                const std::shared_ptr<exec::Task>& task) {
+void JniHandle::printTaskStatus(
+    const TrinoTaskId& id, const std::shared_ptr<facebook::velox::exec::Task>& task) {
   std::stringstream ss;
   ss << fmt::format("Task {} status:\n", id.fullId());
 

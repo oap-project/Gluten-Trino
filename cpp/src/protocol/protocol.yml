@@ -34,6 +34,11 @@ EnumMap:
         DistributionType: SemiJoinNodeType
 
 ExtraFields:
+
+#    Aggregation:
+#      GlutenFunctionHandle: functionHandle
+#      List<GlutenRowExpression>: arguments
+
     GlutenPlanNode:
         PlanNodeId :         id
 
@@ -57,6 +62,7 @@ AbstractClasses:
       comparable: true
       subclasses:
         - { name: GlutenBuiltInFunctionHandle,  key: static}
+        - { name: GlutenSqlFunctionHandle,      key: json_file }
 
     GlutenRowExpression:
       super: JsonEncodedSubclass
@@ -227,6 +233,7 @@ trinoCppJavaClasses:
   - src/main/java/io/trino/velox/protocol/GlutenSpecialFormExpression.java
   - src/main/java/io/trino/velox/protocol/GlutenSplit.java
   - src/main/java/io/trino/velox/protocol/GlutenSplitAssignment.java
+  - src/main/java/io/trino/velox/protocol/GlutenSqlFunctionHandle.java
   - src/main/java/io/trino/velox/protocol/GlutenTableHandle.java
   - src/main/java/io/trino/velox/protocol/GlutenTableScanNode.java
   - src/main/java/io/trino/velox/protocol/GlutenTopNNode.java

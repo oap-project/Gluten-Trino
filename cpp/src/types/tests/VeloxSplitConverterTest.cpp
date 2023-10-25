@@ -20,9 +20,6 @@
 #include "velox/exec/Exchange.h"
 #include "velox/velox/common/encode/Base64.h"
 
-using namespace facebook::velox;
-using namespace io::trino;
-
 class PrestoToVeloxSplitTest : public ::testing::Test {};
 
 TEST_F(PrestoToVeloxSplitTest, RemoteConnectorSplit) {
@@ -31,7 +28,7 @@ TEST_F(PrestoToVeloxSplitTest, RemoteConnectorSplit) {
 
   nlohmann::json json = nlohmann::json::parse(json_str);
   io::trino::protocol::ScheduledSplit split;
-  protocol::from_json(json, split);
+  io::trino::protocol::from_json(json, split);
 
   facebook::velox::exec::Split veloxSplit = io::trino::toVeloxSplit(split);
   EXPECT_TRUE(veloxSplit.hasConnectorSplit());
@@ -46,7 +43,7 @@ TEST_F(PrestoToVeloxSplitTest, TPCHConnectorSplit) {
 
   nlohmann::json json = nlohmann::json::parse(json_str);
   io::trino::protocol::ScheduledSplit split;
-  protocol::from_json(json, split);
+  io::trino::protocol::from_json(json, split);
 
   facebook::velox::exec::Split veloxSplit = io::trino::toVeloxSplit(split);
   EXPECT_TRUE(veloxSplit.hasConnectorSplit());
@@ -62,7 +59,7 @@ TEST_F(PrestoToVeloxSplitTest, HiveConnectorSplit) {
 
   nlohmann::json json = nlohmann::json::parse(json_str);
   io::trino::protocol::ScheduledSplit split;
-  protocol::from_json(json, split);
+  io::trino::protocol::from_json(json, split);
 
   facebook::velox::exec::Split veloxSplit = io::trino::toVeloxSplit(split);
   EXPECT_TRUE(veloxSplit.hasConnectorSplit());

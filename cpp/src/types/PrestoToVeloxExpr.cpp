@@ -388,16 +388,14 @@ TypedExprPtr VeloxExprConverter::toVeloxExpr(
       }
     }
     return std::make_shared<CallTypedExpr>(returnType, args, getFunctionName(signature));
-  } /* else if (
-      auto sqlFunctionHandle =
-          std::dynamic_pointer_cast<protocol::SqlFunctionHandle>(
-              pexpr.functionHandle)) {
+  } else if (auto sqlFunctionHandle =
+                 std::dynamic_pointer_cast<protocol::SqlFunctionHandle>(
+                     pexpr.functionHandle)) {
     auto args = toVeloxExpr(pexpr.arguments);
     auto returnType = parseTypeSignature(pexpr.returnType);
     return std::make_shared<CallTypedExpr>(
         returnType, args, getFunctionName(sqlFunctionHandle->functionId));
   }
-  */
 
   VELOX_FAIL("Unsupported function handle: {}", pexpr.functionHandle->_type);
 }
